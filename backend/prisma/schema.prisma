@@ -1,0 +1,617 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ----------------------------------------------------
+// Enums
+// ----------------------------------------------------
+
+enum Role {
+  STUDENT
+  TEACHER
+  INSTITUTE_ADMIN
+  PLATFORM_ADMIN
+}
+
+enum ExamType {
+  JEE_MAIN
+  JEE_ADVANCED
+  NEET
+  BOTH_JEE
+}
+
+enum QuestionType {
+  SINGLE_CORRECT
+  MULTIPLE_CORRECT
+  NUMERICAL
+  INTEGER
+  ASSERTION_REASON
+}
+
+enum Difficulty {
+  EASY
+  MEDIUM
+  HARD
+  ADVANCED
+}
+
+enum QuestionStatus {
+  DRAFT
+  VERIFIED
+  PUBLISHED
+  ARCHIVED
+}
+
+enum MistakeType {
+  NONE
+  CONCEPTUAL
+  FORMULA_SELECTION
+  CALCULATION
+  SIGN_CONVENTION
+  UNIT_CONVERSION
+  QUESTION_INTERPRETATION
+  PREREQUISITE_GAP
+  INCOMPLETE_SOLUTION
+  TIME_MANAGEMENT
+}
+
+enum MasteryLevel {
+  NOVICE
+  DEVELOPING
+  COMPETENT
+  PROFICIENT
+  MASTERED
+}
+
+enum PrerequisiteDependency {
+  HARD
+  SOFT
+  HELPFUL
+}
+
+enum InstituteRole {
+  STUDENT
+  TEACHER
+  ADMIN
+}
+
+enum MembershipStatus {
+  PENDING
+  ACTIVE
+  SUSPENDED
+}
+
+enum ContestStatus {
+  DRAFT
+  PUBLISHED
+  ACTIVE
+  COMPLETED
+  ARCHIVED
+}
+
+enum ParticipantStatus {
+  REGISTERED
+  IN_PROGRESS
+  SUBMITTED
+  DISQUALIFIED
+}
+
+enum ScholarshipStatus {
+  OPEN
+  UNDER_REVIEW
+  AWARDED
+  CLOSED
+}
+
+// ----------------------------------------------------
+// 1. Authentication & Users
+// ----------------------------------------------------
+
+model User {
+  id              String             @id @default(uuid())
+  email           String             @unique
+  passwordHash    String
+  fullName        String
+  avatarUrl       String?
+  role            Role               @default(STUDENT)
+  isEmailVerified Boolean            @default(false)
+  isActive        Boolean            @default(true)
+  lastLoginAt     DateTime?
+  createdAt       DateTime           @default(now())
+  updatedAt       DateTime           @updatedAt
+
+  studentProfile  StudentProfile?
+  teacherProfile  TeacherProfile?
+  memberships     InstituteMembership[]
+  attempts        QuestionAttempt[]
+  bookmarks       Bookmark[]
+  masteryRecords  StudentConceptMastery[]
+  contestParts    ContestParticipant[]
+  leaderboard     LeaderboardEntry[]
+  auditLogs       AuditLog[]
+  createdQuestions Question[]        @relation("CreatedQuestions")
+  verifiedSolutions QuestionSolution[] @relation("VerifiedSolutions")
+  recommendations Recommendation[]
+  learningGoals   LearningGoal[]
+  revisionSchedules RevisionSchedule[]
+  scholarshipApps ScholarshipApplication[]
+  notifications   Notification[]
+}
+
+model StudentProfile {
+  id                  String       @id @default(uuid())
+  userId              String       @unique
+  user                User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  targetExam          ExamType     @default(JEE_MAIN)
+  targetYear          Int          @default(2026)
+  academicLevel       String       @default("Class 12")
+  preferredSubjects   String[]     @default(["Physics"])
+  dailyGoalQuestions  Int          @default(15)
+  currentStreak       Int          @default(0)
+  longestStreak       Int          @default(0)
+  problemSolvingIndex Float        @default(0.0)
+  createdAt           DateTime     @default(now())
+  updatedAt           DateTime     @updatedAt
+}
+
+model TeacherProfile {
+  id             String       @id @default(uuid())
+  userId         String       @unique
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  specialization String       @default("Physics")
+  qualifications String?
+  bio            String?
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+}
+
+// ----------------------------------------------------
+// 2. Multi-Tenant Institute
+// ----------------------------------------------------
+
+model Institute {
+  id          String                @id @default(uuid())
+  name        String
+  slug        String                @unique
+  code        String                @unique
+  logoUrl     String?
+  website     String?
+  isVerified  Boolean               @default(false)
+  createdAt   DateTime              @default(now())
+  updatedAt   DateTime              @updatedAt
+
+  memberships InstituteMembership[]
+  contests    Contest[]
+  scholarships Scholarship[]
+}
+
+model InstituteMembership {
+  id              String           @id @default(uuid())
+  userId          String
+  instituteId     String
+  user            User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  institute       Institute        @relation(fields: [instituteId], references: [id], onDelete: Cascade)
+  roleInInstitute InstituteRole    @default(STUDENT)
+  batchName       String?
+  status          MembershipStatus @default(ACTIVE)
+  joinedAt        DateTime         @default(now())
+
+  @@unique([userId, instituteId])
+}
+
+// ----------------------------------------------------
+// 3. Syllabus & Knowledge Graph
+// ----------------------------------------------------
+
+model Examination {
+  id          String                @id @default(uuid())
+  code        String                @unique
+  name        String
+  description String?
+  isActive    Boolean               @default(true)
+  syllabi     ExaminationSyllabus[]
+}
+
+model Subject {
+  id           String                @id @default(uuid())
+  name         String                @unique
+  slug         String                @unique
+  displayOrder Int                   @default(0)
+  chapters     Chapter[]
+  syllabi      ExaminationSyllabus[]
+}
+
+model ExaminationSyllabus {
+  id            String      @id @default(uuid())
+  examinationId String
+  subjectId     String
+  examination   Examination @relation(fields: [examinationId], references: [id], onDelete: Cascade)
+  subject       Subject     @relation(fields: [subjectId], references: [id], onDelete: Cascade)
+
+  @@unique([examinationId, subjectId])
+}
+
+model Chapter {
+  id           String   @id @default(uuid())
+  subjectId    String
+  subject      Subject  @relation(fields: [subjectId], references: [id], onDelete: Cascade)
+  name         String
+  slug         String
+  description  String?
+  displayOrder Int      @default(0)
+  topics       Topic[]
+
+  @@unique([subjectId, slug])
+}
+
+model Topic {
+  id           String    @id @default(uuid())
+  chapterId    String
+  chapter      Chapter   @relation(fields: [chapterId], references: [id], onDelete: Cascade)
+  name         String
+  slug         String
+  displayOrder Int       @default(0)
+  concepts     Concept[]
+  questions    Question[]
+}
+
+model Concept {
+  id               String               @id @default(uuid())
+  topicId          String
+  topic            Topic                @relation(fields: [topicId], references: [id], onDelete: Cascade)
+  code             String               @unique
+  name             String
+  summary          String
+  importanceWeight Float                @default(1.0)
+
+  prerequisites    ConceptPrerequisite[] @relation("ConceptToPrerequisite")
+  dependedOnBy     ConceptPrerequisite[] @relation("PrerequisiteToConcept")
+  questions        Question[]
+  masteryRecords   StudentConceptMastery[]
+}
+
+model ConceptPrerequisite {
+  id                 String                 @id @default(uuid())
+  conceptId          String
+  prerequisiteId     String
+  dependencyStrength PrerequisiteDependency @default(HARD)
+
+  concept            Concept                @relation("ConceptToPrerequisite", fields: [conceptId], references: [id], onDelete: Cascade)
+  prerequisite       Concept                @relation("PrerequisiteToConcept", fields: [prerequisiteId], references: [id], onDelete: Cascade)
+
+  @@unique([conceptId, prerequisiteId])
+}
+
+// ----------------------------------------------------
+// 4. Question Bank & Solutions
+// ----------------------------------------------------
+
+model Question {
+  id                    String            @id @default(uuid())
+  code                  String            @unique
+  topicId               String
+  topic                 Topic             @relation(fields: [topicId], references: [id], onDelete: Cascade)
+  primaryConceptId      String?
+  primaryConcept        Concept?          @relation(fields: [primaryConceptId], references: [id], onDelete: SetNull)
+  examType              ExamType          @default(JEE_MAIN)
+  questionType          QuestionType      @default(SINGLE_CORRECT)
+  difficulty            Difficulty        @default(MEDIUM)
+  contentLatex          String
+  imageUrl              String?
+  marks                 Float             @default(4.0)
+  negativeMarks         Float             @default(1.0)
+  timeRecommendationSec Int               @default(180)
+  isPYQ                 Boolean           @default(false)
+  pyqYear               Int?
+  sourceAttribution     String?
+  status                QuestionStatus    @default(DRAFT)
+  version               Int               @default(1)
+  numericalAnswer       Float?
+  numericalTolerance    Float?            @default(0.05)
+  unit                  String?
+  createdById           String?
+  createdBy             User?             @relation("CreatedQuestions", fields: [createdById], references: [id], onDelete: SetNull)
+  createdAt             DateTime          @default(now())
+  updatedAt             DateTime          @updatedAt
+
+  options               QuestionOption[]
+  hints                 QuestionHint[]
+  solution              QuestionSolution?
+  attempts              QuestionAttempt[]
+  bookmarks             Bookmark[]
+  contestQuestions      ContestQuestion[]
+  recommendations       Recommendation[]
+  versions              QuestionVersion[]
+
+  @@index([topicId, difficulty, status])
+}
+
+model QuestionVersion {
+  id           String       @id @default(uuid())
+  questionId   String
+  question     Question     @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  version      Int
+  contentLatex String
+  dataSnapshot Json
+  createdAt    DateTime     @default(now())
+
+  @@unique([questionId, version])
+}
+
+model QuestionOption {
+  id           String   @id @default(uuid())
+  questionId   String
+  question     Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  optionKey    String
+  contentLatex String
+  imageUrl     String?
+  isCorrect    Boolean
+  displayOrder Int      @default(0)
+
+  @@unique([questionId, optionKey])
+}
+
+model QuestionHint {
+  id              String   @id @default(uuid())
+  questionId      String
+  question        Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  level           Int
+  hintTextLatex   String
+  penaltyFraction Float    @default(0.0)
+
+  @@unique([questionId, level])
+}
+
+model QuestionSolution {
+  id                String   @id @default(uuid())
+  questionId        String   @unique
+  question          Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  solutionTextLatex String
+  verifiedById      String?
+  verifiedBy        User?    @relation("VerifiedSolutions", fields: [verifiedById], references: [id], onDelete: SetNull)
+  keyFormulas       String[] @default([])
+  commonPitfalls    String?
+  createdAt         DateTime @default(now())
+}
+
+// ----------------------------------------------------
+// 5. Attempts, Telemetry & Mastery
+// ----------------------------------------------------
+
+model QuestionAttempt {
+  id                String       @id @default(uuid())
+  userId            String
+  user              User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  questionId        String
+  question          Question     @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  isCorrect         Boolean
+  marksEarned       Float
+  timeSpentSeconds  Int
+  submittedAnswer   Json
+  hintsRequested    Int          @default(0)
+  diagnosedMistake  MistakeType  @default(NONE)
+  aiMentorFeedback  String?
+  createdAt         DateTime     @default(now())
+
+  steps             AttemptStep[]
+
+  @@index([userId, createdAt])
+  @@index([questionId, isCorrect])
+}
+
+model AttemptStep {
+  id           String          @id @default(uuid())
+  attemptId    String
+  attempt      QuestionAttempt @relation(fields: [attemptId], references: [id], onDelete: Cascade)
+  stepNumber   Int
+  studentInput String
+  aiFeedback   String?
+  createdAt    DateTime        @default(now())
+}
+
+model StudentConceptMastery {
+  id              String       @id @default(uuid())
+  userId          String
+  user            User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  conceptId       String
+  concept         Concept      @relation(fields: [conceptId], references: [id], onDelete: Cascade)
+  attemptsCount   Int          @default(0)
+  correctCount    Int          @default(0)
+  accuracy        Float        @default(0.0)
+  difficultyScore Float        @default(0.0)
+  masteryLevel    MasteryLevel @default(NOVICE)
+  lastAttemptAt   DateTime?
+  retentionHealth Float        @default(1.0)
+
+  @@unique([userId, conceptId])
+}
+
+model Bookmark {
+  id         String   @id @default(uuid())
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  questionId String
+  question   Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  notes      String?
+  createdAt  DateTime @default(now())
+
+  @@unique([userId, questionId])
+}
+
+// ----------------------------------------------------
+// 6. Adaptive Learning, Goals & Revision
+// ----------------------------------------------------
+
+model Recommendation {
+  id          String   @id @default(uuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  questionId  String
+  question    Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  reason      String
+  isCompleted Boolean  @default(false)
+  createdAt   DateTime @default(now())
+}
+
+model LearningGoal {
+  id             String    @id @default(uuid())
+  userId         String
+  user           User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  targetConcept  String
+  targetAccuracy Float     @default(80.0)
+  deadline       DateTime?
+  isAchieved     Boolean   @default(false)
+  createdAt      DateTime  @default(now())
+}
+
+model RevisionSchedule {
+  id           String   @id @default(uuid())
+  userId       String
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  topicName    String
+  scheduledFor DateTime
+  isCompleted  Boolean  @default(false)
+  createdAt    DateTime @default(now())
+}
+
+// ----------------------------------------------------
+// 7. Contests & Leaderboards
+// ----------------------------------------------------
+
+model Contest {
+  id              String               @id @default(uuid())
+  title           String
+  slug            String               @unique
+  description     String?
+  examType        ExamType             @default(JEE_MAIN)
+  startTime       DateTime
+  endTime         DateTime
+  durationMinutes Int
+  totalMarks      Float
+  status          ContestStatus        @default(DRAFT)
+  instituteId     String?
+  institute       Institute?           @relation(fields: [instituteId], references: [id], onDelete: SetNull)
+  createdAt       DateTime             @default(now())
+
+  questions       ContestQuestion[]
+  participants    ContestParticipant[]
+  leaderboard     LeaderboardEntry[]
+}
+
+model ContestQuestion {
+  id          String   @id @default(uuid())
+  contestId   String
+  questionId  String
+  contest     Contest  @relation(fields: [contestId], references: [id], onDelete: Cascade)
+  question    Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  sectionName String   @default("Physics")
+  orderIndex  Int
+
+  @@unique([contestId, questionId])
+  @@unique([contestId, orderIndex])
+}
+
+model ContestParticipant {
+  id          String            @id @default(uuid())
+  contestId   String
+  userId      String
+  contest     Contest           @relation(fields: [contestId], references: [id], onDelete: Cascade)
+  user        User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  startedAt   DateTime?
+  submittedAt DateTime?
+  score       Float             @default(0.0)
+  rank        Int?
+  status      ParticipantStatus @default(REGISTERED)
+
+  submissions ContestSubmission[]
+
+  @@unique([contestId, userId])
+}
+
+model ContestSubmission {
+  id            String             @id @default(uuid())
+  participantId String
+  participant   ContestParticipant @relation(fields: [participantId], references: [id], onDelete: Cascade)
+  questionId    String
+  answerGiven   Json
+  isCorrect     Boolean
+  marksAwarded  Float
+  submittedAt   DateTime           @default(now())
+}
+
+model LeaderboardEntry {
+  id               String   @id @default(uuid())
+  contestId        String
+  contest          Contest  @relation(fields: [contestId], references: [id], onDelete: Cascade)
+  userId           String
+  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  score            Float
+  totalTimeSeconds Int
+  rank             Int
+  calculatedAt     DateTime @default(now())
+
+  @@index([contestId, rank])
+}
+
+// ----------------------------------------------------
+// 8. Scholarships, Achievements & Notifications
+// ----------------------------------------------------
+
+model Scholarship {
+  id           String                   @id @default(uuid())
+  instituteId  String
+  institute    Institute                @relation(fields: [instituteId], references: [id], onDelete: Cascade)
+  title        String
+  description  String
+  criteriaJson Json
+  status       ScholarshipStatus        @default(OPEN)
+  createdAt    DateTime                 @default(now())
+
+  applications ScholarshipApplication[]
+}
+
+model ScholarshipApplication {
+  id            String            @id @default(uuid())
+  scholarshipId String
+  userId        String
+  scholarship   Scholarship       @relation(fields: [scholarshipId], references: [id], onDelete: Cascade)
+  user          User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  status        ScholarshipStatus @default(UNDER_REVIEW)
+  submittedAt   DateTime          @default(now())
+}
+
+model Achievement {
+  id          String   @id @default(uuid())
+  code        String   @unique
+  title       String
+  description String
+  badgeIcon   String
+  points      Int      @default(50)
+}
+
+model Notification {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title     String
+  message   String
+  isRead    Boolean  @default(false)
+  createdAt DateTime @default(now())
+}
+
+model AuditLog {
+  id           String   @id @default(uuid())
+  actorId      String?
+  actor        User?    @relation(fields: [actorId], references: [id], onDelete: SetNull)
+  action       String
+  resourceType String
+  resourceId   String
+  payload      Json?
+  ipAddress    String?
+  createdAt    DateTime @default(now())
+}
