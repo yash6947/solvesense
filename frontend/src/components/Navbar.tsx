@@ -12,12 +12,16 @@ import {
   Building2, 
   Menu, 
   X,
-  Sparkles
+  Sparkles,
+  LogOut,
+  User as UserIcon
 } from 'lucide-react';
+import { useAuth } from '@/context/AuthContext';
 
 export const Navbar: React.FC = () => {
   const pathname = usePathname();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const { user, profile, logout } = useAuth();
 
   const navLinks = [
     { href: '/solve', label: 'Problem Bank', icon: BookOpen },
@@ -33,7 +37,7 @@ export const Navbar: React.FC = () => {
           {/* Brand Logo */}
           <Link href="/" className="flex items-center gap-2.5 group">
             <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-blue-600 to-electric flex items-center justify-center shadow-lg shadow-blue-500/20 group-hover:scale-105 transition-transform">
-              <Atom className="w-5 h-5 text-white animate-spin-slow" />
+              <Atom className="w-5 h-5 text-white" />
             </div>
             <div className="flex flex-col">
               <span className="font-bold text-lg tracking-tight text-white flex items-center gap-1.5">
@@ -72,7 +76,7 @@ export const Navbar: React.FC = () => {
             {/* Active Streak Badge */}
             <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-400 text-xs font-semibold">
               <Flame className="w-3.5 h-3.5 fill-amber-500" />
-              <span>3-Day Streak</span>
+              <span>{profile?.currentStreak || 0}-Day Streak</span>
             </div>
 
             {/* AI Status Badge */}
@@ -81,19 +85,44 @@ export const Navbar: React.FC = () => {
               <span>Gemini AI Active</span>
             </div>
 
-            <Link
-              href="/auth/login"
-              className="px-4 py-2 rounded-lg text-sm font-medium text-slate-200 hover:text-white hover:bg-surface transition-colors"
-            >
-              Sign In
-            </Link>
+            {user ? (
+              <div className="flex items-center gap-3 ml-2 pl-3 border-l border-card-border">
+                <Link
+                  href="/dashboard"
+                  className="flex items-center gap-2 text-sm text-slate-200 hover:text-white"
+                >
+                  <div className="w-8 h-8 rounded-full bg-blue-600/30 border border-blue-500/40 flex items-center justify-center text-xs font-bold text-electric">
+                    {user.fullName.charAt(0)}
+                  </div>
+                  <span className="font-medium text-xs max-w-[100px] truncate">
+                    {user.fullName}
+                  </span>
+                </Link>
+                <button
+                  onClick={logout}
+                  title="Sign out"
+                  className="p-1.5 text-slate-400 hover:text-red-400 rounded-lg hover:bg-surface transition-colors"
+                >
+                  <LogOut className="w-4 h-4" />
+                </button>
+              </div>
+            ) : (
+              <>
+                <Link
+                  href="/auth/login"
+                  className="px-4 py-2 rounded-lg text-sm font-medium text-slate-200 hover:text-white hover:bg-surface transition-colors"
+                >
+                  Sign In
+                </Link>
 
-            <Link
-              href="/auth/register"
-              className="px-4 py-2 rounded-lg text-sm font-medium bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 text-white shadow-md shadow-blue-600/20 transition-all"
-            >
-              Start Learning
-            </Link>
+                <Link
+                  href="/auth/register"
+                  className="px-4 py-2 rounded-lg text-sm font-medium bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 text-white shadow-md shadow-blue-600/20 transition-all"
+                >
+                  Start Learning
+                </Link>
+              </>
+            )}
           </div>
 
           {/* Mobile Menu Button */}
@@ -127,20 +156,34 @@ export const Navbar: React.FC = () => {
             );
           })}
           <div className="pt-3 border-t border-card-border flex flex-col gap-2">
-            <Link
-              href="/auth/login"
-              onClick={() => setMobileMenuOpen(false)}
-              className="w-full text-center py-2.5 rounded-lg text-slate-200 hover:bg-surface text-sm font-medium"
-            >
-              Sign In
-            </Link>
-            <Link
-              href="/auth/register"
-              onClick={() => setMobileMenuOpen(false)}
-              className="w-full text-center py-2.5 rounded-lg bg-blue-600 hover:bg-blue-500 text-white text-sm font-medium shadow-md shadow-blue-600/20"
-            >
-              Start Learning
-            </Link>
+            {user ? (
+              <div className="flex items-center justify-between py-2">
+                <span className="text-sm font-medium text-slate-200">{user.fullName}</span>
+                <button
+                  onClick={logout}
+                  className="text-xs text-red-400 flex items-center gap-1 font-medium"
+                >
+                  <LogOut className="w-3.5 h-3.5" /> Sign Out
+                </button>
+              </div>
+            ) : (
+              <>
+                <Link
+                  href="/auth/login"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="w-full text-center py-2.5 rounded-lg text-slate-200 hover:bg-surface text-sm font-medium"
+                >
+                  Sign In
+                </Link>
+                <Link
+                  href="/auth/register"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="w-full text-center py-2.5 rounded-lg bg-blue-600 hover:bg-blue-500 text-white text-sm font-medium shadow-md shadow-blue-600/20"
+                >
+                  Start Learning
+                </Link>
+              </>
+            )}
           </div>
         </div>
       )}
