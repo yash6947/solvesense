@@ -1,26 +1,25 @@
 'use client';
 
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import { 
   Play, 
   Pause, 
-  RotateCcw, 
   Clock, 
   Award, 
   CheckCircle2, 
   XCircle, 
   Sparkles, 
   HelpCircle, 
-  ChevronRight, 
-  BookOpen, 
   Edit3, 
   AlertCircle, 
-  Layers, 
   ArrowLeft,
   RefreshCw,
-  Bookmark
+  Send,
+  MessageSquare,
+  ShieldAlert,
+  Brain
 } from 'lucide-react';
 import { apiRequest } from '@/lib/api';
 import { useAuth } from '@/context/AuthContext';
@@ -51,10 +50,22 @@ export default function QuestionWorkspacePage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submissionResult, setSubmissionResult] = useState<any>(null);
 
-  // Progressive Hint state
+  // AI Mentor State
+  const [mentorMode, setMentorMode] = useState<'COLLABORATIVE' | 'STRICT'>('COLLABORATIVE');
   const [unlockedHintLevel, setUnlockedHintLevel] = useState<number>(0);
-  const [hintsCache, setHintsCache] = useState<{ [level: number]: string }>({});
+  const [hintsCache, setHintsCache] = useState<{ [level: number]: { text: string; note: string } }>({});
   const [isLoadingHint, setIsLoadingHint] = useState(false);
+
+  // Mistake Analysis State
+  const [mistakeAnalysis, setMistakeAnalysis] = useState<any>(null);
+  const [isLoadingMistake, setIsLoadingMistake] = useState(false);
+
+  // AI Chat State
+  const [chatMessages, setChatMessages] = useState<
+    { sender: 'student' | 'mentor'; text: string; time: string }[]
+  >([]);
+  const [chatInput, setChatInput] = useState('');
+  const [isChatSending, setIsChatSending] = useState(false);
 
   // Mobile layout tab
   const [mobileTab, setMobileTab] = useState<'problem' | 'workspace' | 'mentor'>('problem');
@@ -103,11 +114,22 @@ export default function QuestionWorkspacePage() {
 
     setIsLoadingHint(true);
     try {
-      const data = await apiRequest(`/questions/${questionId}/hints?level=${level}`);
-      setHintsCache((prev) => ({ ...prev, [level]: data.hintTextLatex }));
+      const data = await apiRequest('/ai/hint', {
+        method: 'POST',
+        body: JSON.stringify({
+          questionId,
+          level,
+          mentorMode,
+        }),
+      });
+
+      setHintsCache((prev) => ({
+        ...prev,
+        [level]: { text: data.hintTextLatex, note: data.guidanceNote },
+      }));
       setUnlockedHintLevel(level);
     } catch (err: any) {
-      console.error('Failed to fetch hint:', err);
+      console.error('Failed to fetch AI hint:', err);
     } finally {
       setIsLoadingHint(false);
     }
@@ -154,13 +176,78 @@ export default function QuestionWorkspacePage() {
 
       setSubmissionResult(result);
       setIsTimerRunning(false);
-      // Switch mobile view to mentor/solution
       setMobileTab('mentor');
+
+      // If incorrect, trigger AI Mistake Analysis
+      if (!result.isCorrect) {
+        triggerAiMistakeAnalysis(answerPayload);
+      }
     } catch (err: any) {
       console.error('Submission failed:', err);
       alert(err.message || 'Error evaluating answer.');
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  const triggerAiMistakeAnalysis = async (submittedAnswer: any) => {
+    setIsLoadingMistake(true);
+    try {
+      const analysis = await apiRequest('/ai/analyze-mistake', {
+        method: 'POST',
+        body: JSON.stringify({
+          questionId,
+          submittedAnswer,
+          timeSpentSeconds: seconds,
+          mentorMode,
+        }),
+      });
+      setMistakeAnalysis(analysis);
+    } catch (err) {
+      console.error('Failed to trigger AI mistake analysis:', err);
+    } finally {
+      setIsLoadingMistake(false);
+    }
+  };
+
+  const handleSendChatMessage = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!chatInput.trim() || isChatSending) return;
+
+    const userMsg = chatInput.trim();
+    setChatInput('');
+    setChatMessages((prev) => [
+      ...prev,
+      { sender: 'student', text: userMsg, time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) },
+    ]);
+
+    setIsChatSending(true);
+    try {
+      const response = await apiRequest('/ai/chat', {
+        method: 'POST',
+        body: JSON.stringify({
+          questionId,
+          studentMessage: userMsg,
+          mentorMode,
+        }),
+      });
+
+      setChatMessages((prev) => [
+        ...prev,
+        { sender: 'mentor', text: response.replyLatex, time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) },
+      ]);
+    } catch (err: any) {
+      console.error('Chat error:', err);
+      setChatMessages((prev) => [
+        ...prev,
+        {
+          sender: 'mentor',
+          text: 'Unable to reach Gemini AI at the moment. Please review the verified editorial solution.',
+          time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        },
+      ]);
+    } finally {
+      setIsChatSending(false);
     }
   };
 
@@ -271,13 +358,13 @@ export default function QuestionWorkspacePage() {
               : 'border-transparent text-slate-400'
           }`}
         >
-          3. AI Mentor & Solution
+          3. AI Mentor
         </button>
       </div>
 
       {/* 3-Panel Main Grid */}
       <div className="flex-1 grid grid-cols-1 lg:grid-cols-12 overflow-hidden">
-        {/* PANEL 1: PROBLEM STATEMENT (4 cols) */}
+        {/* PANEL 1: PROBLEM STATEMENT (5 cols) */}
         <div
           className={`lg:col-span-5 border-r border-card-border bg-background p-6 overflow-y-auto space-y-6 ${
             mobileTab === 'problem' ? 'block' : 'hidden lg:block'
@@ -450,7 +537,7 @@ export default function QuestionWorkspacePage() {
                       )}
                     </div>
                     <p className="text-[11px] text-slate-500">
-                      Rounded up to 2 decimal places. Standard SI unit applied.
+                      Standard SI units applied. Deterministic tolerance check configured on server.
                     </p>
                   </div>
                 )}
@@ -493,152 +580,264 @@ export default function QuestionWorkspacePage() {
           </div>
         </div>
 
-        {/* PANEL 3: AI MENTOR & EDITORIAL SOLUTIONS (3 cols) */}
+        {/* PANEL 3: AI MENTOR, PROGRESSIVE HINTS & CHAT (3 cols) */}
         <div
-          className={`lg:col-span-3 bg-surface/30 p-6 overflow-y-auto space-y-6 ${
-            mobileTab === 'mentor' ? 'block' : 'hidden lg:block'
+          className={`lg:col-span-3 bg-surface/30 p-5 overflow-y-auto space-y-5 flex flex-col justify-between ${
+            mobileTab === 'mentor' ? 'block' : 'hidden lg:flex'
           }`}
         >
-          {/* Post-Submission Result Card */}
-          {submissionResult ? (
-            <div className="space-y-6">
-              <div
-                className={`p-4 rounded-xl border text-sm space-y-2 ${
-                  submissionResult.isCorrect
-                    ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-300'
-                    : 'bg-red-500/10 border-red-500/30 text-red-300'
-                }`}
-              >
-                <div className="flex items-center gap-2 font-bold text-base">
-                  {submissionResult.isCorrect ? (
-                    <>
-                      <CheckCircle2 className="w-5 h-5 text-emerald-400" />
-                      <span>Solved Correctly!</span>
-                    </>
-                  ) : (
-                    <>
-                      <XCircle className="w-5 h-5 text-red-400" />
-                      <span>Incorrect Answer</span>
-                    </>
-                  )}
-                </div>
-                <div className="text-xs">
-                  Marks Awarded:{' '}
-                  <span className="font-bold">
-                    {submissionResult.marksEarned > 0 ? `+${submissionResult.marksEarned}` : submissionResult.marksEarned}
-                  </span>{' '}
-                  • Time Taken: {submissionResult.timeSpentSeconds}s
-                </div>
-                {!submissionResult.isCorrect && (
-                  <div className="text-xs font-mono text-amber-300">
-                    Diagnosed Error: {submissionResult.diagnosedMistake}
-                  </div>
-                )}
+          <div className="space-y-5">
+            {/* Header: AI Mentor & Persona Switcher */}
+            <div className="flex items-center justify-between border-b border-card-border pb-3">
+              <div className="flex items-center gap-1.5 text-xs font-bold text-amber-400 uppercase tracking-wider">
+                <Sparkles className="w-4 h-4" />
+                <span>AI Mentor</span>
               </div>
 
-              {/* Verified Editorial Solution */}
-              <div className="p-4 rounded-xl bg-card border border-card-border space-y-3">
-                <div className="text-xs font-bold uppercase tracking-wider text-electric flex items-center gap-1.5">
-                  <Sparkles className="w-4 h-4" />
-                  <span>Verified Editorial Solution</span>
-                </div>
-                <div className="text-xs text-slate-300 leading-relaxed space-y-3">
-                  <MathRenderer
-                    content={submissionResult.verifiedSolution?.solutionTextLatex || ''}
-                  />
+              {/* Mode Toggle */}
+              <div className="flex items-center gap-1 bg-surface p-1 rounded-lg border border-card-border">
+                <button
+                  type="button"
+                  onClick={() => setMentorMode('COLLABORATIVE')}
+                  className={`px-2 py-0.5 rounded text-[10px] font-semibold transition-colors ${
+                    mentorMode === 'COLLABORATIVE'
+                      ? 'bg-blue-600 text-white'
+                      : 'text-slate-400 hover:text-white'
+                  }`}
+                  title="Collaborative Mode: step-by-step guidance and analogies"
+                >
+                  Collab
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setMentorMode('STRICT')}
+                  className={`px-2 py-0.5 rounded text-[10px] font-semibold transition-colors ${
+                    mentorMode === 'STRICT'
+                      ? 'bg-red-600 text-white'
+                      : 'text-slate-400 hover:text-white'
+                  }`}
+                  title="Strict Mode: disciplined, socratic, refuses to reveal shortcuts"
+                >
+                  Strict
+                </button>
+              </div>
+            </div>
+
+            {/* Post-Submission Result & AI Mistake Diagnosis */}
+            {submissionResult ? (
+              <div className="space-y-4">
+                {/* Result Banner */}
+                <div
+                  className={`p-4 rounded-xl border text-sm space-y-1.5 ${
+                    submissionResult.isCorrect
+                      ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-300'
+                      : 'bg-red-500/10 border-red-500/30 text-red-300'
+                  }`}
+                >
+                  <div className="flex items-center gap-2 font-bold text-base">
+                    {submissionResult.isCorrect ? (
+                      <>
+                        <CheckCircle2 className="w-5 h-5 text-emerald-400" />
+                        <span>Solved Correctly!</span>
+                      </>
+                    ) : (
+                      <>
+                        <XCircle className="w-5 h-5 text-red-400" />
+                        <span>Incorrect Answer</span>
+                      </>
+                    )}
+                  </div>
+                  <div className="text-xs">
+                    Marks Awarded:{' '}
+                    <span className="font-bold">
+                      {submissionResult.marksEarned > 0 ? `+${submissionResult.marksEarned}` : submissionResult.marksEarned}
+                    </span>{' '}
+                    • Time Taken: {submissionResult.timeSpentSeconds}s
+                  </div>
                 </div>
 
-                {submissionResult.verifiedSolution?.keyFormulas?.length > 0 && (
-                  <div className="pt-3 border-t border-card-border/60">
-                    <div className="text-[11px] font-semibold text-slate-400 mb-1.5">
-                      Key Governing Laws:
-                    </div>
-                    <div className="space-y-1">
-                      {submissionResult.verifiedSolution.keyFormulas.map(
-                        (f: string, i: number) => (
-                          <div key={i} className="text-xs text-electric">
-                            <MathRenderer content={`$${f}$`} inline />
-                          </div>
-                        )
+                {/* AI Mistake Diagnosis Card */}
+                {!submissionResult.isCorrect && (
+                  <div className="p-4 rounded-xl bg-card border border-amber-500/30 space-y-2.5">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[11px] font-bold text-amber-400 uppercase tracking-wider flex items-center gap-1">
+                        <Brain className="w-3.5 h-3.5" />
+                        <span>AI Mistake Diagnosis</span>
+                      </span>
+                      {mistakeAnalysis && (
+                        <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-amber-500/20 text-amber-300 font-semibold">
+                          {mistakeAnalysis.mistakeType}
+                        </span>
                       )}
                     </div>
+
+                    {isLoadingMistake ? (
+                      <div className="py-4 text-center text-xs text-slate-400 flex items-center justify-center gap-2">
+                        <RefreshCw className="w-4 h-4 text-amber-400 animate-spin" />
+                        <span>Diagnosing reasoning path...</span>
+                      </div>
+                    ) : mistakeAnalysis ? (
+                      <div className="space-y-2 text-xs">
+                        <p className="text-slate-300 font-medium">
+                          {mistakeAnalysis.divergencePoint}
+                        </p>
+                        <div className="text-slate-400 leading-relaxed text-[11px]">
+                          <MathRenderer content={mistakeAnalysis.analysisTextLatex} />
+                        </div>
+                        {mistakeAnalysis.prerequisiteWarning && (
+                          <div className="p-2 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400 text-[11px] flex items-center gap-1.5 font-medium">
+                            <ShieldAlert className="w-3.5 h-3.5 shrink-0" />
+                            <span>Prerequisite Warning: {mistakeAnalysis.prerequisiteWarning}</span>
+                          </div>
+                        )}
+                        <div className="text-[11px] text-electric font-semibold pt-1">
+                          &rarr; {mistakeAnalysis.suggestedReview}
+                        </div>
+                      </div>
+                    ) : null}
+                  </div>
+                )}
+
+                {/* Verified Editorial Solution */}
+                <div className="p-4 rounded-xl bg-card border border-card-border space-y-3">
+                  <div className="text-xs font-bold uppercase tracking-wider text-electric flex items-center gap-1.5">
+                    <Sparkles className="w-4 h-4" />
+                    <span>Verified Solution</span>
+                  </div>
+                  <div className="text-xs text-slate-300 leading-relaxed space-y-3">
+                    <MathRenderer
+                      content={submissionResult.verifiedSolution?.solutionTextLatex || ''}
+                    />
+                  </div>
+                </div>
+
+                <Link
+                  href="/solve"
+                  className="w-full py-2.5 rounded-xl bg-surface border border-card-border hover:border-slate-500 text-slate-200 text-xs font-semibold text-center block transition-colors"
+                >
+                  Return to Problem Bank &rarr;
+                </Link>
+              </div>
+            ) : (
+              /* Pre-Submission Progressive Hints Drawer */
+              <div className="space-y-4">
+                <div className="text-xs text-slate-400 leading-relaxed">
+                  {mentorMode === 'STRICT'
+                    ? 'Strict Mentor active: Hints provide mathematical constraints without shortcuts.'
+                    : 'Collaborative Mentor active: Progressive hints to guide your reasoning.'}
+                </div>
+
+                {/* Hint Level Selector Buttons */}
+                <div className="grid grid-cols-2 gap-2">
+                  {[1, 2, 3, 4].map((level) => (
+                    <button
+                      key={level}
+                      onClick={() => requestHint(level)}
+                      className={`p-2.5 rounded-xl border text-left text-xs font-medium transition-all ${
+                        unlockedHintLevel >= level
+                          ? 'bg-blue-600/20 border-blue-500 text-white'
+                          : 'bg-surface border-card-border text-slate-400 hover:border-slate-600'
+                      }`}
+                    >
+                      <div>Hint Level {level}</div>
+                      <div className="text-[10px] text-slate-500">
+                        {level === 1
+                          ? 'Direction'
+                          : level === 2
+                          ? 'Formula'
+                          : level === 3
+                          ? 'Strategy'
+                          : 'Guided Step'}
+                      </div>
+                    </button>
+                  ))}
+                </div>
+
+                {/* Unlocked Hint Content */}
+                {isLoadingHint ? (
+                  <div className="py-6 text-center text-xs text-slate-400 flex items-center justify-center gap-2">
+                    <RefreshCw className="w-4 h-4 text-electric animate-spin" />
+                    <span>Consulting Gemini Knowledge Graph...</span>
+                  </div>
+                ) : unlockedHintLevel > 0 ? (
+                  <div className="p-4 rounded-xl bg-card border border-card-border space-y-2 text-xs">
+                    <div className="font-bold text-electric flex items-center gap-1.5">
+                      <HelpCircle className="w-4 h-4" />
+                      <span>Level {unlockedHintLevel} Hint:</span>
+                    </div>
+                    {hintsCache[unlockedHintLevel]?.note && (
+                      <p className="text-[11px] text-slate-400 italic">
+                        {hintsCache[unlockedHintLevel].note}
+                      </p>
+                    )}
+                    <div className="text-slate-200 leading-relaxed">
+                      <MathRenderer content={hintsCache[unlockedHintLevel]?.text || ''} />
+                    </div>
+                  </div>
+                ) : (
+                  <div className="p-4 rounded-xl bg-surface/40 border border-card-border text-center text-xs text-slate-500">
+                    Select a progressive hint tier above if you need conceptual direction.
                   </div>
                 )}
               </div>
+            )}
+          </div>
 
-              <Link
-                href="/solve"
-                className="w-full py-2.5 rounded-xl bg-surface border border-card-border hover:border-slate-500 text-slate-200 text-xs font-semibold text-center block transition-colors"
-              >
-                Return to Problem Bank &rarr;
-              </Link>
+          {/* Interactive Chat Drawer Section at Bottom of Panel 3 */}
+          <div className="pt-4 border-t border-card-border space-y-3">
+            <div className="flex items-center gap-1.5 text-xs font-semibold text-slate-300">
+              <MessageSquare className="w-3.5 h-3.5 text-electric" />
+              <span>Ask AI Mentor a Doubt</span>
             </div>
-          ) : (
-            /* Pre-Submission AI Mentoring & Progressive Hints */
-            <div className="space-y-5">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-1.5 text-xs font-bold text-amber-400 uppercase tracking-wider">
-                  <Sparkles className="w-4 h-4" />
-                  <span>AI Mentor Guidance</span>
-                </div>
-                <span className="text-[10px] font-semibold px-2 py-0.5 rounded bg-blue-500/20 text-electric">
-                  Progressive Hints
-                </span>
-              </div>
 
-              <p className="text-xs text-slate-400 leading-relaxed">
-                Stuck on this problem? Request tiered hints that guide your reasoning without revealing the final answer.
-              </p>
-
-              {/* Hint Level Selector Buttons */}
-              <div className="grid grid-cols-2 gap-2">
-                {[1, 2, 3, 4].map((level) => (
-                  <button
-                    key={level}
-                    onClick={() => requestHint(level)}
-                    className={`p-2.5 rounded-xl border text-left text-xs font-medium transition-all ${
-                      unlockedHintLevel >= level
-                        ? 'bg-blue-600/20 border-blue-500 text-white'
-                        : 'bg-surface border-card-border text-slate-400 hover:border-slate-600'
+            {/* Conversation Feed */}
+            {chatMessages.length > 0 && (
+              <div className="max-h-48 overflow-y-auto space-y-2 p-2 rounded-xl bg-card border border-card-border text-xs">
+                {chatMessages.map((msg, idx) => (
+                  <div
+                    key={idx}
+                    className={`p-2.5 rounded-lg text-xs leading-relaxed ${
+                      msg.sender === 'student'
+                        ? 'bg-blue-600/20 text-white ml-4 border border-blue-500/30'
+                        : 'bg-surface text-slate-300 mr-4 border border-card-border'
                     }`}
                   >
-                    <div>Hint Level {level}</div>
-                    <div className="text-[10px] text-slate-500">
-                      {level === 1
-                        ? 'Direction'
-                        : level === 2
-                        ? 'Formula'
-                        : level === 3
-                        ? 'Strategy'
-                        : 'Guided Step'}
+                    <div className="text-[10px] font-bold text-slate-400 mb-1 flex items-center justify-between">
+                      <span>{msg.sender === 'student' ? 'You' : `AI Mentor (${mentorMode})`}</span>
+                      <span>{msg.time}</span>
                     </div>
-                  </button>
+                    <MathRenderer content={msg.text} />
+                  </div>
                 ))}
+                {isChatSending && (
+                  <div className="p-2 text-xs text-slate-400 italic flex items-center gap-2">
+                    <RefreshCw className="w-3.5 h-3.5 animate-spin text-electric" />
+                    <span>Gemini Mentor is formulating a physics explanation...</span>
+                  </div>
+                )}
               </div>
+            )}
 
-              {/* Unlocked Hint Content */}
-              {isLoadingHint ? (
-                <div className="py-6 text-center text-xs text-slate-400 flex items-center justify-center gap-2">
-                  <RefreshCw className="w-4 h-4 text-electric animate-spin" />
-                  <span>Consulting Physics Knowledge Graph...</span>
-                </div>
-              ) : unlockedHintLevel > 0 ? (
-                <div className="p-4 rounded-xl bg-card border border-card-border space-y-2 text-xs">
-                  <div className="font-bold text-electric flex items-center gap-1.5">
-                    <HelpCircle className="w-4 h-4" />
-                    <span>Level {unlockedHintLevel} Hint:</span>
-                  </div>
-                  <div className="text-slate-300 leading-relaxed">
-                    <MathRenderer content={hintsCache[unlockedHintLevel] || ''} />
-                  </div>
-                </div>
-              ) : (
-                <div className="p-4 rounded-xl bg-surface/40 border border-card-border text-center text-xs text-slate-500">
-                  Select a hint tier above if you need conceptual scaffolding.
-                </div>
-              )}
-            </div>
-          )}
+            {/* Chat Input Form */}
+            <form onSubmit={handleSendChatMessage} className="flex items-center gap-2">
+              <input
+                type="text"
+                value={chatInput}
+                onChange={(e) => setChatInput(e.target.value)}
+                placeholder="Ask about torque, formulas, constraints..."
+                disabled={isChatSending}
+                className="flex-1 px-3 py-2 rounded-xl bg-surface border border-card-border focus:border-electric text-white text-xs outline-none"
+              />
+              <button
+                type="submit"
+                disabled={isChatSending || !chatInput.trim()}
+                className="p-2 rounded-xl bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white transition-colors"
+                title="Send doubt to AI mentor"
+              >
+                <Send className="w-3.5 h-3.5" />
+              </button>
+            </form>
+          </div>
         </div>
       </div>
     </div>
