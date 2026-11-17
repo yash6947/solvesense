@@ -15,7 +15,8 @@ import {
   Sparkles,
   LogOut,
   User as UserIcon,
-  TrendingUp
+  TrendingUp,
+  Award
 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 
@@ -27,9 +28,10 @@ export const Navbar: React.FC = () => {
   const navLinks = [
     { href: '/solve', label: 'Problems', icon: BookOpen },
     { href: '/dashboard', label: 'Dashboard', icon: BarChart3 },
-    { href: '/analytics', label: 'Analytics & PSI', icon: TrendingUp },
+    { href: '/analytics', label: 'Analytics', icon: TrendingUp },
     { href: '/contests', label: 'Contests', icon: Trophy },
     { href: '/institutes', label: 'Institutes', icon: Building2 },
+    { href: '/scholarships', label: 'Scholarships', icon: Award },
   ];
 
   return (

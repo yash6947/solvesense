@@ -8,6 +8,7 @@ import aiRouter from './ai.route.js';
 import analyticsRouter from './analytics.route.js';
 import learningRouter from './learning.route.js';
 import contestRouter from './contest.route.js';
+import instituteRouter from './institute.route.js';
 
 const apiRouter = Router();
 
@@ -21,5 +22,6 @@ apiRouter.use('/ai', aiRouter);
 apiRouter.use('/analytics', analyticsRouter);
 apiRouter.use('/learning', learningRouter);
 apiRouter.use('/contests', contestRouter);
+apiRouter.use('/institutes', instituteRouter);
 
 export default apiRouter;
