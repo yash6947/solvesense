@@ -5,6 +5,8 @@ import studentRouter from './student.route.js';
 import syllabusRouter from './syllabus.route.js';
 import questionRouter from './question.route.js';
 import aiRouter from './ai.route.js';
+import analyticsRouter from './analytics.route.js';
+import learningRouter from './learning.route.js';
 
 const apiRouter = Router();
 
@@ -15,5 +17,7 @@ apiRouter.use('/syllabus', syllabusRouter);
 apiRouter.use('/exams', syllabusRouter);
 apiRouter.use('/questions', questionRouter);
 apiRouter.use('/ai', aiRouter);
+apiRouter.use('/analytics', analyticsRouter);
+apiRouter.use('/learning', learningRouter);
 
 export default apiRouter;
