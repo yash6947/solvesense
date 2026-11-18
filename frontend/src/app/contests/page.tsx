@@ -9,10 +9,8 @@ import {
   Award, 
   Calendar, 
   ArrowRight, 
-  Sparkles, 
   RefreshCw,
-  CheckCircle2,
-  AlertCircle
+  Zap
 } from 'lucide-react';
 import { apiRequest } from '@/lib/api';
 
@@ -44,10 +42,10 @@ export default function ContestsCatalogPage() {
 
   return (
     <div className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
-      {/* Header Banner */}
-      <div className="p-6 sm:p-8 rounded-2xl bg-gradient-to-r from-surface via-card to-surface border border-card-border shadow-xl">
+      {/* Header Banner (Flowbite Clean Header) */}
+      <div className="p-6 sm:p-8 rounded-2xl flow-card-elevated shadow-xl">
         <div className="max-w-3xl space-y-2">
-          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-400 text-xs font-semibold">
+          <div className="flow-pill flow-pill-amber">
             <Trophy className="w-3.5 h-3.5" />
             <span>Competitive Exam Arena & Leaderboards</span>
           </div>
@@ -60,13 +58,13 @@ export default function ContestsCatalogPage() {
         </div>
       </div>
 
-      {/* Filter Tabs */}
-      <div className="flex items-center gap-2 p-1 rounded-xl bg-card border border-card-border w-fit text-xs font-semibold">
+      {/* Filter Tabs (Flowbite Tab Pill) */}
+      <div className="flex items-center gap-1.5 p-1 rounded-xl bg-slate-900 border border-slate-800 w-fit text-xs font-semibold">
         {(['ALL', 'ACTIVE', 'UPCOMING'] as const).map((tab) => (
           <button
             key={tab}
             onClick={() => setActiveTab(tab)}
-            className={`px-4 py-2 rounded-lg transition-colors ${
+            className={`px-4 py-2 rounded-lg transition-all ${
               activeTab === tab
                 ? 'bg-blue-600 text-white shadow-sm'
                 : 'text-slate-400 hover:text-white'
@@ -80,7 +78,7 @@ export default function ContestsCatalogPage() {
       {/* Contests Grid */}
       {isLoading ? (
         <div className="py-20 text-center space-y-3">
-          <RefreshCw className="w-8 h-8 text-electric animate-spin mx-auto" />
+          <RefreshCw className="w-8 h-8 text-blue-400 animate-spin mx-auto" />
           <p className="text-slate-400 text-sm font-medium">Loading Contest Schedules...</p>
         </div>
       ) : filteredContests.length > 0 ? (
@@ -88,27 +86,27 @@ export default function ContestsCatalogPage() {
           {filteredContests.map((c) => (
             <div
               key={c.id}
-              className="p-6 rounded-2xl bg-card border border-card-border hover:border-slate-500 transition-all shadow-lg flex flex-col justify-between space-y-6"
+              className="p-6 rounded-2xl flow-card hover:border-slate-700 transition-all shadow-lg flex flex-col justify-between space-y-6"
             >
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
                   <span
-                    className={`text-[10px] font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full border ${
+                    className={
                       c.status === 'ACTIVE'
-                        ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400 animate-pulse'
-                        : 'bg-blue-500/10 border-blue-500/30 text-blue-400'
-                    }`}
+                        ? 'flow-pill flow-pill-emerald'
+                        : 'flow-pill flow-pill-blue'
+                    }
                   >
                     ● {c.status}
                   </span>
 
-                  <span className="text-xs font-bold font-mono text-electric bg-surface px-2.5 py-0.5 rounded border border-card-border">
+                  <span className="font-mono text-xs font-bold text-cyan-300 bg-cyan-500/10 px-2.5 py-0.5 rounded-lg border border-cyan-500/20">
                     {c.examType.replace('_', ' ')}
                   </span>
                 </div>
 
                 <div className="space-y-1.5">
-                  <h3 className="text-lg font-bold text-white group-hover:text-electric transition-colors line-clamp-2">
+                  <h3 className="text-lg font-bold text-white group-hover:text-cyan-300 transition-colors line-clamp-2">
                     {c.title}
                   </h3>
                   <p className="text-xs text-slate-400 line-clamp-3 leading-relaxed">
@@ -117,18 +115,18 @@ export default function ContestsCatalogPage() {
                 </div>
 
                 {/* Metadata Pills */}
-                <div className="pt-2 border-t border-card-border grid grid-cols-3 gap-2 text-center text-xs">
-                  <div className="p-2 rounded-xl bg-surface/50 border border-card-border">
+                <div className="pt-2 border-t border-slate-800 grid grid-cols-3 gap-2 text-center text-xs">
+                  <div className="p-2.5 rounded-xl bg-slate-900 border border-slate-800">
                     <div className="text-white font-bold">{c.durationMinutes}m</div>
-                    <div className="text-[10px] text-slate-500">Duration</div>
+                    <div className="text-[10px] text-slate-500 font-medium">Duration</div>
                   </div>
-                  <div className="p-2 rounded-xl bg-surface/50 border border-card-border">
+                  <div className="p-2.5 rounded-xl bg-slate-900 border border-slate-800">
                     <div className="text-white font-bold">{c.totalMarks}</div>
-                    <div className="text-[10px] text-slate-500">Max Marks</div>
+                    <div className="text-[10px] text-slate-500 font-medium">Max Marks</div>
                   </div>
-                  <div className="p-2 rounded-xl bg-surface/50 border border-card-border">
+                  <div className="p-2.5 rounded-xl bg-slate-900 border border-slate-800">
                     <div className="text-white font-bold">{c.participantsCount}</div>
-                    <div className="text-[10px] text-slate-500">Aspirants</div>
+                    <div className="text-[10px] text-slate-500 font-medium">Aspirants</div>
                   </div>
                 </div>
               </div>
@@ -138,7 +136,7 @@ export default function ContestsCatalogPage() {
                 {c.status === 'ACTIVE' ? (
                   <Link
                     href={`/contests/${c.id}/take`}
-                    className="w-full py-3 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-semibold text-xs shadow-lg shadow-blue-600/25 flex items-center justify-center gap-2 transition-all"
+                    className="w-full py-3 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-semibold text-xs shadow-md shadow-blue-600/30 flex items-center justify-center gap-2 transition-all"
                   >
                     <span>Enter Timed Test</span>
                     <ArrowRight className="w-4 h-4" />
@@ -146,7 +144,7 @@ export default function ContestsCatalogPage() {
                 ) : (
                   <button
                     disabled
-                    className="w-full py-3 rounded-xl bg-surface text-slate-500 font-semibold text-xs border border-card-border cursor-not-allowed text-center"
+                    className="w-full py-3 rounded-xl bg-slate-900 text-slate-500 font-semibold text-xs border border-slate-800 cursor-not-allowed text-center"
                   >
                     Opens Soon
                   </button>
@@ -154,7 +152,7 @@ export default function ContestsCatalogPage() {
 
                 <Link
                   href={`/contests/${c.id}/leaderboard`}
-                  className="w-full py-2.5 rounded-xl bg-surface hover:bg-surface/80 text-slate-300 hover:text-white font-medium text-xs border border-card-border flex items-center justify-center gap-1.5 transition-colors"
+                  className="w-full py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-300 hover:text-white font-medium text-xs border border-slate-800 flex items-center justify-center gap-1.5 transition-colors"
                 >
                   <Trophy className="w-3.5 h-3.5 text-amber-400" />
                   <span>View Live Leaderboard</span>
@@ -164,7 +162,7 @@ export default function ContestsCatalogPage() {
           ))}
         </div>
       ) : (
-        <div className="p-12 rounded-2xl bg-card border border-card-border text-center space-y-3">
+        <div className="p-12 rounded-2xl flow-card text-center space-y-3">
           <Trophy className="w-10 h-10 text-slate-500 mx-auto" />
           <h3 className="text-base font-bold text-white">No Contests in this category</h3>
           <p className="text-xs text-slate-400">Please check back soon for upcoming examination schedules.</p>

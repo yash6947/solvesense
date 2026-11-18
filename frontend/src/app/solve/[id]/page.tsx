@@ -19,7 +19,8 @@ import {
   Send,
   MessageSquare,
   ShieldAlert,
-  Brain
+  Brain,
+  Check
 } from 'lucide-react';
 import { apiRequest } from '@/lib/api';
 import { useAuth } from '@/context/AuthContext';
@@ -118,7 +119,7 @@ export default function QuestionWorkspacePage() {
         method: 'POST',
         body: JSON.stringify({
           questionId,
-          level,
+          requestedLevel: level,
           mentorMode,
         }),
       });
@@ -128,72 +129,65 @@ export default function QuestionWorkspacePage() {
         [level]: { text: data.hintTextLatex, note: data.guidanceNote },
       }));
       setUnlockedHintLevel(level);
-    } catch (err: any) {
-      console.error('Failed to fetch AI hint:', err);
+    } catch (err) {
+      console.error('Failed to get hint:', err);
     } finally {
       setIsLoadingHint(false);
     }
   };
 
   const handleSubmitAnswer = async () => {
-    if (!token) {
-      router.push('/auth/login');
-      return;
-    }
-
-    let answerPayload: any = null;
+    let submittedAnswer: any = null;
 
     if (question.questionType === 'SINGLE_CORRECT') {
       if (!selectedSingleKey) {
         alert('Please select an option before submitting.');
         return;
       }
-      answerPayload = [selectedSingleKey];
+      submittedAnswer = selectedSingleKey;
     } else if (question.questionType === 'MULTIPLE_CORRECT') {
       if (selectedMultiKeys.length === 0) {
         alert('Please select at least one option.');
         return;
       }
-      answerPayload = selectedMultiKeys;
+      submittedAnswer = selectedMultiKeys;
     } else if (question.questionType === 'NUMERICAL') {
-      if (numericalInput.trim() === '' || isNaN(Number(numericalInput))) {
+      if (!numericalInput || isNaN(Number(numericalInput))) {
         alert('Please enter a valid numerical value.');
         return;
       }
-      answerPayload = parseFloat(numericalInput);
+      submittedAnswer = parseFloat(numericalInput);
     }
 
     setIsSubmitting(true);
     try {
-      const result = await apiRequest(`/questions/${questionId}/attempts`, {
+      const result = await apiRequest(`/questions/${questionId}/submit`, {
         method: 'POST',
         body: JSON.stringify({
-          submittedAnswer: answerPayload,
-          timeSpentSeconds: seconds || 1,
+          submittedAnswer,
+          timeSpentSeconds: seconds,
           hintsRequested: unlockedHintLevel,
         }),
       });
 
       setSubmissionResult(result);
       setIsTimerRunning(false);
-      setMobileTab('mentor');
 
-      // If incorrect, trigger AI Mistake Analysis
       if (!result.isCorrect) {
-        triggerAiMistakeAnalysis(answerPayload);
+        triggerMistakeAnalysis(submittedAnswer);
       }
     } catch (err: any) {
-      console.error('Submission failed:', err);
-      alert(err.message || 'Error evaluating answer.');
+      console.error('Error submitting answer:', err);
+      alert(err.message || 'Failed to submit answer.');
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  const triggerAiMistakeAnalysis = async (submittedAnswer: any) => {
+  const triggerMistakeAnalysis = async (submittedAnswer: any) => {
     setIsLoadingMistake(true);
     try {
-      const analysis = await apiRequest('/ai/analyze-mistake', {
+      const analysis = await apiRequest('/ai/mistake-analysis', {
         method: 'POST',
         body: JSON.stringify({
           questionId,
@@ -261,7 +255,7 @@ export default function QuestionWorkspacePage() {
     return (
       <div className="flex-1 flex items-center justify-center py-24">
         <div className="flex flex-col items-center gap-3">
-          <RefreshCw className="w-8 h-8 text-electric animate-spin" />
+          <RefreshCw className="w-8 h-8 text-blue-400 animate-spin" />
           <span className="text-slate-400 text-sm font-medium">Loading Workspace Telemetry...</span>
         </div>
       </div>
@@ -271,13 +265,13 @@ export default function QuestionWorkspacePage() {
   if (error || !question) {
     return (
       <div className="flex-1 flex items-center justify-center py-20 px-4">
-        <div className="max-w-md w-full p-6 rounded-2xl bg-card border border-card-border text-center space-y-4">
-          <AlertCircle className="w-10 h-10 text-red-400 mx-auto" />
+        <div className="max-w-md w-full p-6 rounded-2xl flow-card text-center space-y-4">
+          <AlertCircle className="w-10 h-10 text-rose-400 mx-auto" />
           <h3 className="text-lg font-bold text-white">Problem Unavailable</h3>
           <p className="text-sm text-slate-400">{error || 'Could not load question.'}</p>
           <Link
             href="/solve"
-            className="inline-block px-4 py-2 rounded-xl bg-blue-600 text-white text-sm font-semibold"
+            className="inline-block px-5 py-2.5 rounded-xl bg-blue-600 text-white text-xs font-semibold shadow-md"
           >
             Return to Problem Bank
           </Link>
@@ -287,29 +281,31 @@ export default function QuestionWorkspacePage() {
   }
 
   return (
-    <div className="flex-1 flex flex-col h-[calc(100vh-4rem)] overflow-hidden bg-background">
-      {/* Top Bar Navigation */}
-      <div className="h-12 border-b border-card-border bg-surface/80 px-4 flex items-center justify-between text-xs shrink-0">
+    <div className="flex-1 flex flex-col h-[calc(100vh-4rem)] overflow-hidden bg-slate-950">
+      {/* Top Bar Navigation (Flowbite Clean Workspace Header) */}
+      <div className="h-13 border-b border-slate-800 bg-slate-950/90 px-4 py-2 flex items-center justify-between text-xs shrink-0 backdrop-blur-md">
         <div className="flex items-center gap-3">
           <Link
             href="/solve"
-            className="text-slate-400 hover:text-white flex items-center gap-1 font-medium transition-colors"
+            className="text-slate-400 hover:text-white flex items-center gap-1.5 font-medium transition-colors"
           >
             <ArrowLeft className="w-4 h-4" />
-            <span>Problem Bank</span>
+            <span className="hidden sm:inline">Problem Bank</span>
           </Link>
-          <span className="text-slate-600">|</span>
-          <span className="font-mono text-slate-300 font-semibold">{question.code}</span>
-          <span className="hidden sm:inline-block px-2 py-0.5 rounded bg-blue-500/10 text-electric border border-blue-500/20 font-medium">
+          <span className="text-slate-700">|</span>
+          <span className="font-mono text-cyan-300 font-bold bg-cyan-500/10 px-2 py-0.5 rounded border border-cyan-500/20">
+            {question.code}
+          </span>
+          <span className="flow-pill flow-pill-blue hidden sm:inline-flex text-[11px] py-0 px-2">
             {question.examType.replace('_', ' ')}
           </span>
         </div>
 
         {/* Stopwatch & Marks */}
-        <div className="flex items-center gap-4">
-          <div className="flex items-center gap-2 px-3 py-1 rounded-lg bg-surface border border-card-border font-mono text-slate-200">
+        <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 px-3 py-1 rounded-xl bg-slate-900 border border-slate-800 font-mono text-slate-200 shadow-sm">
             <Clock className="w-3.5 h-3.5 text-blue-400" />
-            <span>{formatTimer(seconds)}</span>
+            <span className="font-bold">{formatTimer(seconds)}</span>
             {!submissionResult && (
               <button
                 onClick={() => setIsTimerRunning(!isTimerRunning)}
@@ -321,7 +317,7 @@ export default function QuestionWorkspacePage() {
             )}
           </div>
 
-          <div className="hidden sm:flex items-center gap-1.5 font-medium text-slate-300">
+          <div className="hidden sm:flex items-center gap-1.5 font-semibold text-slate-300 bg-slate-900 px-3 py-1 rounded-xl border border-slate-800">
             <Award className="w-3.5 h-3.5 text-amber-400" />
             <span>+{question.marks} / -{question.negativeMarks}</span>
           </div>
@@ -329,12 +325,12 @@ export default function QuestionWorkspacePage() {
       </div>
 
       {/* Mobile Tab Switcher */}
-      <div className="lg:hidden flex border-b border-card-border bg-card text-xs font-semibold">
+      <div className="lg:hidden flex border-b border-slate-800 bg-slate-900 text-xs font-semibold">
         <button
           onClick={() => setMobileTab('problem')}
           className={`flex-1 py-2.5 text-center border-b-2 transition-colors ${
             mobileTab === 'problem'
-              ? 'border-electric text-electric bg-surface'
+              ? 'border-blue-500 text-blue-400 bg-slate-800/50'
               : 'border-transparent text-slate-400'
           }`}
         >
@@ -344,7 +340,7 @@ export default function QuestionWorkspacePage() {
           onClick={() => setMobileTab('workspace')}
           className={`flex-1 py-2.5 text-center border-b-2 transition-colors ${
             mobileTab === 'workspace'
-              ? 'border-electric text-electric bg-surface'
+              ? 'border-blue-500 text-blue-400 bg-slate-800/50'
               : 'border-transparent text-slate-400'
           }`}
         >
@@ -354,7 +350,7 @@ export default function QuestionWorkspacePage() {
           onClick={() => setMobileTab('mentor')}
           className={`flex-1 py-2.5 text-center border-b-2 transition-colors ${
             mobileTab === 'mentor'
-              ? 'border-electric text-electric bg-surface'
+              ? 'border-blue-500 text-blue-400 bg-slate-800/50'
               : 'border-transparent text-slate-400'
           }`}
         >
@@ -366,7 +362,7 @@ export default function QuestionWorkspacePage() {
       <div className="flex-1 grid grid-cols-1 lg:grid-cols-12 overflow-hidden">
         {/* PANEL 1: PROBLEM STATEMENT (5 cols) */}
         <div
-          className={`lg:col-span-5 border-r border-card-border bg-background p-6 overflow-y-auto space-y-6 ${
+          className={`lg:col-span-5 border-r border-slate-800 bg-slate-950 p-6 overflow-y-auto space-y-6 ${
             mobileTab === 'problem' ? 'block' : 'hidden lg:block'
           }`}
         >
@@ -374,7 +370,7 @@ export default function QuestionWorkspacePage() {
             <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
               Problem Statement
             </span>
-            <span className="text-xs font-bold text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/20">
+            <span className="flow-pill flow-pill-amber">
               {question.difficulty}
             </span>
           </div>
@@ -384,7 +380,7 @@ export default function QuestionWorkspacePage() {
           </div>
 
           {question.imageUrl && (
-            <div className="p-4 rounded-xl bg-surface border border-card-border">
+            <div className="p-4 rounded-xl bg-slate-900 border border-slate-800">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src={question.imageUrl}
@@ -394,7 +390,7 @@ export default function QuestionWorkspacePage() {
             </div>
           )}
 
-          <div className="pt-4 border-t border-card-border text-xs text-slate-400 space-y-1">
+          <div className="pt-4 border-t border-slate-800 text-xs text-slate-400 space-y-1.5">
             <div>
               <span className="text-slate-300 font-medium">Exam Standard:</span> {question.examType.replace('_', ' ')}
             </div>
@@ -403,7 +399,7 @@ export default function QuestionWorkspacePage() {
               {Math.round(question.timeRecommendationSec / 60)} minutes
             </div>
             {question.isPYQ && (
-              <div className="text-amber-400 font-semibold">
+              <div className="text-amber-400 font-semibold flex items-center gap-1 pt-1">
                 ★ JEE Previous Year Question ({question.pyqYear})
               </div>
             )}
@@ -412,17 +408,17 @@ export default function QuestionWorkspacePage() {
 
         {/* PANEL 2: ANSWER INPUT & SCRATCHPAD (4 cols) */}
         <div
-          className={`lg:col-span-4 border-r border-card-border bg-card p-6 overflow-y-auto flex flex-col justify-between ${
+          className={`lg:col-span-4 border-r border-slate-800 bg-slate-900/90 p-6 overflow-y-auto flex flex-col justify-between ${
             mobileTab === 'workspace' ? 'block' : 'hidden lg:flex'
           }`}
         >
           <div className="space-y-5">
-            {/* Center Tabs: Input vs Scratchpad */}
-            <div className="flex items-center gap-2 p-1 rounded-xl bg-surface border border-card-border text-xs font-semibold">
+            {/* Center Tabs: Input vs Scratchpad (Flowbite Tab Pill) */}
+            <div className="flex items-center gap-1.5 p-1 rounded-xl bg-slate-950 border border-slate-800 text-xs font-semibold">
               <button
                 type="button"
                 onClick={() => setActiveCenterTab('input')}
-                className={`flex-1 py-1.5 rounded-lg transition-colors ${
+                className={`flex-1 py-1.5 rounded-lg transition-all ${
                   activeCenterTab === 'input'
                     ? 'bg-blue-600 text-white shadow-sm'
                     : 'text-slate-400 hover:text-white'
@@ -433,7 +429,7 @@ export default function QuestionWorkspacePage() {
               <button
                 type="button"
                 onClick={() => setActiveCenterTab('scratchpad')}
-                className={`flex-1 py-1.5 rounded-lg flex items-center justify-center gap-1.5 transition-colors ${
+                className={`flex-1 py-1.5 rounded-lg flex items-center justify-center gap-1.5 transition-all ${
                   activeCenterTab === 'scratchpad'
                     ? 'bg-blue-600 text-white shadow-sm'
                     : 'text-slate-400 hover:text-white'
@@ -459,19 +455,19 @@ export default function QuestionWorkspacePage() {
                         className={`p-3.5 rounded-xl border text-sm flex items-center gap-3 cursor-pointer transition-all ${
                           selectedSingleKey === opt.optionKey
                             ? 'bg-blue-600/20 border-blue-500 text-white shadow-md shadow-blue-500/10'
-                            : 'bg-surface/50 border-card-border text-slate-300 hover:bg-surface'
+                            : 'bg-slate-950/60 border-slate-800 text-slate-300 hover:bg-slate-950 hover:border-slate-700'
                         }`}
                       >
                         <div
                           className={`w-6 h-6 rounded-full border flex items-center justify-center text-xs font-bold ${
                             selectedSingleKey === opt.optionKey
                               ? 'border-blue-400 bg-blue-600 text-white'
-                              : 'border-slate-500 text-slate-400'
+                              : 'border-slate-600 text-slate-400'
                           }`}
                         >
                           {opt.optionKey}
                         </div>
-                        <div className="flex-1">
+                        <div className="flex-1 font-medium">
                           <MathRenderer content={opt.contentLatex} inline />
                         </div>
                       </div>
@@ -493,20 +489,20 @@ export default function QuestionWorkspacePage() {
                           onClick={() => handleToggleMultiOption(opt.optionKey)}
                           className={`p-3.5 rounded-xl border text-sm flex items-center gap-3 cursor-pointer transition-all ${
                             isChecked
-                              ? 'bg-blue-600/20 border-blue-500 text-white shadow-md'
-                              : 'bg-surface/50 border-card-border text-slate-300 hover:bg-surface'
+                              ? 'bg-blue-600/20 border-blue-500 text-white shadow-md shadow-blue-500/10'
+                              : 'bg-slate-950/60 border-slate-800 text-slate-300 hover:bg-slate-950 hover:border-slate-700'
                           }`}
                         >
                           <div
                             className={`w-5 h-5 rounded-md border flex items-center justify-center text-xs font-bold ${
                               isChecked
                                 ? 'border-blue-400 bg-blue-600 text-white'
-                                : 'border-slate-500 text-slate-400'
+                                : 'border-slate-600 text-slate-400'
                             }`}
                           >
-                            {isChecked ? '✓' : opt.optionKey}
+                            {isChecked ? <Check className="w-3.5 h-3.5" /> : opt.optionKey}
                           </div>
-                          <div className="flex-1">
+                          <div className="flex-1 font-medium">
                             <MathRenderer content={opt.contentLatex} inline />
                           </div>
                         </div>
@@ -528,7 +524,7 @@ export default function QuestionWorkspacePage() {
                         value={numericalInput}
                         onChange={(e) => setNumericalInput(e.target.value)}
                         placeholder="e.g. 2.00 or -4.50"
-                        className="w-full px-4 py-3 rounded-xl bg-surface border border-card-border focus:border-electric focus:ring-1 focus:ring-electric text-white text-lg font-mono outline-none"
+                        className="w-full px-4 py-3 rounded-xl bg-slate-950 border border-slate-800 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 text-white text-lg font-mono outline-none"
                       />
                       {question.unit && (
                         <span className="absolute right-4 top-3.5 text-sm font-mono text-slate-400">
@@ -553,18 +549,18 @@ export default function QuestionWorkspacePage() {
                   value={scratchpadText}
                   onChange={(e) => setScratchpadText(e.target.value)}
                   placeholder="Type working notes, free body equations, or torque balances here..."
-                  className="w-full p-3.5 rounded-xl bg-surface border border-card-border text-white text-xs font-mono outline-none focus:border-electric resize-none"
+                  className="w-full p-3.5 rounded-xl bg-slate-950 border border-slate-800 text-white text-xs font-mono outline-none focus:border-blue-500 resize-none"
                 />
               </div>
             )}
           </div>
 
           {/* Submit Action */}
-          <div className="pt-6 border-t border-card-border mt-6">
+          <div className="pt-6 border-t border-slate-800 mt-6">
             <button
               onClick={handleSubmitAnswer}
               disabled={isSubmitting || !!submissionResult}
-              className="w-full py-3.5 rounded-xl bg-blue-600 hover:bg-blue-500 disabled:bg-slate-700 text-white font-semibold text-sm shadow-lg shadow-blue-600/25 transition-all flex items-center justify-center gap-2"
+              className="w-full py-3.5 rounded-xl bg-blue-600 hover:bg-blue-500 disabled:bg-slate-800 disabled:text-slate-500 text-white font-semibold text-sm shadow-lg shadow-blue-600/25 transition-all flex items-center justify-center gap-2"
             >
               {isSubmitting ? (
                 <>
@@ -582,26 +578,26 @@ export default function QuestionWorkspacePage() {
 
         {/* PANEL 3: AI MENTOR, PROGRESSIVE HINTS & CHAT (3 cols) */}
         <div
-          className={`lg:col-span-3 bg-surface/30 p-5 overflow-y-auto space-y-5 flex flex-col justify-between ${
+          className={`lg:col-span-3 bg-slate-950/70 p-5 overflow-y-auto space-y-5 flex flex-col justify-between ${
             mobileTab === 'mentor' ? 'block' : 'hidden lg:flex'
           }`}
         >
           <div className="space-y-5">
             {/* Header: AI Mentor & Persona Switcher */}
-            <div className="flex items-center justify-between border-b border-card-border pb-3">
+            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
               <div className="flex items-center gap-1.5 text-xs font-bold text-amber-400 uppercase tracking-wider">
                 <Sparkles className="w-4 h-4" />
                 <span>AI Mentor</span>
               </div>
 
-              {/* Mode Toggle */}
-              <div className="flex items-center gap-1 bg-surface p-1 rounded-lg border border-card-border">
+              {/* Mode Toggle (Flowbite Switch) */}
+              <div className="flex items-center gap-1 bg-slate-900 p-1 rounded-lg border border-slate-800">
                 <button
                   type="button"
                   onClick={() => setMentorMode('COLLABORATIVE')}
-                  className={`px-2 py-0.5 rounded text-[10px] font-semibold transition-colors ${
+                  className={`px-2.5 py-0.5 rounded-md text-[10px] font-semibold transition-all ${
                     mentorMode === 'COLLABORATIVE'
-                      ? 'bg-blue-600 text-white'
+                      ? 'bg-blue-600 text-white shadow-sm'
                       : 'text-slate-400 hover:text-white'
                   }`}
                   title="Collaborative Mode: step-by-step guidance and analogies"
@@ -611,9 +607,9 @@ export default function QuestionWorkspacePage() {
                 <button
                   type="button"
                   onClick={() => setMentorMode('STRICT')}
-                  className={`px-2 py-0.5 rounded text-[10px] font-semibold transition-colors ${
+                  className={`px-2.5 py-0.5 rounded-md text-[10px] font-semibold transition-all ${
                     mentorMode === 'STRICT'
-                      ? 'bg-red-600 text-white'
+                      ? 'bg-rose-600 text-white shadow-sm'
                       : 'text-slate-400 hover:text-white'
                   }`}
                   title="Strict Mode: disciplined, socratic, refuses to reveal shortcuts"
@@ -631,7 +627,7 @@ export default function QuestionWorkspacePage() {
                   className={`p-4 rounded-xl border text-sm space-y-1.5 ${
                     submissionResult.isCorrect
                       ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-300'
-                      : 'bg-red-500/10 border-red-500/30 text-red-300'
+                      : 'bg-rose-500/10 border-rose-500/30 text-rose-300'
                   }`}
                 >
                   <div className="flex items-center gap-2 font-bold text-base">
@@ -642,7 +638,7 @@ export default function QuestionWorkspacePage() {
                       </>
                     ) : (
                       <>
-                        <XCircle className="w-5 h-5 text-red-400" />
+                        <XCircle className="w-5 h-5 text-rose-400" />
                         <span>Incorrect Answer</span>
                       </>
                     )}
@@ -658,14 +654,14 @@ export default function QuestionWorkspacePage() {
 
                 {/* AI Mistake Diagnosis Card */}
                 {!submissionResult.isCorrect && (
-                  <div className="p-4 rounded-xl bg-card border border-amber-500/30 space-y-2.5">
+                  <div className="p-4 rounded-xl flow-card border-amber-500/30 space-y-2.5">
                     <div className="flex items-center justify-between">
                       <span className="text-[11px] font-bold text-amber-400 uppercase tracking-wider flex items-center gap-1">
                         <Brain className="w-3.5 h-3.5" />
                         <span>AI Mistake Diagnosis</span>
                       </span>
                       {mistakeAnalysis && (
-                        <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-amber-500/20 text-amber-300 font-semibold">
+                        <span className="flow-pill flow-pill-amber text-[10px] py-0 px-2 font-mono">
                           {mistakeAnalysis.mistakeType}
                         </span>
                       )}
@@ -685,12 +681,12 @@ export default function QuestionWorkspacePage() {
                           <MathRenderer content={mistakeAnalysis.analysisTextLatex} />
                         </div>
                         {mistakeAnalysis.prerequisiteWarning && (
-                          <div className="p-2 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400 text-[11px] flex items-center gap-1.5 font-medium">
+                          <div className="p-2 rounded-lg bg-rose-500/10 border border-rose-500/20 text-rose-400 text-[11px] flex items-center gap-1.5 font-medium">
                             <ShieldAlert className="w-3.5 h-3.5 shrink-0" />
                             <span>Prerequisite Warning: {mistakeAnalysis.prerequisiteWarning}</span>
                           </div>
                         )}
-                        <div className="text-[11px] text-electric font-semibold pt-1">
+                        <div className="text-[11px] text-cyan-400 font-semibold pt-1">
                           &rarr; {mistakeAnalysis.suggestedReview}
                         </div>
                       </div>
@@ -699,8 +695,8 @@ export default function QuestionWorkspacePage() {
                 )}
 
                 {/* Verified Editorial Solution */}
-                <div className="p-4 rounded-xl bg-card border border-card-border space-y-3">
-                  <div className="text-xs font-bold uppercase tracking-wider text-electric flex items-center gap-1.5">
+                <div className="p-4 rounded-xl flow-card space-y-3">
+                  <div className="text-xs font-bold uppercase tracking-wider text-cyan-400 flex items-center gap-1.5">
                     <Sparkles className="w-4 h-4" />
                     <span>Verified Solution</span>
                   </div>
@@ -713,7 +709,7 @@ export default function QuestionWorkspacePage() {
 
                 <Link
                   href="/solve"
-                  className="w-full py-2.5 rounded-xl bg-surface border border-card-border hover:border-slate-500 text-slate-200 text-xs font-semibold text-center block transition-colors"
+                  className="w-full py-2.5 rounded-xl bg-slate-900 border border-slate-800 hover:border-slate-700 text-slate-200 text-xs font-semibold text-center block transition-colors"
                 >
                   Return to Problem Bank &rarr;
                 </Link>
@@ -735,11 +731,11 @@ export default function QuestionWorkspacePage() {
                       onClick={() => requestHint(level)}
                       className={`p-2.5 rounded-xl border text-left text-xs font-medium transition-all ${
                         unlockedHintLevel >= level
-                          ? 'bg-blue-600/20 border-blue-500 text-white'
-                          : 'bg-surface border-card-border text-slate-400 hover:border-slate-600'
+                          ? 'bg-blue-600/20 border-blue-500 text-white shadow-sm'
+                          : 'bg-slate-900 border-slate-800 text-slate-400 hover:border-slate-700 hover:text-slate-200'
                       }`}
                     >
-                      <div>Hint Level {level}</div>
+                      <div className="font-semibold">Hint Level {level}</div>
                       <div className="text-[10px] text-slate-500">
                         {level === 1
                           ? 'Direction'
@@ -756,12 +752,12 @@ export default function QuestionWorkspacePage() {
                 {/* Unlocked Hint Content */}
                 {isLoadingHint ? (
                   <div className="py-6 text-center text-xs text-slate-400 flex items-center justify-center gap-2">
-                    <RefreshCw className="w-4 h-4 text-electric animate-spin" />
+                    <RefreshCw className="w-4 h-4 text-blue-400 animate-spin" />
                     <span>Consulting Gemini Knowledge Graph...</span>
                   </div>
                 ) : unlockedHintLevel > 0 ? (
-                  <div className="p-4 rounded-xl bg-card border border-card-border space-y-2 text-xs">
-                    <div className="font-bold text-electric flex items-center gap-1.5">
+                  <div className="p-4 rounded-xl flow-card space-y-2 text-xs">
+                    <div className="font-bold text-cyan-400 flex items-center gap-1.5">
                       <HelpCircle className="w-4 h-4" />
                       <span>Level {unlockedHintLevel} Hint:</span>
                     </div>
@@ -775,7 +771,7 @@ export default function QuestionWorkspacePage() {
                     </div>
                   </div>
                 ) : (
-                  <div className="p-4 rounded-xl bg-surface/40 border border-card-border text-center text-xs text-slate-500">
+                  <div className="p-4 rounded-xl bg-slate-900/50 border border-slate-800 text-center text-xs text-slate-500">
                     Select a progressive hint tier above if you need conceptual direction.
                   </div>
                 )}
@@ -784,22 +780,22 @@ export default function QuestionWorkspacePage() {
           </div>
 
           {/* Interactive Chat Drawer Section at Bottom of Panel 3 */}
-          <div className="pt-4 border-t border-card-border space-y-3">
+          <div className="pt-4 border-t border-slate-800 space-y-3">
             <div className="flex items-center gap-1.5 text-xs font-semibold text-slate-300">
-              <MessageSquare className="w-3.5 h-3.5 text-electric" />
+              <MessageSquare className="w-3.5 h-3.5 text-cyan-400" />
               <span>Ask AI Mentor a Doubt</span>
             </div>
 
             {/* Conversation Feed */}
             {chatMessages.length > 0 && (
-              <div className="max-h-48 overflow-y-auto space-y-2 p-2 rounded-xl bg-card border border-card-border text-xs">
+              <div className="max-h-48 overflow-y-auto space-y-2 p-2 rounded-xl bg-slate-900 border border-slate-800 text-xs">
                 {chatMessages.map((msg, idx) => (
                   <div
                     key={idx}
                     className={`p-2.5 rounded-lg text-xs leading-relaxed ${
                       msg.sender === 'student'
                         ? 'bg-blue-600/20 text-white ml-4 border border-blue-500/30'
-                        : 'bg-surface text-slate-300 mr-4 border border-card-border'
+                        : 'bg-slate-950 text-slate-300 mr-4 border border-slate-800'
                     }`}
                   >
                     <div className="text-[10px] font-bold text-slate-400 mb-1 flex items-center justify-between">
@@ -811,7 +807,7 @@ export default function QuestionWorkspacePage() {
                 ))}
                 {isChatSending && (
                   <div className="p-2 text-xs text-slate-400 italic flex items-center gap-2">
-                    <RefreshCw className="w-3.5 h-3.5 animate-spin text-electric" />
+                    <RefreshCw className="w-3.5 h-3.5 animate-spin text-cyan-400" />
                     <span>Gemini Mentor is formulating a physics explanation...</span>
                   </div>
                 )}
@@ -826,12 +822,12 @@ export default function QuestionWorkspacePage() {
                 onChange={(e) => setChatInput(e.target.value)}
                 placeholder="Ask about torque, formulas, constraints..."
                 disabled={isChatSending}
-                className="flex-1 px-3 py-2 rounded-xl bg-surface border border-card-border focus:border-electric text-white text-xs outline-none"
+                className="flex-1 px-3 py-2 rounded-xl bg-slate-900 border border-slate-800 focus:border-blue-500 text-white text-xs outline-none transition-colors"
               />
               <button
                 type="submit"
                 disabled={isChatSending || !chatInput.trim()}
-                className="p-2 rounded-xl bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white transition-colors"
+                className="p-2 rounded-xl bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white transition-colors shadow-sm"
                 title="Send doubt to AI mentor"
               >
                 <Send className="w-3.5 h-3.5" />

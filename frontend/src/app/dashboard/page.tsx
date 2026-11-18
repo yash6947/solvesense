@@ -12,17 +12,16 @@ import {
   XCircle, 
   AlertTriangle, 
   BookOpen, 
-  ArrowRight, 
-  Sparkles, 
-  Award,
   ChevronRight,
   TrendingUp,
   RefreshCw,
-  Compass
+  Compass,
+  Award,
+  Zap,
+  Activity
 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { apiRequest } from '@/lib/api';
-import MathRenderer from '@/components/MathRenderer';
 
 export default function DashboardPage() {
   const router = useRouter();
@@ -60,8 +59,8 @@ export default function DashboardPage() {
     return (
       <div className="flex-1 flex items-center justify-center py-24">
         <div className="flex flex-col items-center gap-3">
-          <RefreshCw className="w-8 h-8 text-electric animate-spin" />
-          <span className="text-slate-400 text-sm font-medium">Loading Student Telemetry...</span>
+          <RefreshCw className="w-8 h-8 text-blue-400 animate-spin" />
+          <span className="text-slate-400 text-sm font-medium">Syncing Real-Time Telemetry...</span>
         </div>
       </div>
     );
@@ -70,13 +69,13 @@ export default function DashboardPage() {
   if (error || !dashboardData) {
     return (
       <div className="flex-1 flex items-center justify-center py-20 px-4">
-        <div className="max-w-md w-full p-6 rounded-2xl bg-card border border-card-border text-center space-y-4">
+        <div className="max-w-md w-full p-6 rounded-2xl flow-card text-center space-y-4">
           <AlertTriangle className="w-10 h-10 text-amber-400 mx-auto" />
           <h3 className="text-lg font-bold text-white">Dashboard Offline</h3>
           <p className="text-sm text-slate-400">{error || 'Could not load data.'}</p>
           <button
             onClick={fetchDashboard}
-            className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-sm font-semibold"
+            className="px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-sm font-semibold transition-all shadow-md shadow-blue-600/20"
           >
             Retry Connection
           </button>
@@ -88,30 +87,31 @@ export default function DashboardPage() {
   const { profile, performance, subjectProgress, weakConcepts, recentActivity, learningRoadmap } =
     dashboardData;
 
-  const hasActivity = performance.totalAttempted > 0;
-
   return (
     <div className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
-      {/* 1. WELCOME SECTION */}
-      <div className="p-6 sm:p-8 rounded-2xl bg-gradient-to-r from-surface via-card to-surface border border-card-border shadow-xl flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+      {/* 1. WELCOME SECTION (Flowbite Clean Hero Header) */}
+      <div className="p-6 sm:p-8 rounded-2xl flow-card-elevated shadow-xl flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
         <div className="space-y-2">
-          <div className="flex items-center gap-2.5">
-            <h1 className="text-2xl sm:text-3xl font-extrabold text-white">
-              Hello, {profile.fullName}
+          <div className="flex flex-wrap items-center gap-2.5">
+            <h1 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
+              Welcome back, {profile.fullName}
             </h1>
-            <span className="px-2.5 py-0.5 rounded-full bg-blue-500/10 border border-blue-500/20 text-electric text-xs font-semibold">
+            <span className="flow-pill flow-pill-blue">
               {profile.targetExam.replace('_', ' ')} &apos;{profile.targetYear}
+            </span>
+            <span className="flow-pill flow-pill-purple">
+              {profile.academicLevel}
             </span>
           </div>
           <p className="text-sm text-slate-400">
-            Academic Status: <span className="text-slate-200 font-medium">{profile.academicLevel}</span> • Active Focus: <span className="text-electric font-medium">Physics</span>
+            Active Focus: <span className="text-cyan-300 font-semibold">Physics Mechanics & Electrodynamics</span> • Target Goal: <span className="text-slate-200 font-medium">Top 500 All-India Rank</span>
           </p>
         </div>
 
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-3">
           <Link
             href="/solve"
-            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-semibold text-sm shadow-lg shadow-blue-600/20 transition-all"
+            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-semibold text-xs sm:text-sm shadow-md shadow-blue-600/30 transition-all"
           >
             <BookOpen className="w-4 h-4" />
             Resume Practice
@@ -119,98 +119,111 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      {/* 2. CORE PERFORMANCE CARDS */}
+      {/* 2. CORE PERFORMANCE METRICS (Flowbite 5-Card Metric Strip) */}
       <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
         {/* Total Attempted */}
-        <div className="p-5 rounded-2xl bg-card border border-card-border space-y-2">
-          <div className="flex items-center justify-between text-slate-400 text-xs font-medium">
-            <span>Questions Attempted</span>
-            <Target className="w-4 h-4 text-blue-400" />
+        <div className="p-5 rounded-2xl flow-card space-y-2">
+          <div className="flex items-center justify-between text-slate-400 text-xs font-semibold uppercase tracking-wider">
+            <span>Attempted</span>
+            <div className="p-1.5 rounded-lg bg-blue-500/10 text-blue-400">
+              <Target className="w-4 h-4" />
+            </div>
           </div>
-          <div className="text-2xl sm:text-3xl font-bold text-white">
+          <div className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
             {performance.totalAttempted}
           </div>
-          <div className="text-xs text-slate-500">
-            {performance.totalCorrect} solved correctly
+          <div className="text-xs text-slate-400 flex items-center gap-1">
+            <span className="text-emerald-400 font-semibold">{performance.totalCorrect}</span> correct
           </div>
         </div>
 
         {/* Accuracy */}
-        <div className="p-5 rounded-2xl bg-card border border-card-border space-y-2">
-          <div className="flex items-center justify-between text-slate-400 text-xs font-medium">
-            <span>Overall Accuracy</span>
-            <TrendingUp className="w-4 h-4 text-emerald-400" />
+        <div className="p-5 rounded-2xl flow-card space-y-2">
+          <div className="flex items-center justify-between text-slate-400 text-xs font-semibold uppercase tracking-wider">
+            <span>Accuracy</span>
+            <div className="p-1.5 rounded-lg bg-emerald-500/10 text-emerald-400">
+              <TrendingUp className="w-4 h-4" />
+            </div>
           </div>
-          <div className="text-2xl sm:text-3xl font-bold text-emerald-400">
+          <div className="text-2xl sm:text-3xl font-extrabold text-emerald-400 tracking-tight">
             {performance.accuracyPercentage}%
           </div>
-          <div className="text-xs text-slate-500">
-            Across Single & Multi-Correct
+          <div className="text-xs text-slate-400">
+            JEE Advanced weighted
           </div>
         </div>
 
         {/* Current Streak */}
-        <div className="p-5 rounded-2xl bg-card border border-card-border space-y-2">
-          <div className="flex items-center justify-between text-slate-400 text-xs font-medium">
-            <span>Current Streak</span>
-            <Flame className="w-4 h-4 text-amber-400" />
+        <div className="p-5 rounded-2xl flow-card space-y-2">
+          <div className="flex items-center justify-between text-slate-400 text-xs font-semibold uppercase tracking-wider">
+            <span>Streak</span>
+            <div className="p-1.5 rounded-lg bg-amber-500/10 text-amber-400">
+              <Flame className="w-4 h-4" />
+            </div>
           </div>
-          <div className="text-2xl sm:text-3xl font-bold text-amber-400">
+          <div className="text-2xl sm:text-3xl font-extrabold text-amber-400 tracking-tight">
             {profile.currentStreak} Days
           </div>
-          <div className="text-xs text-slate-500">
-            Record: {profile.longestStreak} days
+          <div className="text-xs text-slate-400">
+            Longest: <span className="text-slate-300 font-semibold">{profile.longestStreak} days</span>
           </div>
         </div>
 
         {/* Average Time */}
-        <div className="p-5 rounded-2xl bg-card border border-card-border space-y-2">
-          <div className="flex items-center justify-between text-slate-400 text-xs font-medium">
-            <span>Average Solving Time</span>
-            <Clock className="w-4 h-4 text-purple-400" />
+        <div className="p-5 rounded-2xl flow-card space-y-2">
+          <div className="flex items-center justify-between text-slate-400 text-xs font-semibold uppercase tracking-wider">
+            <span>Pacing Avg</span>
+            <div className="p-1.5 rounded-lg bg-purple-500/10 text-purple-400">
+              <Clock className="w-4 h-4" />
+            </div>
           </div>
-          <div className="text-2xl sm:text-3xl font-bold text-purple-300">
+          <div className="text-2xl sm:text-3xl font-extrabold text-purple-300 tracking-tight">
             {performance.averageTimeSeconds > 0
               ? `${Math.floor(performance.averageTimeSeconds / 60)}m ${performance.averageTimeSeconds % 60}s`
               : 'N/A'}
           </div>
-          <div className="text-xs text-slate-500">
+          <div className="text-xs text-slate-400">
             Target: &lt; 3m per problem
           </div>
         </div>
 
         {/* Problem-Solving Index (PSI) */}
-        <div className="p-5 rounded-2xl bg-card border border-card-border space-y-2 col-span-2 lg:col-span-1">
-          <div className="flex items-center justify-between text-slate-400 text-xs font-medium">
-            <span>Problem-Solving Index</span>
-            <Award className="w-4 h-4 text-electric" />
+        <div className="p-5 rounded-2xl flow-card space-y-2 col-span-2 lg:col-span-1">
+          <div className="flex items-center justify-between text-slate-400 text-xs font-semibold uppercase tracking-wider">
+            <span>PSI Index</span>
+            <div className="p-1.5 rounded-lg bg-cyan-500/10 text-cyan-400">
+              <Zap className="w-4 h-4" />
+            </div>
           </div>
-          <div className="text-2xl sm:text-3xl font-bold text-electric">
+          <div className="text-2xl sm:text-3xl font-extrabold text-cyan-300 tracking-tight">
             {profile.problemSolvingIndex}
           </div>
-          <div className="text-xs text-slate-500">
-            Composite capability metric
+          <div className="text-xs text-slate-400">
+            Multi-factor composite
           </div>
         </div>
       </div>
 
-      {/* 3. DAILY GOAL PROGRESS */}
-      <div className="p-5 rounded-2xl bg-card border border-card-border flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      {/* 3. DAILY GOAL PROGRESS (Flowbite Progress Bar) */}
+      <div className="p-5 rounded-2xl flow-card flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="space-y-1">
-          <div className="text-xs font-semibold uppercase tracking-wider text-slate-400">
-            Today&apos;s Target
+          <div className="text-xs font-semibold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
+            <Activity className="w-3.5 h-3.5 text-blue-400" />
+            <span>Today&apos;s Solving Target</span>
           </div>
           <div className="text-sm font-medium text-white flex items-center gap-2">
             <span>
-              {performance.dailyGoalProgress.completedToday} of {performance.dailyGoalProgress.target} problems solved today
+              {performance.dailyGoalProgress.completedToday} of {performance.dailyGoalProgress.target} problems completed
             </span>
-            <span className="text-xs text-electric">({performance.dailyGoalProgress.percentage}%)</span>
+            <span className="flow-pill flow-pill-blue text-[11px] py-0 px-2">
+              {performance.dailyGoalProgress.percentage}%
+            </span>
           </div>
         </div>
 
-        <div className="w-full sm:w-64 bg-surface rounded-full h-2.5 overflow-hidden border border-card-border">
+        <div className="w-full sm:w-72 bg-slate-900 rounded-full h-3 overflow-hidden border border-slate-800 p-0.5">
           <div
-            className="bg-gradient-to-r from-blue-600 to-electric h-full rounded-full transition-all duration-500"
+            className="bg-gradient-to-r from-blue-500 via-indigo-500 to-cyan-400 h-full rounded-full transition-all duration-700 shadow-sm"
             style={{ width: `${Math.min(100, performance.dailyGoalProgress.percentage)}%` }}
           />
         </div>
@@ -221,28 +234,30 @@ export default function DashboardPage() {
         {/* Left Column (8 cols): Chapter Progress & Roadmap */}
         <div className="lg:col-span-8 space-y-8">
           {/* Chapter-Wise Progress */}
-          <div className="p-6 rounded-2xl bg-card border border-card-border space-y-5">
+          <div className="p-6 rounded-2xl flow-card space-y-5">
             <div className="flex items-center justify-between">
               <div>
-                <h3 className="text-lg font-bold text-white flex items-center gap-2">
-                  <Compass className="w-5 h-5 text-electric" />
+                <h2 className="text-lg font-bold text-white flex items-center gap-2">
+                  <Compass className="w-5 h-5 text-blue-400" />
                   <span>Physics Syllabus Mastery</span>
-                </h3>
+                </h2>
                 <p className="text-xs text-slate-400 mt-0.5">
-                  Real-time demonstrated mastery computed from verified question attempts
+                  Demonstrated concept accuracy computed from verified submissions
                 </p>
               </div>
-              <span className="text-xs font-mono text-slate-500">JEE Syllabus 2026</span>
+              <span className="flow-pill flow-pill-slate font-mono text-[11px]">
+                JEE Syllabus 2026
+              </span>
             </div>
 
             <div className="space-y-3">
               {subjectProgress.chapters.map((chap: any) => (
                 <div
                   key={chap.chapterId}
-                  className="p-4 rounded-xl bg-surface/50 border border-card-border hover:border-slate-600 transition-colors flex items-center justify-between"
+                  className="p-4 rounded-xl bg-slate-900/60 border border-slate-800 hover:border-slate-700 hover:bg-slate-900 transition-all flex items-center justify-between"
                 >
                   <div className="space-y-1">
-                    <div className="text-sm font-semibold text-white">{chap.chapterName}</div>
+                    <div className="text-sm font-bold text-white tracking-tight">{chap.chapterName}</div>
                     <div className="text-xs text-slate-400">
                       {chap.topicsCount} Topics • {chap.attemptedCount} Attempts Logged
                     </div>
@@ -250,14 +265,14 @@ export default function DashboardPage() {
 
                   <div className="flex items-center gap-4">
                     <div className="text-right">
-                      <div className="text-sm font-bold text-slate-200">
+                      <div className="text-sm font-bold text-slate-100">
                         {chap.accuracyPercentage}%
                       </div>
-                      <div className="text-[10px] text-slate-500">Accuracy</div>
+                      <div className="text-[10px] text-slate-400 uppercase font-semibold">Accuracy</div>
                     </div>
                     <Link
                       href={`/solve?chapter=${chap.slug}`}
-                      className="p-2 rounded-lg bg-surface hover:bg-blue-600/20 text-slate-400 hover:text-electric transition-colors"
+                      className="p-2 rounded-lg bg-slate-800 hover:bg-blue-600/20 text-slate-400 hover:text-cyan-400 transition-colors"
                       title="Practice this chapter"
                     >
                       <ChevronRight className="w-4 h-4" />
@@ -269,12 +284,12 @@ export default function DashboardPage() {
           </div>
 
           {/* Learning Roadmap */}
-          <div className="p-6 rounded-2xl bg-card border border-card-border space-y-5">
+          <div className="p-6 rounded-2xl flow-card space-y-5">
             <div>
-              <h3 className="text-lg font-bold text-white flex items-center gap-2">
+              <h2 className="text-lg font-bold text-white flex items-center gap-2">
                 <BarChart3 className="w-5 h-5 text-purple-400" />
                 <span>Personalized Concept Roadmap</span>
-              </h3>
+              </h2>
               <p className="text-xs text-slate-400 mt-0.5">
                 Spaced-repetition tasks tailored to reinforce prerequisite gaps
               </p>
@@ -284,14 +299,14 @@ export default function DashboardPage() {
               {learningRoadmap.map((item: any) => (
                 <div
                   key={item.stepNumber}
-                  className="p-4 rounded-xl bg-surface/40 border border-card-border flex items-start gap-3"
+                  className="p-4 rounded-xl bg-slate-900/40 border border-slate-800 flex items-start gap-3.5"
                 >
                   <div
                     className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold shrink-0 mt-0.5 ${
                       item.status === 'COMPLETED'
                         ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
                         : item.status === 'IN_PROGRESS'
-                        ? 'bg-blue-500/20 text-electric border border-blue-500/30'
+                        ? 'bg-blue-500/20 text-blue-400 border border-blue-500/30'
                         : 'bg-slate-800 text-slate-500'
                     }`}
                   >
@@ -301,11 +316,11 @@ export default function DashboardPage() {
                     <div className="text-sm font-semibold text-white flex items-center justify-between">
                       <span>{item.title}</span>
                       <span
-                        className={`text-[10px] font-semibold uppercase px-2 py-0.5 rounded ${
+                        className={`text-[10px] font-semibold uppercase px-2 py-0.5 rounded-full ${
                           item.status === 'COMPLETED'
-                            ? 'bg-emerald-500/10 text-emerald-400'
+                            ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
                             : item.status === 'IN_PROGRESS'
-                            ? 'bg-blue-500/10 text-electric'
+                            ? 'bg-blue-500/10 text-blue-400 border border-blue-500/20'
                             : 'bg-slate-800 text-slate-500'
                         }`}
                       >
@@ -323,13 +338,13 @@ export default function DashboardPage() {
         {/* Right Column (4 cols): Weak Concepts & Recent Attempts */}
         <div className="lg:col-span-4 space-y-8">
           {/* Weak Concepts Card */}
-          <div className="p-6 rounded-2xl bg-card border border-card-border space-y-4">
+          <div className="p-6 rounded-2xl flow-card space-y-4">
             <div className="flex items-center gap-2 text-amber-400 text-sm font-bold">
               <AlertTriangle className="w-4 h-4" />
               <span>Diagnosed Learning Gaps</span>
             </div>
             <p className="text-xs text-slate-400">
-              Identified from error patterns in your recent problem attempts:
+              Traced from prerequisite error patterns in recent attempts:
             </p>
 
             {weakConcepts.length > 0 ? (
@@ -341,7 +356,7 @@ export default function DashboardPage() {
                   >
                     <div className="flex items-center justify-between">
                       <span className="text-xs font-semibold text-amber-300">{wc.name}</span>
-                      <span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-400 font-mono">
+                      <span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 font-mono">
                         {wc.diagnosedMistake}
                       </span>
                     </div>
@@ -350,17 +365,17 @@ export default function DashboardPage() {
                 ))}
               </div>
             ) : (
-              <div className="p-4 rounded-xl bg-surface/50 border border-card-border text-center text-xs text-slate-400">
+              <div className="p-4 rounded-xl bg-slate-900 border border-slate-800 text-center text-xs text-slate-400">
                 No acute learning gaps detected yet. Keep solving!
               </div>
             )}
           </div>
 
           {/* Recent Activity Card */}
-          <div className="p-6 rounded-2xl bg-card border border-card-border space-y-4">
+          <div className="p-6 rounded-2xl flow-card space-y-4">
             <div className="flex items-center justify-between">
-              <h4 className="text-sm font-bold text-white">Recent Attempts</h4>
-              <span className="text-xs text-slate-500">{recentActivity.length} logged</span>
+              <h3 className="text-sm font-bold text-white">Recent Activity</h3>
+              <span className="text-xs text-slate-500 font-medium">{recentActivity.length} logged</span>
             </div>
 
             {recentActivity.length > 0 ? (
@@ -368,13 +383,13 @@ export default function DashboardPage() {
                 {recentActivity.slice(0, 5).map((att: any) => (
                   <div
                     key={att.attemptId}
-                    className="p-3 rounded-xl bg-surface/50 border border-card-border text-xs space-y-1.5"
+                    className="p-3.5 rounded-xl bg-slate-900/60 border border-slate-800 text-xs space-y-1.5"
                   >
                     <div className="flex items-center justify-between font-mono">
-                      <span className="text-slate-300">{att.questionId}</span>
+                      <span className="text-slate-300 font-semibold">{att.questionId}</span>
                       <span
                         className={`flex items-center gap-1 font-semibold ${
-                          att.isCorrect ? 'text-emerald-400' : 'text-red-400'
+                          att.isCorrect ? 'text-emerald-400' : 'text-rose-400'
                         }`}
                       >
                         {att.isCorrect ? (
@@ -397,11 +412,11 @@ export default function DashboardPage() {
                 ))}
               </div>
             ) : (
-              <div className="p-6 rounded-xl bg-surface/40 border border-card-border text-center text-xs text-slate-400 space-y-2">
+              <div className="p-6 rounded-xl bg-slate-900/40 border border-slate-800 text-center text-xs text-slate-400 space-y-2">
                 <div>No attempts recorded yet.</div>
                 <Link
                   href="/solve"
-                  className="inline-block text-electric font-semibold hover:underline"
+                  className="inline-block text-cyan-400 font-semibold hover:underline"
                 >
                   Solve your first problem &rarr;
                 </Link>

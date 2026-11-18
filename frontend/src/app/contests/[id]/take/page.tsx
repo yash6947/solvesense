@@ -12,9 +12,7 @@ import {
   ChevronRight, 
   Flag, 
   RotateCcw, 
-  Send, 
   RefreshCw,
-  HelpCircle,
   AlertTriangle
 } from 'lucide-react';
 import { apiRequest } from '@/lib/api';
@@ -33,9 +31,7 @@ export default function TakeContestPage() {
   const [isLoading, setIsLoading] = useState(true);
 
   // Exam answers & status state
-  // answers: { [qid]: answer }
   const [answers, setAnswers] = useState<{ [qid: string]: any }>({});
-  // markedForReview: Set of qids
   const [markedForReview, setMarkedForReview] = useState<string[]>([]);
 
   // Timer state
@@ -59,7 +55,7 @@ export default function TakeContestPage() {
       setTimeLeftSec((prev) => {
         if (prev <= 1) {
           clearInterval(timer);
-          handleAutoSubmit();
+          finalizeSubmission();
           return 0;
         }
         return prev - 1;
@@ -72,13 +68,13 @@ export default function TakeContestPage() {
   const fetchContestPaper = async () => {
     setIsLoading(true);
     try {
-      const data = await apiRequest(`/contests/${contestId}/paper`);
+      const data = await apiRequest(`/contests/${contestId}/take`);
       setContestData(data.contest);
       setQuestions(data.questions);
-      setTimeLeftSec((data.contest.durationMinutes || 60) * 60);
+      setTimeLeftSec(data.contest.durationMinutes * 60);
     } catch (err: any) {
       console.error('Failed to load contest paper:', err);
-      alert('Could not load test paper: ' + err.message);
+      alert(err.message || 'Contest paper unavailable.');
       router.push('/contests');
     } finally {
       setIsLoading(false);
@@ -87,7 +83,7 @@ export default function TakeContestPage() {
 
   const handleSelectOption = (qid: string, key: string, isMulti: boolean) => {
     if (isMulti) {
-      const current = Array.isArray(answers[qid]) ? answers[qid] : [];
+      const current = answers[qid] || [];
       if (current.includes(key)) {
         setAnswers({ ...answers, [qid]: current.filter((k: string) => k !== key) });
       } else {
@@ -102,12 +98,6 @@ export default function TakeContestPage() {
     setAnswers({ ...answers, [qid]: val });
   };
 
-  const handleClearResponse = (qid: string) => {
-    const copy = { ...answers };
-    delete copy[qid];
-    setAnswers(copy);
-  };
-
   const handleToggleReview = (qid: string) => {
     if (markedForReview.includes(qid)) {
       setMarkedForReview(markedForReview.filter((id) => id !== qid));
@@ -116,46 +106,54 @@ export default function TakeContestPage() {
     }
   };
 
-  const handleAutoSubmit = () => {
-    alert('Time has expired! Submitting your test automatically.');
-    finalizeSubmission();
+  const handleClearResponse = (qid: string) => {
+    const updated = { ...answers };
+    delete updated[qid];
+    setAnswers(updated);
   };
 
   const finalizeSubmission = async () => {
     setIsSubmitting(true);
     try {
-      const durationTaken = (contestData.durationMinutes * 60) - timeLeftSec;
-      await apiRequest(`/contests/${contestId}/submit`, {
+      const submissionList = Object.entries(answers).map(([qid, ans]) => ({
+        questionId: qid,
+        submittedAnswer: ans,
+      }));
+
+      const elapsedSec = (contestData?.durationMinutes * 60 || 3600) - timeLeftSec;
+
+      const res = await apiRequest(`/contests/${contestId}/submit`, {
         method: 'POST',
         body: JSON.stringify({
-          answers,
-          timeSpentSeconds: Math.max(10, durationTaken),
+          submissions: submissionList,
+          timeSpentSeconds: Math.max(1, elapsedSec),
         }),
       });
 
       router.push(`/contests/${contestId}/leaderboard`);
     } catch (err: any) {
-      console.error('Submission failed:', err);
-      alert('Submission error: ' + err.message);
+      console.error('Failed to submit contest:', err);
+      alert('Error submitting contest: ' + err.message);
       setIsSubmitting(false);
+      setShowSubmitModal(false);
     }
   };
 
-  const formatTimer = (secs: number) => {
-    const h = Math.floor(secs / 3600);
-    const m = Math.floor((secs % 3600) / 60);
-    const s = secs % 60;
-    if (h > 0) {
-      return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+  const formatTimer = (totalSec: number) => {
+    const hours = Math.floor(totalSec / 3600);
+    const mins = Math.floor((totalSec % 3600) / 60);
+    const secs = totalSec % 60;
+    if (hours > 0) {
+      return `${hours}:${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
     }
-    return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   };
 
   if (isLoading || !contestData) {
     return (
       <div className="flex-1 flex items-center justify-center py-24">
         <div className="flex flex-col items-center gap-3">
-          <RefreshCw className="w-8 h-8 text-electric animate-spin" />
+          <RefreshCw className="w-8 h-8 text-blue-400 animate-spin" />
           <span className="text-slate-400 text-sm font-medium">Entering Proctored Exam Environment...</span>
         </div>
       </div>
@@ -164,56 +162,54 @@ export default function TakeContestPage() {
 
   const currentQ = questions[currentIdx];
   const isLastQuestion = currentIdx === questions.length - 1;
-  const isUrgent = timeLeftSec <= 300; // Under 5 mins
-
-  // Palette counts
   const answeredCount = Object.keys(answers).length;
   const markedCount = markedForReview.length;
   const unattemptedCount = questions.length - answeredCount;
 
   return (
-    <div className="flex-1 flex flex-col h-[calc(100vh-4rem)] overflow-hidden bg-background">
-      {/* 1. Exam Proctored Header */}
-      <div className="h-14 border-b border-card-border bg-surface px-4 sm:px-6 flex items-center justify-between shrink-0">
-        <div className="flex items-center gap-3">
-          <span className="font-bold text-sm text-white hidden sm:inline-block">
+    <div className="flex-1 flex flex-col h-[calc(100vh-4rem)] overflow-hidden bg-slate-950">
+      {/* 1. Proctored Exam Top Bar (Flowbite Header) */}
+      <div className="h-14 border-b border-slate-800 bg-slate-950 px-6 flex items-center justify-between text-xs shrink-0">
+        <div className="flex items-center gap-4">
+          <span className="font-bold text-white text-sm sm:text-base tracking-tight truncate max-w-xs sm:max-w-md">
             {contestData.title}
           </span>
-          <span className="text-xs px-2.5 py-0.5 rounded-full bg-blue-500/10 text-electric border border-blue-500/20 font-semibold font-mono">
-            {contestData.examType.replace('_', ' ')}
+          <span className="flow-pill flow-pill-blue hidden sm:inline-flex text-[11px] py-0 px-2">
+            Section: Physics
           </span>
         </div>
 
-        {/* Center Countdown Clock */}
-        <div
-          className={`flex items-center gap-2 px-4 py-1.5 rounded-xl border font-mono font-bold text-sm transition-all ${
-            isUrgent
-              ? 'bg-red-500/15 border-red-500 text-red-400 animate-pulse'
-              : 'bg-background border-card-border text-slate-200'
-          }`}
-        >
-          <Clock className="w-4 h-4 text-amber-400" />
-          <span>{formatTimer(timeLeftSec)}</span>
-        </div>
+        {/* Live Timer Pill */}
+        <div className="flex items-center gap-3">
+          <div
+            className={`flex items-center gap-2 px-3.5 py-1.5 rounded-xl border font-mono font-bold text-sm ${
+              timeLeftSec <= 300
+                ? 'bg-rose-500/20 border-rose-500 text-rose-300 animate-pulse'
+                : 'bg-slate-900 border-slate-800 text-slate-200'
+            }`}
+          >
+            <Clock className={`w-4 h-4 ${timeLeftSec <= 300 ? 'text-rose-400' : 'text-blue-400'}`} />
+            <span>{formatTimer(timeLeftSec)}</span>
+          </div>
 
-        {/* End Test Button */}
-        <button
-          onClick={() => setShowSubmitModal(true)}
-          className="px-4 py-2 rounded-xl bg-red-600 hover:bg-red-500 text-white font-semibold text-xs shadow-md transition-colors"
-        >
-          Finish Test
-        </button>
+          <button
+            onClick={() => setShowSubmitModal(true)}
+            className="px-4 py-2 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-semibold text-xs shadow-md shadow-rose-600/30 transition-all"
+          >
+            Finish Test
+          </button>
+        </div>
       </div>
 
       {/* 2. Main Exam Body (Question View Left + Palette Right) */}
       <div className="flex-1 grid grid-cols-1 lg:grid-cols-12 overflow-hidden">
         {/* Left (8 cols): Question Formulation & Answer Input */}
-        <div className="lg:col-span-8 p-6 overflow-y-auto space-y-6 flex flex-col justify-between border-r border-card-border">
+        <div className="lg:col-span-8 p-6 overflow-y-auto space-y-6 flex flex-col justify-between border-r border-slate-800">
           <div className="space-y-6">
             {/* Question Header */}
-            <div className="flex items-center justify-between pb-3 border-b border-card-border">
-              <div className="flex items-center gap-2">
-                <span className="w-7 h-7 rounded-lg bg-blue-600/30 text-electric font-bold text-xs flex items-center justify-center border border-blue-500/40">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-800">
+              <div className="flex items-center gap-2.5">
+                <span className="w-7 h-7 rounded-lg bg-blue-600/30 text-cyan-300 font-bold text-xs flex items-center justify-center border border-blue-500/40">
                   {currentIdx + 1}
                 </span>
                 <span className="text-xs font-semibold text-slate-300">
@@ -222,11 +218,11 @@ export default function TakeContestPage() {
               </div>
 
               <div className="flex items-center gap-3 text-xs">
-                <span className="font-mono text-slate-400 bg-surface px-2.5 py-1 rounded border border-card-border">
+                <span className="font-mono text-slate-300 bg-slate-900 px-2.5 py-1 rounded-lg border border-slate-800">
                   {currentQ.questionType.replace('_', ' ')}
                 </span>
                 <span className="text-emerald-400 font-semibold">+{currentQ.marks}</span>
-                <span className="text-red-400 font-semibold">-{currentQ.negativeMarks}</span>
+                <span className="text-rose-400 font-semibold">-{currentQ.negativeMarks}</span>
               </div>
             </div>
 
@@ -237,7 +233,7 @@ export default function TakeContestPage() {
 
             {/* Diagram */}
             {currentQ.imageUrl && (
-              <div className="p-4 rounded-xl bg-surface border border-card-border">
+              <div className="p-4 rounded-xl bg-slate-900 border border-slate-800">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src={currentQ.imageUrl}
@@ -259,20 +255,20 @@ export default function TakeContestPage() {
                         onClick={() => handleSelectOption(currentQ.id, opt.optionKey, false)}
                         className={`p-3.5 rounded-xl border text-sm flex items-center gap-3 cursor-pointer transition-all ${
                           isSelected
-                            ? 'bg-blue-600/20 border-blue-500 text-white shadow-sm'
-                            : 'bg-surface/50 border-card-border text-slate-300 hover:bg-surface'
+                            ? 'bg-blue-600/20 border-blue-500 text-white shadow-sm shadow-blue-500/10'
+                            : 'bg-slate-900/60 border-slate-800 text-slate-300 hover:bg-slate-900 hover:border-slate-700'
                         }`}
                       >
                         <div
                           className={`w-6 h-6 rounded-full border flex items-center justify-center text-xs font-bold ${
                             isSelected
                               ? 'border-blue-400 bg-blue-600 text-white'
-                              : 'border-slate-500 text-slate-400'
+                              : 'border-slate-600 text-slate-400'
                           }`}
                         >
                           {opt.optionKey}
                         </div>
-                        <div className="flex-1">
+                        <div className="flex-1 font-medium">
                           <MathRenderer content={opt.contentLatex} inline />
                         </div>
                       </div>
@@ -292,20 +288,20 @@ export default function TakeContestPage() {
                         onClick={() => handleSelectOption(currentQ.id, opt.optionKey, true)}
                         className={`p-3.5 rounded-xl border text-sm flex items-center gap-3 cursor-pointer transition-all ${
                           isSelected
-                            ? 'bg-blue-600/20 border-blue-500 text-white shadow-sm'
-                            : 'bg-surface/50 border-card-border text-slate-300 hover:bg-surface'
+                            ? 'bg-blue-600/20 border-blue-500 text-white shadow-sm shadow-blue-500/10'
+                            : 'bg-slate-900/60 border-slate-800 text-slate-300 hover:bg-slate-900 hover:border-slate-700'
                         }`}
                       >
                         <div
                           className={`w-5 h-5 rounded-md border flex items-center justify-center text-xs font-bold ${
                             isSelected
                               ? 'border-blue-400 bg-blue-600 text-white'
-                              : 'border-slate-500 text-slate-400'
+                              : 'border-slate-600 text-slate-400'
                           }`}
                         >
                           {isSelected ? '✓' : opt.optionKey}
                         </div>
-                        <div className="flex-1">
+                        <div className="flex-1 font-medium">
                           <MathRenderer content={opt.contentLatex} inline />
                         </div>
                       </div>
@@ -325,7 +321,7 @@ export default function TakeContestPage() {
                     value={answers[currentQ.id] || ''}
                     onChange={(e) => handleNumericalChange(currentQ.id, e.target.value)}
                     placeholder="Enter decimal answer"
-                    className="w-full px-4 py-3 rounded-xl bg-surface border border-card-border focus:border-electric text-white text-lg font-mono outline-none"
+                    className="w-full px-4 py-3 rounded-xl bg-slate-900 border border-slate-800 focus:border-blue-500 text-white text-lg font-mono outline-none"
                   />
                 </div>
               )}
@@ -333,15 +329,15 @@ export default function TakeContestPage() {
           </div>
 
           {/* Bottom Action Controls */}
-          <div className="pt-6 border-t border-card-border flex flex-wrap items-center justify-between gap-3">
+          <div className="pt-6 border-t border-slate-800 flex flex-wrap items-center justify-between gap-3">
             <div className="flex items-center gap-2">
               <button
                 type="button"
                 onClick={() => handleToggleReview(currentQ.id)}
-                className={`px-3.5 py-2 rounded-xl text-xs font-medium border flex items-center gap-1.5 transition-colors ${
+                className={`px-3.5 py-2 rounded-xl text-xs font-semibold border flex items-center gap-1.5 transition-all ${
                   markedForReview.includes(currentQ.id)
                     ? 'bg-amber-500/20 border-amber-500 text-amber-300'
-                    : 'bg-surface border-card-border text-slate-400 hover:text-white'
+                    : 'bg-slate-900 border-slate-800 text-slate-400 hover:text-white hover:bg-slate-800'
                 }`}
               >
                 <Flag className="w-3.5 h-3.5" />
@@ -351,7 +347,7 @@ export default function TakeContestPage() {
               <button
                 type="button"
                 onClick={() => handleClearResponse(currentQ.id)}
-                className="px-3.5 py-2 rounded-xl text-xs font-medium bg-surface border border-card-border text-slate-400 hover:text-white flex items-center gap-1.5"
+                className="px-3.5 py-2 rounded-xl text-xs font-semibold bg-slate-900 border border-slate-800 text-slate-400 hover:text-white hover:bg-slate-800 flex items-center gap-1.5 transition-colors"
               >
                 <RotateCcw className="w-3.5 h-3.5" />
                 <span>Clear Response</span>
@@ -362,7 +358,7 @@ export default function TakeContestPage() {
               <button
                 disabled={currentIdx === 0}
                 onClick={() => setCurrentIdx(currentIdx - 1)}
-                className="px-4 py-2 rounded-xl bg-surface border border-card-border disabled:opacity-30 text-white text-xs font-medium flex items-center gap-1"
+                className="px-4 py-2 rounded-xl bg-slate-900 border border-slate-800 disabled:opacity-30 text-white text-xs font-semibold flex items-center gap-1"
               >
                 <ChevronLeft className="w-4 h-4" />
                 <span>Previous</span>
@@ -376,7 +372,7 @@ export default function TakeContestPage() {
                     setCurrentIdx(currentIdx + 1);
                   }
                 }}
-                className="px-5 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold flex items-center gap-1 shadow-md shadow-blue-600/20"
+                className="px-5 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold flex items-center gap-1 shadow-md shadow-blue-600/30 transition-all"
               >
                 <span>{isLastQuestion ? 'Review & Submit' : 'Save & Next'}</span>
                 <ChevronRight className="w-4 h-4" />
@@ -386,11 +382,11 @@ export default function TakeContestPage() {
         </div>
 
         {/* Right (4 cols): Question Navigation Palette */}
-        <div className="lg:col-span-4 p-6 bg-surface/40 overflow-y-auto space-y-6">
+        <div className="lg:col-span-4 p-6 bg-slate-950/70 overflow-y-auto space-y-6">
           <div className="space-y-1">
-            <h4 className="text-xs font-bold uppercase tracking-wider text-slate-300">
+            <h3 className="text-xs font-bold uppercase tracking-wider text-slate-300">
               Question Palette
-            </h4>
+            </h3>
             <div className="grid grid-cols-3 gap-2 pt-2 text-[11px]">
               <div className="flex items-center gap-1.5 text-slate-300">
                 <span className="w-3 h-3 rounded-full bg-emerald-500 inline-block" />
@@ -414,11 +410,11 @@ export default function TakeContestPage() {
               const isMarked = markedForReview.includes(q.id);
               const isCurrent = currentIdx === idx;
 
-              let btnStyle = 'bg-surface border-card-border text-slate-400';
+              let btnStyle = 'bg-slate-900 border-slate-800 text-slate-400';
               if (isAnswered && isMarked) {
                 btnStyle = 'bg-purple-600/30 border-purple-500 text-purple-300';
               } else if (isAnswered) {
-                btnStyle = 'bg-emerald-600/30 border-emerald-500 text-emerald-300';
+                btnStyle = 'bg-emerald-600/30 border-emerald-500 text-emerald-300 font-bold';
               } else if (isMarked) {
                 btnStyle = 'bg-amber-600/30 border-amber-500 text-amber-300';
               }
@@ -428,7 +424,7 @@ export default function TakeContestPage() {
                   key={q.id}
                   onClick={() => setCurrentIdx(idx)}
                   className={`h-10 rounded-xl border font-mono font-bold text-xs transition-all ${btnStyle} ${
-                    isCurrent ? 'ring-2 ring-electric scale-105' : ''
+                    isCurrent ? 'ring-2 ring-blue-500 scale-105' : ''
                   }`}
                 >
                   {idx + 1}
@@ -438,7 +434,7 @@ export default function TakeContestPage() {
           </div>
 
           {/* Test Guidance Warning */}
-          <div className="p-4 rounded-xl bg-card border border-card-border text-xs text-slate-400 space-y-2">
+          <div className="p-4 rounded-xl flow-card text-xs text-slate-400 space-y-2">
             <div className="font-semibold text-slate-200 flex items-center gap-1.5">
               <AlertTriangle className="w-4 h-4 text-amber-400" />
               <span>Standard Marking Scheme</span>
@@ -452,18 +448,18 @@ export default function TakeContestPage() {
 
       {/* 3. Final Submission Confirmation Modal */}
       {showSubmitModal && (
-        <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="max-w-md w-full p-6 rounded-2xl bg-card border border-card-border shadow-2xl space-y-5">
-            <h3 className="text-lg font-bold text-white flex items-center gap-2">
+        <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-md flex items-center justify-center p-4">
+          <div className="max-w-md w-full p-6 rounded-2xl flow-card shadow-2xl space-y-5">
+            <h2 className="text-lg font-bold text-white flex items-center gap-2">
               <AlertCircle className="w-5 h-5 text-amber-400" />
               <span>Confirm Final Submission</span>
-            </h3>
+            </h2>
 
             <p className="text-xs text-slate-400">
               Are you sure you want to conclude the test? Once submitted, your paper will be locked and graded instantaneously.
             </p>
 
-            <div className="grid grid-cols-3 gap-2 p-3 rounded-xl bg-surface border border-card-border text-center text-xs">
+            <div className="grid grid-cols-3 gap-2 p-3 rounded-xl bg-slate-900 border border-slate-800 text-center text-xs">
               <div>
                 <div className="font-bold text-emerald-400 text-lg">{answeredCount}</div>
                 <div className="text-[10px] text-slate-500">Answered</div>
@@ -482,7 +478,7 @@ export default function TakeContestPage() {
               <button
                 type="button"
                 onClick={() => setShowSubmitModal(false)}
-                className="flex-1 py-2.5 rounded-xl bg-surface border border-card-border text-slate-300 text-xs font-semibold hover:bg-surface/80"
+                className="flex-1 py-2.5 rounded-xl bg-slate-900 border border-slate-800 text-slate-300 text-xs font-semibold hover:bg-slate-800"
               >
                 Return to Paper
               </button>
@@ -491,7 +487,7 @@ export default function TakeContestPage() {
                 type="button"
                 onClick={finalizeSubmission}
                 disabled={isSubmitting}
-                className="flex-1 py-2.5 rounded-xl bg-red-600 hover:bg-red-500 text-white text-xs font-semibold shadow-lg shadow-red-600/30 flex items-center justify-center gap-1.5"
+                className="flex-1 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white text-xs font-semibold shadow-lg shadow-rose-600/30 flex items-center justify-center gap-1.5"
               >
                 {isSubmitting ? (
                   <>
