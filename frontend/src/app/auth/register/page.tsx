@@ -4,15 +4,13 @@ import React, { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { 
-  Atom, 
+  Code2, 
   Lock, 
   Mail, 
   User, 
   ArrowRight, 
   AlertCircle, 
-  GraduationCap, 
-  Calendar,
-  CheckCircle2
+  GraduationCap
 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 
@@ -53,87 +51,73 @@ export default function RegisterPage() {
   };
 
   return (
-    <div className="flex-1 flex items-center justify-center px-4 py-16 sm:px-6 lg:px-8 relative overflow-hidden">
-      {/* Background ambient flow glow */}
-      <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[32rem] h-[32rem] bg-indigo-500/10 rounded-full blur-3xl pointer-events-none" />
-
-      <div className="w-full max-w-xl space-y-7 relative z-10">
+    <div className="flex-1 flex items-center justify-center px-4 py-16 bg-[#1a1a1a]">
+      <div className="w-full max-w-md space-y-6">
         {/* Header */}
         <div className="text-center">
-          <div className="inline-flex p-3 rounded-2xl bg-gradient-to-br from-blue-600/30 via-indigo-600/20 to-transparent border border-blue-500/30 shadow-lg shadow-blue-500/10 mb-4">
-            <Atom className="w-8 h-8 text-blue-400" />
+          <div className="mx-auto w-10 h-10 rounded bg-[#ffa116] flex items-center justify-center mb-3">
+            <Code2 className="w-5 h-5 text-black stroke-[2.5]" />
           </div>
-          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-semibold bg-indigo-500/10 text-indigo-300 border border-indigo-500/20 mb-3 block w-fit mx-auto">
-            <GraduationCap className="w-3.5 h-3.5 text-indigo-400" />
-            <span>Target Calibration & Profile Setup</span>
-          </div>
-          <h2 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
+          <h2 className="text-xl font-bold text-white tracking-tight">
             Create Student Profile
           </h2>
-          <p className="mt-2 text-sm text-slate-400">
-            Calibrate your target exam, track conceptual mastery, and unlock AI-guided practice
+          <p className="mt-1 text-xs text-[#8c8c8c]">
+            Calibrate your target examination and begin problem solving
           </p>
         </div>
 
         {/* Form Card */}
-        <div className="flow-card p-6 sm:p-8 rounded-2xl shadow-xl space-y-6">
+        <div className="p-6 rounded-lg bg-[#262626] border border-[#333333] space-y-4">
           {error && (
-            <div className="p-3.5 rounded-xl bg-red-500/10 border border-red-500/30 text-red-400 text-xs sm:text-sm flex items-start gap-2.5">
+            <div className="p-3 rounded bg-[#381a1f] border border-[#ff375f] text-[#ff375f] text-xs flex items-start gap-2">
               <AlertCircle className="w-4 h-4 mt-0.5 shrink-0" />
               <span>{error}</span>
             </div>
           )}
 
-          <form onSubmit={handleSubmit} className="space-y-6">
-            {/* 1. Account Credentials */}
-            <div className="space-y-4">
-              <h3 className="text-xs font-bold uppercase tracking-wider text-blue-400 border-b border-slate-800 pb-2 flex items-center gap-2">
-                <span className="w-4 h-4 rounded-full bg-blue-500/20 text-blue-400 flex items-center justify-center text-[10px] font-mono">1</span>
-                <span>Account Credentials</span>
-              </h3>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1.5">
-                    Full Name
-                  </label>
-                  <div className="relative">
-                    <User className="w-4 h-4 text-slate-400 absolute left-3.5 top-3.5 pointer-events-none" />
-                    <input
-                      type="text"
-                      required
-                      value={fullName}
-                      onChange={(e) => setFullName(e.target.value)}
-                      placeholder="Arjun Sharma"
-                      className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-slate-900/90 border border-slate-700/70 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 text-white placeholder-slate-500 text-sm outline-none transition-all"
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1.5">
-                    Email Address
-                  </label>
-                  <div className="relative">
-                    <Mail className="w-4 h-4 text-slate-400 absolute left-3.5 top-3.5 pointer-events-none" />
-                    <input
-                      type="email"
-                      required
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      placeholder="arjun@example.com"
-                      className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-slate-900/90 border border-slate-700/70 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 text-white placeholder-slate-500 text-sm outline-none transition-all"
-                    />
-                  </div>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            {/* Account Credentials */}
+            <div className="space-y-3">
+              <div>
+                <label className="block text-xs font-medium text-[#8c8c8c] mb-1">
+                  Full Name
+                </label>
+                <div className="relative">
+                  <User className="w-4 h-4 text-[#8c8c8c] absolute left-3 top-2.5 pointer-events-none" />
+                  <input
+                    type="text"
+                    required
+                    value={fullName}
+                    onChange={(e) => setFullName(e.target.value)}
+                    placeholder="Arjun Sharma"
+                    className="w-full pl-9 pr-3 py-2 rounded bg-[#1f1f1f] border border-[#383838] focus:border-[#ffa116] text-white placeholder-[#6b7280] text-xs outline-none"
+                  />
                 </div>
               </div>
 
               <div>
-                <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1.5">
+                <label className="block text-xs font-medium text-[#8c8c8c] mb-1">
+                  Email Address
+                </label>
+                <div className="relative">
+                  <Mail className="w-4 h-4 text-[#8c8c8c] absolute left-3 top-2.5 pointer-events-none" />
+                  <input
+                    type="email"
+                    required
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="arjun@example.com"
+                    className="w-full pl-9 pr-3 py-2 rounded bg-[#1f1f1f] border border-[#383838] focus:border-[#ffa116] text-white placeholder-[#6b7280] text-xs outline-none"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-medium text-[#8c8c8c] mb-1">
                   Password (min. 6 characters)
                 </label>
                 <div className="relative">
-                  <Lock className="w-4 h-4 text-slate-400 absolute left-3.5 top-3.5 pointer-events-none" />
+                  <Lock className="w-4 h-4 text-[#8c8c8c] absolute left-3 top-2.5 pointer-events-none" />
                   <input
                     type="password"
                     required
@@ -141,71 +125,64 @@ export default function RegisterPage() {
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     placeholder="••••••••"
-                    className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-slate-900/90 border border-slate-700/70 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 text-white placeholder-slate-500 text-sm outline-none transition-all"
+                    className="w-full pl-9 pr-3 py-2 rounded bg-[#1f1f1f] border border-[#383838] focus:border-[#ffa116] text-white placeholder-[#6b7280] text-xs outline-none"
                   />
                 </div>
               </div>
             </div>
 
-            {/* 2. Target Examination & Academic Level */}
-            <div className="space-y-4 pt-2">
-              <h3 className="text-xs font-bold uppercase tracking-wider text-blue-400 border-b border-slate-800 pb-2 flex items-center gap-2">
-                <span className="w-4 h-4 rounded-full bg-blue-500/20 text-blue-400 flex items-center justify-center text-[10px] font-mono">2</span>
-                <span>Target Examination & Prep Timeline</span>
-              </h3>
-
-              {/* Target Exam Selection Cards */}
+            {/* Target Examination */}
+            <div className="pt-2 border-t border-[#333333] space-y-3">
               <div>
-                <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-2">
-                  Target Examination
+                <label className="block text-xs font-medium text-[#8c8c8c] mb-1.5">
+                  Target Exam
                 </label>
-                <div className="grid grid-cols-3 gap-2.5">
+                <div className="grid grid-cols-3 gap-2">
                   {[
-                    { id: 'JEE_MAIN', label: 'JEE Main', desc: 'NTA Standard' },
-                    { id: 'JEE_ADVANCED', label: 'JEE Advanced', desc: 'IIT Benchmark' },
-                    { id: 'BOTH_JEE', label: 'Main + Adv', desc: 'Full Dual Track' },
+                    { id: 'JEE_MAIN', label: 'JEE Main' },
+                    { id: 'JEE_ADVANCED', label: 'JEE Advanced' },
+                    { id: 'BOTH_JEE', label: 'Main + Adv' },
                   ].map((exam) => (
                     <button
                       key={exam.id}
                       type="button"
                       onClick={() => setTargetExam(exam.id as any)}
-                      className={`p-3 rounded-xl border text-left transition-all ${
+                      className={`py-2 px-2 rounded border text-xs font-medium transition-colors ${
                         targetExam === exam.id
-                          ? 'bg-blue-600/20 border-blue-500 text-white shadow-sm ring-1 ring-blue-500/40'
-                          : 'bg-slate-900/60 border-slate-800 text-slate-300 hover:border-slate-700 hover:bg-slate-800/40'
+                          ? 'bg-[#2b2416] border-[#ffa116] text-[#ffa116]'
+                          : 'bg-[#1f1f1f] border-[#383838] text-[#8c8c8c] hover:text-white'
                       }`}
                     >
-                      <div className="text-xs font-bold">{exam.label}</div>
-                      <div className="text-[10px] text-slate-400 mt-0.5">{exam.desc}</div>
+                      {exam.label}
                     </button>
                   ))}
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1.5">
-                    Academic Year / Class
+                  <label className="block text-xs font-medium text-[#8c8c8c] mb-1">
+                    Academic Class
                   </label>
                   <select
                     value={academicLevel}
                     onChange={(e) => setAcademicLevel(e.target.value)}
-                    className="w-full px-3.5 py-2.5 rounded-xl bg-slate-900/90 border border-slate-700/70 text-white text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
+                    className="w-full px-2.5 py-1.5 rounded bg-[#1f1f1f] border border-[#383838] text-white text-xs outline-none focus:border-[#ffa116]"
                   >
-                    <option value="Class 11">Class 11 (Foundation)</option>
-                    <option value="Class 12">Class 12 (Board + JEE)</option>
-                    <option value="Dropper">Dropper / Repeater</option>
+                    <option value="Class 11">Class 11</option>
+                    <option value="Class 12">Class 12</option>
+                    <option value="Dropper">Dropper</option>
                   </select>
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1.5">
-                    Target Exam Year
+                  <label className="block text-xs font-medium text-[#8c8c8c] mb-1">
+                    Target Year
                   </label>
                   <select
                     value={targetYear}
                     onChange={(e) => setTargetYear(Number(e.target.value))}
-                    className="w-full px-3.5 py-2.5 rounded-xl bg-slate-900/90 border border-slate-700/70 text-white text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
+                    className="w-full px-2.5 py-1.5 rounded bg-[#1f1f1f] border border-[#383838] text-white text-xs outline-none focus:border-[#ffa116]"
                   >
                     <option value={2025}>2025</option>
                     <option value={2026}>2026</option>
@@ -218,16 +195,16 @@ export default function RegisterPage() {
             <button
               type="submit"
               disabled={isLoading}
-              className="w-full py-3.5 px-4 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-semibold text-sm shadow-md shadow-blue-500/20 transition-all flex items-center justify-center gap-2 disabled:opacity-50"
+              className="w-full py-2.5 px-4 rounded bg-[#ffa116] hover:bg-[#ff9500] text-black font-bold text-xs shadow transition-colors flex items-center justify-center gap-2 disabled:opacity-50 mt-2"
             >
-              {isLoading ? 'Creating Your Account...' : 'Complete Registration & Open Dashboard'}
-              <ArrowRight className="w-4 h-4" />
+              {isLoading ? 'Creating Account...' : 'Complete Registration'}
+              <ArrowRight className="w-3.5 h-3.5 stroke-[2.5]" />
             </button>
           </form>
 
-          <div className="pt-4 border-t border-slate-800 text-center text-xs text-slate-400">
+          <div className="pt-3 border-t border-[#333333] text-center text-xs text-[#8c8c8c]">
             Already have an account?{' '}
-            <Link href="/auth/login" className="text-blue-400 hover:text-blue-300 font-semibold transition-colors">
+            <Link href="/auth/login" className="text-[#ffa116] font-semibold hover:underline">
               Sign in here
             </Link>
           </div>

@@ -18,9 +18,12 @@ import {
   RefreshCw,
   Send,
   MessageSquare,
-  ShieldAlert,
-  Brain,
-  Check
+  FileText,
+  History,
+  Check,
+  ChevronRight,
+  RotateCcw,
+  BookOpen
 } from 'lucide-react';
 import { apiRequest } from '@/lib/api';
 import { useAuth } from '@/context/AuthContext';
@@ -29,12 +32,15 @@ import MathRenderer from '@/components/MathRenderer';
 export default function QuestionWorkspacePage() {
   const params = useParams();
   const router = useRouter();
-  const { user, token } = useAuth();
+  const { user } = useAuth();
   const questionId = params.id as string;
 
   const [question, setQuestion] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  // LeetCode-style Active Left Pane Tab
+  const [leftTab, setLeftTab] = useState<'description' | 'editorial' | 'submissions' | 'hints'>('description');
 
   // Timer state
   const [seconds, setSeconds] = useState(0);
@@ -44,8 +50,8 @@ export default function QuestionWorkspacePage() {
   const [selectedSingleKey, setSelectedSingleKey] = useState<string>('');
   const [selectedMultiKeys, setSelectedMultiKeys] = useState<string[]>([]);
   const [numericalInput, setNumericalInput] = useState<string>('');
+  const [showScratchpad, setShowScratchpad] = useState<boolean>(false);
   const [scratchpadText, setScratchpadText] = useState<string>('');
-  const [activeCenterTab, setActiveCenterTab] = useState<'input' | 'scratchpad'>('input');
 
   // Submission & evaluation state
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -67,9 +73,6 @@ export default function QuestionWorkspacePage() {
   >([]);
   const [chatInput, setChatInput] = useState('');
   const [isChatSending, setIsChatSending] = useState(false);
-
-  // Mobile layout tab
-  const [mobileTab, setMobileTab] = useState<'problem' | 'workspace' | 'mentor'>('problem');
 
   // Timer effect
   useEffect(() => {
@@ -236,7 +239,7 @@ export default function QuestionWorkspacePage() {
         ...prev,
         {
           sender: 'mentor',
-          text: 'Unable to reach Gemini AI at the moment. Please review the verified editorial solution.',
+          text: 'The AI assistant is temporarily unavailable. Please refer to the verified editorial solution tab.',
           time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
         },
       ]);
@@ -245,18 +248,42 @@ export default function QuestionWorkspacePage() {
     }
   };
 
+  const handleResetAnswer = () => {
+    setSelectedSingleKey('');
+    setSelectedMultiKeys([]);
+    setNumericalInput('');
+    setSubmissionResult(null);
+    setMistakeAnalysis(null);
+    setIsTimerRunning(true);
+  };
+
   const formatTimer = (totalSeconds: number) => {
     const mins = Math.floor(totalSeconds / 60);
     const secs = totalSeconds % 60;
     return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   };
 
+  const getDifficultyColor = (diff: string) => {
+    switch (diff) {
+      case 'EASY':
+        return 'text-[#00b8a3] bg-[#00b8a3]/10 border-[#00b8a3]/20';
+      case 'MEDIUM':
+        return 'text-[#ffc01e] bg-[#ffc01e]/10 border-[#ffc01e]/20';
+      case 'HARD':
+        return 'text-[#ff375f] bg-[#ff375f]/10 border-[#ff375f]/20';
+      case 'ADVANCED':
+        return 'text-[#a855f7] bg-[#a855f7]/10 border-[#a855f7]/20';
+      default:
+        return 'text-[#9ca3af] bg-[#2a2a2a] border-[#383838]';
+    }
+  };
+
   if (isLoading) {
     return (
-      <div className="flex-1 flex items-center justify-center py-24">
+      <div className="flex-1 flex items-center justify-center py-24 text-[#8c8c8c]">
         <div className="flex flex-col items-center gap-3">
-          <RefreshCw className="w-8 h-8 text-blue-400 animate-spin" />
-          <span className="text-slate-400 text-sm font-medium">Loading Workspace Telemetry...</span>
+          <div className="w-6 h-6 border-2 border-[#ffa116] border-t-transparent rounded-full animate-spin" />
+          <span className="text-xs font-mono">Loading problem telemetry...</span>
         </div>
       </div>
     );
@@ -265,15 +292,15 @@ export default function QuestionWorkspacePage() {
   if (error || !question) {
     return (
       <div className="flex-1 flex items-center justify-center py-20 px-4">
-        <div className="max-w-md w-full p-6 rounded-2xl flow-card text-center space-y-4">
-          <AlertCircle className="w-10 h-10 text-rose-400 mx-auto" />
-          <h3 className="text-lg font-bold text-white">Problem Unavailable</h3>
-          <p className="text-sm text-slate-400">{error || 'Could not load question.'}</p>
+        <div className="max-w-md w-full p-6 rounded bg-[#262626] border border-[#333333] text-center space-y-4">
+          <AlertCircle className="w-8 h-8 text-[#ff375f] mx-auto" />
+          <h3 className="text-base font-bold text-white">Problem Unavailable</h3>
+          <p className="text-xs text-[#8c8c8c]">{error || 'Could not load question.'}</p>
           <Link
             href="/solve"
-            className="inline-block px-5 py-2.5 rounded-xl bg-blue-600 text-white text-xs font-semibold shadow-md"
+            className="inline-block px-4 py-2 rounded bg-[#333333] hover:bg-[#3d3d3d] text-white text-xs font-semibold"
           >
-            Return to Problem Bank
+            Back to Problemset
           </Link>
         </div>
       </div>
@@ -281,35 +308,41 @@ export default function QuestionWorkspacePage() {
   }
 
   return (
-    <div className="flex-1 flex flex-col h-[calc(100vh-4rem)] overflow-hidden bg-slate-950">
-      {/* Top Bar Navigation (Flowbite Clean Workspace Header) */}
-      <div className="h-13 border-b border-slate-800 bg-slate-950/90 px-4 py-2 flex items-center justify-between text-xs shrink-0 backdrop-blur-md">
+    <div className="flex-1 flex flex-col h-[calc(100vh-3.25rem)] overflow-hidden bg-[#1a1a1a]">
+      {/* LeetCode Workspace Top Sub-Navbar */}
+      <div className="h-11 border-b border-[#282828] bg-[#212121] px-4 flex items-center justify-between text-xs shrink-0 select-none">
+        {/* Left: Back Link & Problem Code / Difficulty */}
         <div className="flex items-center gap-3">
           <Link
             href="/solve"
-            className="text-slate-400 hover:text-white flex items-center gap-1.5 font-medium transition-colors"
+            className="text-[#8c8c8c] hover:text-[#eff1f6] flex items-center gap-1.5 font-medium transition-colors"
           >
-            <ArrowLeft className="w-4 h-4" />
-            <span className="hidden sm:inline">Problem Bank</span>
+            <ArrowLeft className="w-3.5 h-3.5" />
+            <span className="hidden sm:inline font-mono">Problem List</span>
           </Link>
-          <span className="text-slate-700">|</span>
-          <span className="font-mono text-cyan-300 font-bold bg-cyan-500/10 px-2 py-0.5 rounded border border-cyan-500/20">
+          <span className="text-[#3a3a3a]">|</span>
+          <span className="font-mono text-[#eff1f6] font-bold">
             {question.code}
           </span>
-          <span className="flow-pill flow-pill-blue hidden sm:inline-flex text-[11px] py-0 px-2">
-            {question.examType.replace('_', ' ')}
+          <span className={`px-2 py-0.5 rounded text-[11px] font-semibold border ${getDifficultyColor(question.difficulty)}`}>
+            {question.difficulty}
           </span>
+          {question.isPYQ && (
+            <span className="hidden sm:inline-block px-2 py-0.5 rounded text-[10px] font-mono bg-[#2b2416] text-[#ffa116] border border-[#4a3b1d]">
+              JEE PYQ {question.pyqYear}
+            </span>
+          )}
         </div>
 
-        {/* Stopwatch & Marks */}
-        <div className="flex items-center gap-3">
-          <div className="flex items-center gap-2 px-3 py-1 rounded-xl bg-slate-900 border border-slate-800 font-mono text-slate-200 shadow-sm">
-            <Clock className="w-3.5 h-3.5 text-blue-400" />
+        {/* Center: Stopwatch & Marking */}
+        <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2 px-2.5 py-1 rounded bg-[#1a1a1a] border border-[#333333] font-mono text-white text-xs">
+            <Clock className="w-3 h-3 text-[#ffa116]" />
             <span className="font-bold">{formatTimer(seconds)}</span>
             {!submissionResult && (
               <button
                 onClick={() => setIsTimerRunning(!isTimerRunning)}
-                className="text-slate-400 hover:text-white ml-1"
+                className="text-[#8c8c8c] hover:text-white ml-0.5"
                 title={isTimerRunning ? 'Pause timer' : 'Resume timer'}
               >
                 {isTimerRunning ? <Pause className="w-3 h-3" /> : <Play className="w-3 h-3" />}
@@ -317,522 +350,594 @@ export default function QuestionWorkspacePage() {
             )}
           </div>
 
-          <div className="hidden sm:flex items-center gap-1.5 font-semibold text-slate-300 bg-slate-900 px-3 py-1 rounded-xl border border-slate-800">
-            <Award className="w-3.5 h-3.5 text-amber-400" />
-            <span>+{question.marks} / -{question.negativeMarks}</span>
+          <div className="hidden sm:flex items-center gap-1 font-mono text-[11px] text-[#8c8c8c]">
+            <span>Marks:</span>
+            <span className="text-[#00b8a3] font-bold">+{question.marks}</span>
+            <span>/</span>
+            <span className="text-[#ff375f] font-bold">-{question.negativeMarks}</span>
           </div>
+        </div>
+
+        {/* Right: Quick Action Buttons */}
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setShowScratchpad(!showScratchpad)}
+            className={`px-2.5 py-1 rounded text-xs border font-medium flex items-center gap-1.5 transition-colors ${
+              showScratchpad
+                ? 'bg-[#2b2416] border-[#4a3b1d] text-[#ffa116]'
+                : 'bg-[#262626] border-[#383838] text-[#8c8c8c] hover:text-white'
+            }`}
+          >
+            <Edit3 className="w-3 h-3" />
+            <span className="hidden sm:inline">Scratchpad</span>
+          </button>
+
+          <button
+            onClick={handleSubmitAnswer}
+            disabled={isSubmitting}
+            className="px-4 py-1 rounded bg-[#2cbb5d] hover:bg-[#26a050] text-white font-semibold text-xs flex items-center gap-1.5 shadow-sm transition-all disabled:opacity-50"
+          >
+            {isSubmitting ? (
+              <>
+                <RefreshCw className="w-3 h-3 animate-spin" />
+                <span>Evaluating...</span>
+              </>
+            ) : (
+              <>
+                <Check className="w-3 h-3 stroke-[3]" />
+                <span>Submit</span>
+              </>
+            )}
+          </button>
         </div>
       </div>
 
-      {/* Mobile Tab Switcher */}
-      <div className="lg:hidden flex border-b border-slate-800 bg-slate-900 text-xs font-semibold">
-        <button
-          onClick={() => setMobileTab('problem')}
-          className={`flex-1 py-2.5 text-center border-b-2 transition-colors ${
-            mobileTab === 'problem'
-              ? 'border-blue-500 text-blue-400 bg-slate-800/50'
-              : 'border-transparent text-slate-400'
-          }`}
-        >
-          1. Problem
-        </button>
-        <button
-          onClick={() => setMobileTab('workspace')}
-          className={`flex-1 py-2.5 text-center border-b-2 transition-colors ${
-            mobileTab === 'workspace'
-              ? 'border-blue-500 text-blue-400 bg-slate-800/50'
-              : 'border-transparent text-slate-400'
-          }`}
-        >
-          2. Workspace
-        </button>
-        <button
-          onClick={() => setMobileTab('mentor')}
-          className={`flex-1 py-2.5 text-center border-b-2 transition-colors ${
-            mobileTab === 'mentor'
-              ? 'border-blue-500 text-blue-400 bg-slate-800/50'
-              : 'border-transparent text-slate-400'
-          }`}
-        >
-          3. AI Mentor
-        </button>
-      </div>
-
-      {/* 3-Panel Main Grid */}
+      {/* Main Split Body: Left Pane (Tabs) & Right Pane (Solving Workspace) */}
       <div className="flex-1 grid grid-cols-1 lg:grid-cols-12 overflow-hidden">
-        {/* PANEL 1: PROBLEM STATEMENT (5 cols) */}
-        <div
-          className={`lg:col-span-5 border-r border-slate-800 bg-slate-950 p-6 overflow-y-auto space-y-6 ${
-            mobileTab === 'problem' ? 'block' : 'hidden lg:block'
-          }`}
-        >
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
-              Problem Statement
-            </span>
-            <span className="flow-pill flow-pill-amber">
-              {question.difficulty}
-            </span>
+        {/* ======================================================== */}
+        {/* LEFT PANE: LeetCode Tabbed Problem Description / Editorial */}
+        {/* ======================================================== */}
+        <div className="lg:col-span-6 flex flex-col border-b lg:border-b-0 lg:border-r border-[#282828] bg-[#1e1e1e] overflow-hidden">
+          {/* Tab Strip */}
+          <div className="flex items-center border-b border-[#282828] bg-[#212121] px-2 shrink-0 overflow-x-auto">
+            <button
+              onClick={() => setLeftTab('description')}
+              className={`lc-tab ${leftTab === 'description' ? 'lc-tab-active' : ''}`}
+            >
+              <FileText className="w-3.5 h-3.5" />
+              <span>Description</span>
+            </button>
+            <button
+              onClick={() => setLeftTab('editorial')}
+              className={`lc-tab ${leftTab === 'editorial' ? 'lc-tab-active' : ''}`}
+            >
+              <BookOpen className="w-3.5 h-3.5" />
+              <span>Editorial</span>
+              {submissionResult && (
+                <span className="w-1.5 h-1.5 rounded-full bg-[#00b8a3] ml-1" />
+              )}
+            </button>
+            <button
+              onClick={() => setLeftTab('submissions')}
+              className={`lc-tab ${leftTab === 'submissions' ? 'lc-tab-active' : ''}`}
+            >
+              <History className="w-3.5 h-3.5" />
+              <span>Submissions</span>
+              {submissionResult && (
+                <span className="px-1.5 py-0.2 rounded text-[10px] font-mono bg-[#282828] text-white ml-1">
+                  1
+                </span>
+              )}
+            </button>
+            <button
+              onClick={() => setLeftTab('hints')}
+              className={`lc-tab ${leftTab === 'hints' ? 'lc-tab-active' : ''}`}
+            >
+              <Sparkles className="w-3.5 h-3.5 text-[#ffa116]" />
+              <span>Mentor Hints</span>
+            </button>
           </div>
 
-          <div className="text-slate-200 text-sm leading-relaxed space-y-4">
-            <MathRenderer content={question.contentLatex} />
-          </div>
+          {/* Tab Content Area (Scrollable) */}
+          <div className="flex-1 overflow-y-auto p-5 text-sm text-[#eff1f6] space-y-5">
+            {/* TAB 1: DESCRIPTION */}
+            {leftTab === 'description' && (
+              <div className="space-y-5">
+                {/* Title & Exam Meta */}
+                <div className="border-b border-[#282828] pb-3">
+                  <h1 className="text-lg font-bold text-white tracking-tight">
+                    {question.code}: {question.topic ? question.topic.name : 'JEE Physics Problem'}
+                  </h1>
+                  <div className="flex items-center gap-2 text-xs text-[#8c8c8c] mt-1.5">
+                    <span>{question.examType.replace('_', ' ')}</span>
+                    <span>•</span>
+                    <span className="font-mono">{question.questionType.replace('_', ' ')}</span>
+                    <span>•</span>
+                    <span>Time Target: {Math.round(question.timeRecommendationSec / 60)}m</span>
+                  </div>
+                </div>
 
-          {question.imageUrl && (
-            <div className="p-4 rounded-xl bg-slate-900 border border-slate-800">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={question.imageUrl}
-                alt="Question Diagram"
-                className="max-h-60 mx-auto object-contain rounded-lg"
-              />
-            </div>
-          )}
+                {/* Question Statement with KaTeX */}
+                <div className="leading-relaxed text-[#d1d5db]">
+                  <MathRenderer content={question.contentLatex} />
+                </div>
 
-          <div className="pt-4 border-t border-slate-800 text-xs text-slate-400 space-y-1.5">
-            <div>
-              <span className="text-slate-300 font-medium">Exam Standard:</span> {question.examType.replace('_', ' ')}
-            </div>
-            <div>
-              <span className="text-slate-300 font-medium">Recommended Time:</span>{' '}
-              {Math.round(question.timeRecommendationSec / 60)} minutes
-            </div>
-            {question.isPYQ && (
-              <div className="text-amber-400 font-semibold flex items-center gap-1 pt-1">
-                ★ JEE Previous Year Question ({question.pyqYear})
+                {/* Constraints & Exam Scheme Box */}
+                <div className="p-3.5 rounded bg-[#262626] border border-[#333333] space-y-2 text-xs">
+                  <div className="font-bold text-[#eff1f6] uppercase tracking-wider text-[11px]">
+                    Marking Scheme & Rules
+                  </div>
+                  <ul className="list-disc list-inside text-[#9ca3af] space-y-1">
+                    {question.questionType === 'SINGLE_CORRECT' && (
+                      <>
+                        <li><span className="text-[#00b8a3] font-medium">+4 Marks</span> for the correct option selected.</li>
+                        <li><span className="text-[#ff375f] font-medium">-1 Mark</span> for an incorrect option.</li>
+                        <li>0 Marks if unattempted.</li>
+                      </>
+                    )}
+                    {question.questionType === 'MULTIPLE_CORRECT' && (
+                      <>
+                        <li><span className="text-[#00b8a3] font-medium">+4 Marks</span> if all correct options are selected and no incorrect option is chosen.</li>
+                        <li><span className="text-[#00b8a3] font-medium">+2 Marks</span> (Partial) if two or more correct options are selected without any incorrect choice.</li>
+                        <li><span className="text-[#ff375f] font-medium">-2 Marks</span> if any incorrect option is selected.</li>
+                      </>
+                    )}
+                    {question.questionType === 'NUMERICAL' && (
+                      <>
+                        <li><span className="text-[#00b8a3] font-medium">+4 Marks</span> for exact numerical value within ±0.05 tolerance.</li>
+                        <li>0 Negative Marks.</li>
+                      </>
+                    )}
+                  </ul>
+                </div>
+
+                {/* Prerequisite Tags */}
+                {question.conceptTags && question.conceptTags.length > 0 && (
+                  <div className="pt-2">
+                    <div className="text-xs text-[#8c8c8c] font-medium mb-2">Prerequisite Concepts:</div>
+                    <div className="flex flex-wrap gap-1.5">
+                      {question.conceptTags.map((tag: string) => (
+                        <span
+                          key={tag}
+                          className="px-2 py-0.5 rounded bg-[#262626] border border-[#333333] text-[11px] font-mono text-[#8c8c8c]"
+                        >
+                          {tag}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
             )}
-          </div>
-        </div>
 
-        {/* PANEL 2: ANSWER INPUT & SCRATCHPAD (4 cols) */}
-        <div
-          className={`lg:col-span-4 border-r border-slate-800 bg-slate-900/90 p-6 overflow-y-auto flex flex-col justify-between ${
-            mobileTab === 'workspace' ? 'block' : 'hidden lg:flex'
-          }`}
-        >
-          <div className="space-y-5">
-            {/* Center Tabs: Input vs Scratchpad (Flowbite Tab Pill) */}
-            <div className="flex items-center gap-1.5 p-1 rounded-xl bg-slate-950 border border-slate-800 text-xs font-semibold">
-              <button
-                type="button"
-                onClick={() => setActiveCenterTab('input')}
-                className={`flex-1 py-1.5 rounded-lg transition-all ${
-                  activeCenterTab === 'input'
-                    ? 'bg-blue-600 text-white shadow-sm'
-                    : 'text-slate-400 hover:text-white'
-                }`}
-              >
-                Answer Selection
-              </button>
-              <button
-                type="button"
-                onClick={() => setActiveCenterTab('scratchpad')}
-                className={`flex-1 py-1.5 rounded-lg flex items-center justify-center gap-1.5 transition-all ${
-                  activeCenterTab === 'scratchpad'
-                    ? 'bg-blue-600 text-white shadow-sm'
-                    : 'text-slate-400 hover:text-white'
-                }`}
-              >
-                <Edit3 className="w-3.5 h-3.5" />
-                <span>Working Notes</span>
-              </button>
-            </div>
-
-            {activeCenterTab === 'input' ? (
+            {/* TAB 2: EDITORIAL & VERIFIED SOLUTION */}
+            {leftTab === 'editorial' && (
               <div className="space-y-4">
-                {/* 1. SINGLE CORRECT MCQ */}
-                {question.questionType === 'SINGLE_CORRECT' && (
-                  <div className="space-y-3">
-                    <div className="text-xs text-slate-400 font-medium">
-                      Select exactly one correct option:
-                    </div>
-                    {question.options?.map((opt: any) => (
-                      <div
-                        key={opt.optionKey}
-                        onClick={() => setSelectedSingleKey(opt.optionKey)}
-                        className={`p-3.5 rounded-xl border text-sm flex items-center gap-3 cursor-pointer transition-all ${
-                          selectedSingleKey === opt.optionKey
-                            ? 'bg-blue-600/20 border-blue-500 text-white shadow-md shadow-blue-500/10'
-                            : 'bg-slate-950/60 border-slate-800 text-slate-300 hover:bg-slate-950 hover:border-slate-700'
-                        }`}
-                      >
-                        <div
-                          className={`w-6 h-6 rounded-full border flex items-center justify-center text-xs font-bold ${
-                            selectedSingleKey === opt.optionKey
-                              ? 'border-blue-400 bg-blue-600 text-white'
-                              : 'border-slate-600 text-slate-400'
-                          }`}
-                        >
-                          {opt.optionKey}
-                        </div>
-                        <div className="flex-1 font-medium">
-                          <MathRenderer content={opt.contentLatex} inline />
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
+                <div className="border-b border-[#282828] pb-3">
+                  <h2 className="text-base font-bold text-white">Verified Editorial Solution</h2>
+                  <p className="text-xs text-[#8c8c8c] mt-0.5">
+                    Step-by-step mathematical derivation and physical principle analysis.
+                  </p>
+                </div>
 
-                {/* 2. MULTIPLE CORRECT MCQ */}
-                {question.questionType === 'MULTIPLE_CORRECT' && (
-                  <div className="space-y-3">
-                    <div className="text-xs text-slate-400 font-medium">
-                      Select one or more correct options (Partial marking rules apply):
-                    </div>
-                    {question.options?.map((opt: any) => {
-                      const isChecked = selectedMultiKeys.includes(opt.optionKey);
-                      return (
-                        <div
-                          key={opt.optionKey}
-                          onClick={() => handleToggleMultiOption(opt.optionKey)}
-                          className={`p-3.5 rounded-xl border text-sm flex items-center gap-3 cursor-pointer transition-all ${
-                            isChecked
-                              ? 'bg-blue-600/20 border-blue-500 text-white shadow-md shadow-blue-500/10'
-                              : 'bg-slate-950/60 border-slate-800 text-slate-300 hover:bg-slate-950 hover:border-slate-700'
-                          }`}
-                        >
-                          <div
-                            className={`w-5 h-5 rounded-md border flex items-center justify-center text-xs font-bold ${
-                              isChecked
-                                ? 'border-blue-400 bg-blue-600 text-white'
-                                : 'border-slate-600 text-slate-400'
-                            }`}
-                          >
-                            {isChecked ? <Check className="w-3.5 h-3.5" /> : opt.optionKey}
-                          </div>
-                          <div className="flex-1 font-medium">
-                            <MathRenderer content={opt.contentLatex} inline />
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
-
-                {/* 3. NUMERICAL VALUE INPUT */}
-                {question.questionType === 'NUMERICAL' && (
-                  <div className="space-y-4">
-                    <div className="text-xs text-slate-400 font-medium">
-                      Enter the calculated decimal value (Tolerance: ±0.05):
-                    </div>
-                    <div className="relative">
-                      <input
-                        type="number"
-                        step="any"
-                        value={numericalInput}
-                        onChange={(e) => setNumericalInput(e.target.value)}
-                        placeholder="e.g. 2.00 or -4.50"
-                        className="w-full px-4 py-3 rounded-xl bg-slate-950 border border-slate-800 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 text-white text-lg font-mono outline-none"
+                {submissionResult?.solutionLatex || question.solutionLatex ? (
+                  <div className="p-4 rounded bg-[#262626] border border-[#333333] space-y-3">
+                    <div className="text-xs font-mono font-bold text-[#00b8a3]">DERIVATION & PROOF:</div>
+                    <div className="text-sm text-[#d1d5db] leading-relaxed">
+                      <MathRenderer
+                        content={submissionResult?.solutionLatex || question.solutionLatex}
                       />
-                      {question.unit && (
-                        <span className="absolute right-4 top-3.5 text-sm font-mono text-slate-400">
-                          {question.unit}
-                        </span>
-                      )}
                     </div>
-                    <p className="text-[11px] text-slate-500">
-                      Standard SI units applied. Deterministic tolerance check configured on server.
+                  </div>
+                ) : (
+                  <div className="p-6 text-center text-[#8c8c8c] bg-[#262626] rounded border border-[#333333]">
+                    <HelpCircle className="w-6 h-6 mx-auto mb-2 text-[#ffa116]" />
+                    <p className="text-xs">
+                      Submit an answer or consult the progressive hints tab to view the complete verified editorial derivation.
                     </p>
                   </div>
                 )}
               </div>
-            ) : (
-              /* Scratchpad Tab */
-              <div className="space-y-2">
-                <div className="text-xs text-slate-400 font-medium">
-                  Scratchpad & Formula Workspace:
-                </div>
-                <textarea
-                  rows={10}
-                  value={scratchpadText}
-                  onChange={(e) => setScratchpadText(e.target.value)}
-                  placeholder="Type working notes, free body equations, or torque balances here..."
-                  className="w-full p-3.5 rounded-xl bg-slate-950 border border-slate-800 text-white text-xs font-mono outline-none focus:border-blue-500 resize-none"
-                />
-              </div>
             )}
-          </div>
 
-          {/* Submit Action */}
-          <div className="pt-6 border-t border-slate-800 mt-6">
-            <button
-              onClick={handleSubmitAnswer}
-              disabled={isSubmitting || !!submissionResult}
-              className="w-full py-3.5 rounded-xl bg-blue-600 hover:bg-blue-500 disabled:bg-slate-800 disabled:text-slate-500 text-white font-semibold text-sm shadow-lg shadow-blue-600/25 transition-all flex items-center justify-center gap-2"
-            >
-              {isSubmitting ? (
-                <>
-                  <RefreshCw className="w-4 h-4 animate-spin" />
-                  <span>Evaluating Answer...</span>
-                </>
-              ) : submissionResult ? (
-                'Answer Evaluated'
-              ) : (
-                'Submit Final Answer'
-              )}
-            </button>
-          </div>
-        </div>
-
-        {/* PANEL 3: AI MENTOR, PROGRESSIVE HINTS & CHAT (3 cols) */}
-        <div
-          className={`lg:col-span-3 bg-slate-950/70 p-5 overflow-y-auto space-y-5 flex flex-col justify-between ${
-            mobileTab === 'mentor' ? 'block' : 'hidden lg:flex'
-          }`}
-        >
-          <div className="space-y-5">
-            {/* Header: AI Mentor & Persona Switcher */}
-            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
-              <div className="flex items-center gap-1.5 text-xs font-bold text-amber-400 uppercase tracking-wider">
-                <Sparkles className="w-4 h-4" />
-                <span>AI Mentor</span>
-              </div>
-
-              {/* Mode Toggle (Flowbite Switch) */}
-              <div className="flex items-center gap-1 bg-slate-900 p-1 rounded-lg border border-slate-800">
-                <button
-                  type="button"
-                  onClick={() => setMentorMode('COLLABORATIVE')}
-                  className={`px-2.5 py-0.5 rounded-md text-[10px] font-semibold transition-all ${
-                    mentorMode === 'COLLABORATIVE'
-                      ? 'bg-blue-600 text-white shadow-sm'
-                      : 'text-slate-400 hover:text-white'
-                  }`}
-                  title="Collaborative Mode: step-by-step guidance and analogies"
-                >
-                  Collab
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setMentorMode('STRICT')}
-                  className={`px-2.5 py-0.5 rounded-md text-[10px] font-semibold transition-all ${
-                    mentorMode === 'STRICT'
-                      ? 'bg-rose-600 text-white shadow-sm'
-                      : 'text-slate-400 hover:text-white'
-                  }`}
-                  title="Strict Mode: disciplined, socratic, refuses to reveal shortcuts"
-                >
-                  Strict
-                </button>
-              </div>
-            </div>
-
-            {/* Post-Submission Result & AI Mistake Diagnosis */}
-            {submissionResult ? (
+            {/* TAB 3: SUBMISSIONS */}
+            {leftTab === 'submissions' && (
               <div className="space-y-4">
-                {/* Result Banner */}
-                <div
-                  className={`p-4 rounded-xl border text-sm space-y-1.5 ${
-                    submissionResult.isCorrect
-                      ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-300'
-                      : 'bg-rose-500/10 border-rose-500/30 text-rose-300'
-                  }`}
-                >
-                  <div className="flex items-center gap-2 font-bold text-base">
-                    {submissionResult.isCorrect ? (
-                      <>
-                        <CheckCircle2 className="w-5 h-5 text-emerald-400" />
-                        <span>Solved Correctly!</span>
-                      </>
-                    ) : (
-                      <>
-                        <XCircle className="w-5 h-5 text-rose-400" />
-                        <span>Incorrect Answer</span>
-                      </>
-                    )}
-                  </div>
-                  <div className="text-xs">
-                    Marks Awarded:{' '}
-                    <span className="font-bold">
-                      {submissionResult.marksEarned > 0 ? `+${submissionResult.marksEarned}` : submissionResult.marksEarned}
-                    </span>{' '}
-                    • Time Taken: {submissionResult.timeSpentSeconds}s
-                  </div>
+                <div className="border-b border-[#282828] pb-3">
+                  <h2 className="text-base font-bold text-white">Your Submissions</h2>
+                  <p className="text-xs text-[#8c8c8c] mt-0.5">Execution history and scoring logs for this problem.</p>
                 </div>
 
-                {/* AI Mistake Diagnosis Card */}
-                {!submissionResult.isCorrect && (
-                  <div className="p-4 rounded-xl flow-card border-amber-500/30 space-y-2.5">
-                    <div className="flex items-center justify-between">
-                      <span className="text-[11px] font-bold text-amber-400 uppercase tracking-wider flex items-center gap-1">
-                        <Brain className="w-3.5 h-3.5" />
-                        <span>AI Mistake Diagnosis</span>
-                      </span>
-                      {mistakeAnalysis && (
-                        <span className="flow-pill flow-pill-amber text-[10px] py-0 px-2 font-mono">
-                          {mistakeAnalysis.mistakeType}
-                        </span>
-                      )}
-                    </div>
-
-                    {isLoadingMistake ? (
-                      <div className="py-4 text-center text-xs text-slate-400 flex items-center justify-center gap-2">
-                        <RefreshCw className="w-4 h-4 text-amber-400 animate-spin" />
-                        <span>Diagnosing reasoning path...</span>
-                      </div>
-                    ) : mistakeAnalysis ? (
-                      <div className="space-y-2 text-xs">
-                        <p className="text-slate-300 font-medium">
-                          {mistakeAnalysis.divergencePoint}
-                        </p>
-                        <div className="text-slate-400 leading-relaxed text-[11px]">
-                          <MathRenderer content={mistakeAnalysis.analysisTextLatex} />
-                        </div>
-                        {mistakeAnalysis.prerequisiteWarning && (
-                          <div className="p-2 rounded-lg bg-rose-500/10 border border-rose-500/20 text-rose-400 text-[11px] flex items-center gap-1.5 font-medium">
-                            <ShieldAlert className="w-3.5 h-3.5 shrink-0" />
-                            <span>Prerequisite Warning: {mistakeAnalysis.prerequisiteWarning}</span>
+                {submissionResult ? (
+                  <div className="rounded border border-[#333333] overflow-hidden bg-[#262626]">
+                    <div className="p-4 flex items-center justify-between border-b border-[#333333]">
+                      <div className="flex items-center gap-2">
+                        {submissionResult.isCorrect ? (
+                          <div className="flex items-center gap-1.5 text-[#00b8a3] font-bold text-sm">
+                            <CheckCircle2 className="w-4 h-4" />
+                            <span>Accepted</span>
+                          </div>
+                        ) : (
+                          <div className="flex items-center gap-1.5 text-[#ff375f] font-bold text-sm">
+                            <XCircle className="w-4 h-4" />
+                            <span>Wrong Answer</span>
                           </div>
                         )}
-                        <div className="text-[11px] text-cyan-400 font-semibold pt-1">
-                          &rarr; {mistakeAnalysis.suggestedReview}
+                      </div>
+                      <span className="font-mono text-xs text-[#8c8c8c]">
+                        {new Date().toLocaleTimeString()}
+                      </span>
+                    </div>
+
+                    <div className="p-4 grid grid-cols-3 gap-2 text-center text-xs">
+                      <div className="p-2 rounded bg-[#1f1f1f]">
+                        <div className="text-[#8c8c8c] text-[10px] uppercase">Runtime</div>
+                        <div className="font-mono font-bold text-white mt-0.5">{seconds}s</div>
+                      </div>
+                      <div className="p-2 rounded bg-[#1f1f1f]">
+                        <div className="text-[#8c8c8c] text-[10px] uppercase">Marks</div>
+                        <div className={`font-mono font-bold mt-0.5 ${submissionResult.marksAwarded >= 0 ? 'text-[#00b8a3]' : 'text-[#ff375f]'}`}>
+                          {submissionResult.marksAwarded > 0 ? `+${submissionResult.marksAwarded}` : submissionResult.marksAwarded}
                         </div>
                       </div>
-                    ) : null}
-                  </div>
-                )}
-
-                {/* Verified Editorial Solution */}
-                <div className="p-4 rounded-xl flow-card space-y-3">
-                  <div className="text-xs font-bold uppercase tracking-wider text-cyan-400 flex items-center gap-1.5">
-                    <Sparkles className="w-4 h-4" />
-                    <span>Verified Solution</span>
-                  </div>
-                  <div className="text-xs text-slate-300 leading-relaxed space-y-3">
-                    <MathRenderer
-                      content={submissionResult.verifiedSolution?.solutionTextLatex || ''}
-                    />
-                  </div>
-                </div>
-
-                <Link
-                  href="/solve"
-                  className="w-full py-2.5 rounded-xl bg-slate-900 border border-slate-800 hover:border-slate-700 text-slate-200 text-xs font-semibold text-center block transition-colors"
-                >
-                  Return to Problem Bank &rarr;
-                </Link>
-              </div>
-            ) : (
-              /* Pre-Submission Progressive Hints Drawer */
-              <div className="space-y-4">
-                <div className="text-xs text-slate-400 leading-relaxed">
-                  {mentorMode === 'STRICT'
-                    ? 'Strict Mentor active: Hints provide mathematical constraints without shortcuts.'
-                    : 'Collaborative Mentor active: Progressive hints to guide your reasoning.'}
-                </div>
-
-                {/* Hint Level Selector Buttons */}
-                <div className="grid grid-cols-2 gap-2">
-                  {[1, 2, 3, 4].map((level) => (
-                    <button
-                      key={level}
-                      onClick={() => requestHint(level)}
-                      className={`p-2.5 rounded-xl border text-left text-xs font-medium transition-all ${
-                        unlockedHintLevel >= level
-                          ? 'bg-blue-600/20 border-blue-500 text-white shadow-sm'
-                          : 'bg-slate-900 border-slate-800 text-slate-400 hover:border-slate-700 hover:text-slate-200'
-                      }`}
-                    >
-                      <div className="font-semibold">Hint Level {level}</div>
-                      <div className="text-[10px] text-slate-500">
-                        {level === 1
-                          ? 'Direction'
-                          : level === 2
-                          ? 'Formula'
-                          : level === 3
-                          ? 'Strategy'
-                          : 'Guided Step'}
+                      <div className="p-2 rounded bg-[#1f1f1f]">
+                        <div className="text-[#8c8c8c] text-[10px] uppercase">Hints Used</div>
+                        <div className="font-mono font-bold text-white mt-0.5">{unlockedHintLevel} / 4</div>
                       </div>
-                    </button>
-                  ))}
-                </div>
-
-                {/* Unlocked Hint Content */}
-                {isLoadingHint ? (
-                  <div className="py-6 text-center text-xs text-slate-400 flex items-center justify-center gap-2">
-                    <RefreshCw className="w-4 h-4 text-blue-400 animate-spin" />
-                    <span>Consulting Gemini Knowledge Graph...</span>
-                  </div>
-                ) : unlockedHintLevel > 0 ? (
-                  <div className="p-4 rounded-xl flow-card space-y-2 text-xs">
-                    <div className="font-bold text-cyan-400 flex items-center gap-1.5">
-                      <HelpCircle className="w-4 h-4" />
-                      <span>Level {unlockedHintLevel} Hint:</span>
-                    </div>
-                    {hintsCache[unlockedHintLevel]?.note && (
-                      <p className="text-[11px] text-slate-400 italic">
-                        {hintsCache[unlockedHintLevel].note}
-                      </p>
-                    )}
-                    <div className="text-slate-200 leading-relaxed">
-                      <MathRenderer content={hintsCache[unlockedHintLevel]?.text || ''} />
                     </div>
                   </div>
                 ) : (
-                  <div className="p-4 rounded-xl bg-slate-900/50 border border-slate-800 text-center text-xs text-slate-500">
-                    Select a progressive hint tier above if you need conceptual direction.
+                  <div className="py-12 text-center text-[#8c8c8c]">
+                    <History className="w-6 h-6 mx-auto mb-2 text-[#4a4a4a]" />
+                    <p className="text-xs">No submissions recorded yet for this session.</p>
                   </div>
                 )}
+              </div>
+            )}
+
+            {/* TAB 4: MENTOR HINTS */}
+            {leftTab === 'hints' && (
+              <div className="space-y-4">
+                <div className="border-b border-[#282828] pb-3 flex items-center justify-between">
+                  <div>
+                    <h2 className="text-base font-bold text-white">Progressive Hints</h2>
+                    <p className="text-xs text-[#8c8c8c]">Calibrated hints designed to guide without giving away answers.</p>
+                  </div>
+                  {/* Mode Selector */}
+                  <select
+                    value={mentorMode}
+                    onChange={(e: any) => setMentorMode(e.target.value)}
+                    className="px-2 py-1 rounded bg-[#262626] border border-[#333333] text-[11px] text-[#eff1f6] outline-none"
+                  >
+                    <option value="COLLABORATIVE">Collaborative Mode</option>
+                    <option value="STRICT">Strict Exam Mode</option>
+                  </select>
+                </div>
+
+                {/* 4 Hint Levels */}
+                <div className="space-y-2.5">
+                  {[
+                    { level: 1, title: 'Level 1: Physical Intuition', subtitle: 'Conceptual setup & free body diagram' },
+                    { level: 2, title: 'Level 2: Governing Physical Law', subtitle: 'Conservation principles & Newton-Euler laws' },
+                    { level: 3, title: 'Level 3: Equation Formulation', subtitle: 'Simultaneous system equations in variables' },
+                    { level: 4, title: 'Level 4: Complete Method Step', subtitle: 'Step-by-step mathematical path' },
+                  ].map((h) => {
+                    const isUnlocked = unlockedHintLevel >= h.level;
+                    return (
+                      <div key={h.level} className="rounded border border-[#333333] bg-[#262626] p-3 text-xs">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <div className="font-bold text-white">{h.title}</div>
+                            <div className="text-[11px] text-[#8c8c8c]">{h.subtitle}</div>
+                          </div>
+                          <button
+                            onClick={() => requestHint(h.level)}
+                            disabled={isLoadingHint}
+                            className={`px-2.5 py-1 rounded font-semibold text-[11px] transition-colors ${
+                              isUnlocked
+                                ? 'bg-[#333333] text-white'
+                                : 'bg-[#ffa116] hover:bg-[#ff9500] text-black'
+                            }`}
+                          >
+                            {isUnlocked ? 'View' : 'Unlock Hint'}
+                          </button>
+                        </div>
+
+                        {/* Unlocked Hint Text */}
+                        {isUnlocked && hintsCache[h.level] && (
+                          <div className="mt-3 pt-2.5 border-t border-[#333333] text-[#d1d5db] space-y-1">
+                            <MathRenderer content={hintsCache[h.level].text} />
+                            {hintsCache[h.level].note && (
+                              <p className="text-[11px] text-[#ffa116] font-mono mt-1">
+                                Note: {hintsCache[h.level].note}
+                              </p>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {/* Chat with Mentor Drawer */}
+                <div className="pt-3 border-t border-[#282828] space-y-2">
+                  <div className="text-xs font-bold text-white flex items-center gap-1.5">
+                    <MessageSquare className="w-3.5 h-3.5 text-[#00b8a3]" />
+                    <span>Ask a Concept Doubt</span>
+                  </div>
+
+                  {chatMessages.length > 0 && (
+                    <div className="p-3 rounded bg-[#1a1a1a] border border-[#333333] max-h-40 overflow-y-auto space-y-2 text-xs">
+                      {chatMessages.map((msg, i) => (
+                        <div
+                          key={i}
+                          className={`p-2 rounded ${
+                            msg.sender === 'student'
+                              ? 'bg-[#282828] text-white ml-6 text-right'
+                              : 'bg-[#222222] text-[#d1d5db] mr-6 border border-[#333333]'
+                          }`}
+                        >
+                          <div className="font-semibold text-[10px] text-[#8c8c8c] mb-0.5">
+                            {msg.sender === 'student' ? 'You' : 'AI Physics Mentor'} • {msg.time}
+                          </div>
+                          <MathRenderer content={msg.text} />
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  <form onSubmit={handleSendChatMessage} className="flex gap-2">
+                    <input
+                      type="text"
+                      value={chatInput}
+                      onChange={(e) => setChatInput(e.target.value)}
+                      placeholder="e.g. Why does friction point upward here?"
+                      className="flex-1 px-3 py-1.5 rounded bg-[#262626] border border-[#383838] text-xs text-white placeholder-[#6b7280] outline-none focus:border-[#ffa116]"
+                    />
+                    <button
+                      type="submit"
+                      disabled={isChatSending || !chatInput.trim()}
+                      className="px-3 py-1.5 rounded bg-[#333333] hover:bg-[#3d3d3d] text-white text-xs font-semibold disabled:opacity-50"
+                    >
+                      <Send className="w-3.5 h-3.5" />
+                    </button>
+                  </form>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* ======================================================== */}
+        {/* RIGHT PANE: LeetCode-style Answer Editor & Test Console */}
+        {/* ======================================================== */}
+        <div className="lg:col-span-6 flex flex-col bg-[#1a1a1a] overflow-hidden">
+          {/* Header of Right Pane */}
+          <div className="h-10 border-b border-[#282828] bg-[#212121] px-4 flex items-center justify-between text-xs text-[#8c8c8c] shrink-0">
+            <span className="font-semibold text-white">Your Solution</span>
+            <span className="font-mono text-[11px]">
+              {question.questionType.replace('_', ' ')}
+            </span>
+          </div>
+
+          {/* Interactive Workspace Area */}
+          <div className="flex-1 overflow-y-auto p-5 space-y-4">
+            {/* If Scratchpad is active */}
+            {showScratchpad && (
+              <div className="p-3 rounded bg-[#202020] border border-[#333333] space-y-2">
+                <div className="flex items-center justify-between text-xs text-[#8c8c8c]">
+                  <span className="font-mono text-[#ffa116]">Rough Work / Scratchpad</span>
+                  <button
+                    onClick={() => setScratchpadText('')}
+                    className="hover:text-white"
+                  >
+                    Clear
+                  </button>
+                </div>
+                <textarea
+                  value={scratchpadText}
+                  onChange={(e) => setScratchpadText(e.target.value)}
+                  placeholder="Type formulas or intermediate steps here (e.g. tau = I*alpha, F - f = m*a)..."
+                  rows={4}
+                  className="w-full bg-[#181818] border border-[#333333] rounded p-2.5 text-xs text-white font-mono outline-none resize-none"
+                />
+              </div>
+            )}
+
+            {/* SINGLE CORRECT MCQ SELECTOR */}
+            {question.questionType === 'SINGLE_CORRECT' && (
+              <div className="space-y-2.5">
+                <div className="text-xs text-[#8c8c8c] mb-2 font-medium">Select exactly one option:</div>
+                {question.options &&
+                  question.options.map((opt: any) => {
+                    const isSelected = selectedSingleKey === opt.optionKey;
+                    return (
+                      <div
+                        key={opt.id || opt.optionKey}
+                        onClick={() => setSelectedSingleKey(opt.optionKey)}
+                        className={`p-3.5 rounded border text-xs flex items-center justify-between cursor-pointer transition-colors ${
+                          isSelected
+                            ? 'bg-[#2b2416] border-[#ffa116] text-white'
+                            : 'bg-[#262626] border-[#333333] text-[#d1d5db] hover:border-[#4a4a4a] hover:bg-[#2a2a2a]'
+                        }`}
+                      >
+                        <div className="flex items-center gap-3 flex-1">
+                          <span
+                            className={`w-6 h-6 rounded flex items-center justify-center font-mono font-bold shrink-0 ${
+                              isSelected
+                                ? 'bg-[#ffa116] text-black'
+                                : 'bg-[#1f1f1f] text-[#8c8c8c] border border-[#383838]'
+                            }`}
+                          >
+                            {opt.optionKey}
+                          </span>
+                          <div className="flex-1 font-medium">
+                            <MathRenderer content={opt.contentLatex} inline />
+                          </div>
+                        </div>
+                        {isSelected && <Check className="w-4 h-4 text-[#ffa116] shrink-0 ml-2" />}
+                      </div>
+                    );
+                  })}
+              </div>
+            )}
+
+            {/* MULTIPLE CORRECT MCQ SELECTOR */}
+            {question.questionType === 'MULTIPLE_CORRECT' && (
+              <div className="space-y-2.5">
+                <div className="text-xs text-[#8c8c8c] mb-2 font-medium">
+                  Select one or more correct options (Partial marking enabled):
+                </div>
+                {question.options &&
+                  question.options.map((opt: any) => {
+                    const isSelected = selectedMultiKeys.includes(opt.optionKey);
+                    return (
+                      <div
+                        key={opt.id || opt.optionKey}
+                        onClick={() => handleToggleMultiOption(opt.optionKey)}
+                        className={`p-3.5 rounded border text-xs flex items-center justify-between cursor-pointer transition-colors ${
+                          isSelected
+                            ? 'bg-[#2b2416] border-[#ffa116] text-white'
+                            : 'bg-[#262626] border-[#333333] text-[#d1d5db] hover:border-[#4a4a4a] hover:bg-[#2a2a2a]'
+                        }`}
+                      >
+                        <div className="flex items-center gap-3 flex-1">
+                          <span
+                            className={`w-6 h-6 rounded flex items-center justify-center font-mono font-bold shrink-0 ${
+                              isSelected
+                                ? 'bg-[#ffa116] text-black'
+                                : 'bg-[#1f1f1f] text-[#8c8c8c] border border-[#383838]'
+                            }`}
+                          >
+                            {opt.optionKey}
+                          </span>
+                          <div className="flex-1 font-medium">
+                            <MathRenderer content={opt.contentLatex} inline />
+                          </div>
+                        </div>
+                        {isSelected && <Check className="w-4 h-4 text-[#ffa116] shrink-0 ml-2" />}
+                      </div>
+                    );
+                  })}
+              </div>
+            )}
+
+            {/* NUMERICAL VALUE INPUT */}
+            {question.questionType === 'NUMERICAL' && (
+              <div className="space-y-3">
+                <label className="block text-xs text-[#8c8c8c] font-medium">
+                  Enter final numerical answer (Rounded to 2 decimal places):
+                </label>
+                <div className="relative max-w-sm">
+                  <input
+                    type="number"
+                    step="any"
+                    value={numericalInput}
+                    onChange={(e) => setNumericalInput(e.target.value)}
+                    placeholder="e.g. 1.25"
+                    className="w-full px-4 py-2.5 rounded bg-[#262626] border border-[#333333] focus:border-[#ffa116] font-mono text-base text-white outline-none"
+                  />
+                  <span className="absolute right-3 top-3 text-xs font-mono text-[#8c8c8c]">
+                    SI Units
+                  </span>
+                </div>
               </div>
             )}
           </div>
 
-          {/* Interactive Chat Drawer Section at Bottom of Panel 3 */}
-          <div className="pt-4 border-t border-slate-800 space-y-3">
-            <div className="flex items-center gap-1.5 text-xs font-semibold text-slate-300">
-              <MessageSquare className="w-3.5 h-3.5 text-cyan-400" />
-              <span>Ask AI Mentor a Doubt</span>
-            </div>
-
-            {/* Conversation Feed */}
-            {chatMessages.length > 0 && (
-              <div className="max-h-48 overflow-y-auto space-y-2 p-2 rounded-xl bg-slate-900 border border-slate-800 text-xs">
-                {chatMessages.map((msg, idx) => (
-                  <div
-                    key={idx}
-                    className={`p-2.5 rounded-lg text-xs leading-relaxed ${
-                      msg.sender === 'student'
-                        ? 'bg-blue-600/20 text-white ml-4 border border-blue-500/30'
-                        : 'bg-slate-950 text-slate-300 mr-4 border border-slate-800'
-                    }`}
-                  >
-                    <div className="text-[10px] font-bold text-slate-400 mb-1 flex items-center justify-between">
-                      <span>{msg.sender === 'student' ? 'You' : `AI Mentor (${mentorMode})`}</span>
-                      <span>{msg.time}</span>
-                    </div>
-                    <MathRenderer content={msg.text} />
+          {/* ======================================================== */}
+          {/* LEETCODE TEST RESULTS & SUBMISSION OUTPUT CONSOLE        */}
+          {/* ======================================================== */}
+          <div className="border-t border-[#282828] bg-[#1e1e1e] p-4 shrink-0 space-y-3">
+            {/* If Result exists */}
+            {submissionResult ? (
+              <div
+                className={`p-4 rounded border text-xs space-y-2.5 ${
+                  submissionResult.isCorrect
+                    ? 'bg-[#172b1d] border-[#2cbb5d] text-[#eff1f6]'
+                    : 'bg-[#2b171c] border-[#ff375f] text-[#eff1f6]'
+                }`}
+              >
+                {/* Header status */}
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    {submissionResult.isCorrect ? (
+                      <CheckCircle2 className="w-5 h-5 text-[#2cbb5d]" />
+                    ) : (
+                      <XCircle className="w-5 h-5 text-[#ff375f]" />
+                    )}
+                    <span
+                      className={`text-base font-bold ${
+                        submissionResult.isCorrect ? 'text-[#2cbb5d]' : 'text-[#ff375f]'
+                      }`}
+                    >
+                      {submissionResult.isCorrect ? 'Accepted' : 'Wrong Answer'}
+                    </span>
                   </div>
-                ))}
-                {isChatSending && (
-                  <div className="p-2 text-xs text-slate-400 italic flex items-center gap-2">
-                    <RefreshCw className="w-3.5 h-3.5 animate-spin text-cyan-400" />
-                    <span>Gemini Mentor is formulating a physics explanation...</span>
+
+                  <span className="font-mono text-xs">
+                    Marks: <span className="font-bold">{submissionResult.marksAwarded > 0 ? `+${submissionResult.marksAwarded}` : submissionResult.marksAwarded}</span>
+                  </span>
+                </div>
+
+                {/* Explanation text */}
+                <div className="text-xs text-[#d1d5db] leading-relaxed pt-1 border-t border-[#383838]">
+                  <MathRenderer content={submissionResult.explanation} />
+                </div>
+
+                {/* Mistake analysis card if incorrect */}
+                {mistakeAnalysis && (
+                  <div className="p-3 rounded bg-[#1f1f1f] border border-[#404040] space-y-1.5 text-xs mt-2">
+                    <div className="font-bold text-[#ffa116] flex items-center gap-1.5">
+                      <AlertCircle className="w-3.5 h-3.5" />
+                      <span>Cognitive Diagnostic: {mistakeAnalysis.mistakeCategory}</span>
+                    </div>
+                    <p className="text-[#9ca3af]">{mistakeAnalysis.feedback}</p>
+                    {mistakeAnalysis.remedialAction && (
+                      <p className="text-[#00b8a3] font-mono text-[11px]">
+                        Remedy: {mistakeAnalysis.remedialAction}
+                      </p>
+                    )}
                   </div>
                 )}
               </div>
+            ) : (
+              <div className="flex items-center justify-between text-xs text-[#8c8c8c]">
+                <span>Status: Ready to evaluate</span>
+                <span className="font-mono">Time elapsed: {formatTimer(seconds)}</span>
+              </div>
             )}
 
-            {/* Chat Input Form */}
-            <form onSubmit={handleSendChatMessage} className="flex items-center gap-2">
-              <input
-                type="text"
-                value={chatInput}
-                onChange={(e) => setChatInput(e.target.value)}
-                placeholder="Ask about torque, formulas, constraints..."
-                disabled={isChatSending}
-                className="flex-1 px-3 py-2 rounded-xl bg-slate-900 border border-slate-800 focus:border-blue-500 text-white text-xs outline-none transition-colors"
-              />
+            {/* Bottom Buttons Row */}
+            <div className="flex items-center justify-between pt-1">
               <button
-                type="submit"
-                disabled={isChatSending || !chatInput.trim()}
-                className="p-2 rounded-xl bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white transition-colors shadow-sm"
-                title="Send doubt to AI mentor"
+                type="button"
+                onClick={handleResetAnswer}
+                className="px-3 py-1.5 rounded bg-[#262626] hover:bg-[#303030] text-[#8c8c8c] hover:text-white border border-[#333333] text-xs font-medium transition-colors flex items-center gap-1.5"
               >
-                <Send className="w-3.5 h-3.5" />
+                <RotateCcw className="w-3 h-3" />
+                <span>Reset Answer</span>
               </button>
-            </form>
+
+              <button
+                type="button"
+                onClick={handleSubmitAnswer}
+                disabled={isSubmitting}
+                className="px-6 py-2 rounded bg-[#2cbb5d] hover:bg-[#26a050] text-white font-bold text-xs flex items-center gap-1.5 shadow transition-all disabled:opacity-50"
+              >
+                {isSubmitting ? (
+                  <>
+                    <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                    <span>Grading Submission...</span>
+                  </>
+                ) : (
+                  <>
+                    <Check className="w-3.5 h-3.5 stroke-[3]" />
+                    <span>Submit Answer</span>
+                  </>
+                )}
+              </button>
+            </div>
           </div>
         </div>
       </div>

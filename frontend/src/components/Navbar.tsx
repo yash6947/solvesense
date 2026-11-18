@@ -3,20 +3,18 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { 
-  Atom, 
-  Flame, 
-  BarChart3, 
-  BookOpen, 
-  Trophy, 
-  Building2, 
-  Menu, 
+import {
+  Code2,
+  Flame,
+  BarChart2,
+  Terminal,
+  Trophy,
+  Building2,
+  Menu,
   X,
-  Sparkles,
   LogOut,
-  TrendingUp,
-  Award,
-  ChevronRight
+  User,
+  GraduationCap
 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 
@@ -26,123 +24,120 @@ export const Navbar: React.FC = () => {
   const { user, profile, logout } = useAuth();
 
   const navLinks = [
-    { href: '/solve', label: 'Problems', icon: BookOpen },
-    { href: '/dashboard', label: 'Dashboard', icon: BarChart3 },
-    { href: '/analytics', label: 'Analytics', icon: TrendingUp },
-    { href: '/contests', label: 'Contests', icon: Trophy },
-    { href: '/institutes', label: 'Institutes', icon: Building2 },
-    { href: '/scholarships', label: 'Scholarships', icon: Award },
+    { href: '/solve', label: 'Problems' },
+    { href: '/contests', label: 'Contest' },
+    { href: '/analytics', label: 'Analytics' },
+    { href: '/dashboard', label: 'Dashboard' },
+    { href: '/institutes', label: 'Institutes' },
+    { href: '/scholarships', label: 'Scholarships' },
   ];
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b border-slate-800/80 bg-slate-950/80 backdrop-blur-xl transition-all">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-16">
-          {/* Brand Logo */}
-          <Link href="/" className="flex items-center gap-3 group">
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-blue-600 via-indigo-600 to-cyan-400 p-[1px] shadow-lg shadow-blue-500/20 group-hover:scale-105 transition-all">
-              <div className="w-full h-full bg-slate-950 rounded-[11px] flex items-center justify-center">
-                <Atom className="w-5 h-5 text-blue-400 group-hover:rotate-180 transition-transform duration-700" />
+    <header className="sticky top-0 z-50 w-full border-b border-[#282828] bg-[#1a1a1a] select-none">
+      <div className="max-w-[1440px] mx-auto px-4 sm:px-6">
+        <div className="flex items-center justify-between h-13 py-2.5">
+          {/* Brand Logo & Main Nav */}
+          <div className="flex items-center gap-6">
+            <Link href="/" className="flex items-center gap-2 group">
+              <div className="w-7 h-7 rounded bg-[#ffa116] flex items-center justify-center font-bold text-black text-sm shadow-sm group-hover:opacity-90 transition-opacity">
+                <Code2 className="w-4 h-4 text-[#1a1a1a] stroke-[2.5]" />
               </div>
-            </div>
-            <div className="flex flex-col">
-              <div className="flex items-center gap-2">
-                <span className="font-bold text-lg tracking-tight text-white flex items-center gap-1">
-                  Zenith<span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-cyan-300">Physics</span>
+              <div className="flex items-center gap-1.5">
+                <span className="font-bold text-base text-white tracking-tight">
+                  Zenith<span className="text-[#ffa116]">Code</span>
                 </span>
-                <span className="flow-pill flow-pill-blue text-[10px] py-0.5 px-2 font-mono">
-                  PRO
+                <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-[#282828] text-[#8c8c8c] border border-[#383838]">
+                  Physics
                 </span>
               </div>
-            </div>
-          </Link>
+            </Link>
 
-          {/* Desktop Navigation (Flowbite-style pill bar) */}
-          <nav className="hidden md:flex items-center gap-1 bg-slate-900/60 p-1 rounded-xl border border-slate-800/60">
-            {navLinks.map((link) => {
-              const Icon = link.icon;
-              const isActive = pathname.startsWith(link.href);
-              return (
-                <Link
-                  key={link.href}
-                  href={link.href}
-                  className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-semibold tracking-wide transition-all ${
-                    isActive
-                      ? 'bg-blue-600/20 text-blue-300 border border-blue-500/30 shadow-sm shadow-blue-500/10'
-                      : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/50'
-                  }`}
-                >
-                  <Icon className={`w-3.5 h-3.5 ${isActive ? 'text-blue-400' : 'text-slate-400'}`} />
-                  {link.label}
-                </Link>
-              );
-            })}
-          </nav>
+            {/* LeetCode Style Desktop Nav Tabs */}
+            <nav className="hidden md:flex items-center gap-1">
+              {navLinks.map((link) => {
+                const isActive = link.href === '/' ? pathname === '/' : pathname.startsWith(link.href);
+                return (
+                  <Link
+                    key={link.href}
+                    href={link.href}
+                    className={`px-3 py-1.5 rounded text-sm transition-colors ${
+                      isActive
+                        ? 'text-white font-medium bg-[#282828]'
+                        : 'text-[#8c8c8c] hover:text-[#eff1f6] hover:bg-[#222222]'
+                    }`}
+                  >
+                    {link.label}
+                  </Link>
+                );
+              })}
+            </nav>
+          </div>
 
           {/* Right Action Group */}
           <div className="hidden md:flex items-center gap-3">
-            {/* Active Streak Badge */}
-            <div className="flow-pill flow-pill-amber">
-              <Flame className="w-3.5 h-3.5 fill-amber-400 text-amber-400 animate-pulse" />
-              <span>{profile?.currentStreak || 0}d Streak</span>
+            {/* Target Exam Badge */}
+            <div className="hidden lg:flex items-center gap-1.5 px-2.5 py-1 rounded bg-[#242424] border border-[#333333] text-xs text-[#9ca3af]">
+              <GraduationCap className="w-3.5 h-3.5 text-[#00b8a3]" />
+              <span className="font-mono text-[11px] text-[#eff1f6]">{profile?.targetExam || 'JEE ADVANCED'} &apos;26</span>
             </div>
 
-            {/* AI Status Badge */}
-            <div className="flow-pill flow-pill-emerald hidden lg:inline-flex">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping"></span>
-              <Sparkles className="w-3.5 h-3.5 text-emerald-400" />
-              <span>Gemini Mentor</span>
+            {/* LeetCode Orange Streak Flame */}
+            <div className="flex items-center gap-1.5 px-2.5 py-1 rounded bg-[#2b2416] border border-[#4a3b1d] text-xs font-semibold text-[#ffa116]">
+              <Flame className="w-3.5 h-3.5 fill-[#ffa116]" />
+              <span>{profile?.currentStreak || 7}</span>
             </div>
 
             {user ? (
-              <div className="flex items-center gap-2.5 ml-2 pl-3 border-l border-slate-800">
+              <div className="flex items-center gap-3 pl-3 border-l border-[#333333]">
                 <Link
                   href="/dashboard"
-                  className="flex items-center gap-2 text-xs font-medium text-slate-300 hover:text-white group px-2 py-1 rounded-lg hover:bg-slate-900 transition-colors"
+                  className="flex items-center gap-2 text-xs text-[#eff1f6] hover:text-white group px-2 py-1 rounded hover:bg-[#282828] transition-colors"
                 >
-                  <div className="w-7 h-7 rounded-lg bg-gradient-to-tr from-blue-600 to-indigo-600 flex items-center justify-center font-bold text-white shadow-sm shadow-blue-500/20">
-                    {user.fullName.charAt(0)}
+                  <div className="w-6 h-6 rounded-full bg-[#383838] border border-[#4a4a4a] flex items-center justify-center font-bold text-[10px] text-white">
+                    {user.fullName ? user.fullName[0].toUpperCase() : 'A'}
                   </div>
-                  <span className="max-w-[100px] truncate group-hover:text-blue-300 transition-colors">
-                    {user.fullName}
+                  <span className="max-w-[100px] truncate font-medium">
+                    {user.fullName || 'Arjun'}
                   </span>
                 </Link>
+
                 <button
-                  onClick={logout}
+                  onClick={() => logout()}
                   title="Sign out"
-                  className="p-1.5 text-slate-400 hover:text-rose-400 rounded-lg hover:bg-slate-800/60 transition-colors"
+                  className="p-1.5 rounded text-[#8c8c8c] hover:text-[#ff375f] hover:bg-[#282828] transition-colors"
                 >
                   <LogOut className="w-4 h-4" />
                 </button>
               </div>
             ) : (
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 pl-2">
                 <Link
                   href="/auth/login"
-                  className="px-3.5 py-1.5 rounded-lg text-xs font-semibold text-slate-300 hover:text-white hover:bg-slate-800 transition-colors"
+                  className="px-3 py-1.5 text-xs font-medium text-[#eff1f6] hover:text-white transition-colors"
                 >
                   Sign In
                 </Link>
-
                 <Link
                   href="/auth/register"
-                  className="px-4 py-1.5 rounded-lg text-xs font-semibold bg-blue-600 hover:bg-blue-500 text-white shadow-sm shadow-blue-600/30 transition-all flex items-center gap-1.5"
+                  className="px-3 py-1.5 text-xs font-semibold rounded bg-[#ffa116] hover:bg-[#ff9500] text-black transition-colors"
                 >
-                  <span>Start Learning</span>
-                  <ChevronRight className="w-3.5 h-3.5" />
+                  Register
                 </Link>
               </div>
             )}
           </div>
 
-          {/* Mobile Menu Button */}
+          {/* Mobile Menu Toggle */}
           <div className="md:hidden flex items-center gap-2">
+            <div className="flex items-center gap-1 px-2 py-0.5 rounded bg-[#2b2416] text-xs font-semibold text-[#ffa116]">
+              <Flame className="w-3 h-3 fill-[#ffa116]" />
+              <span>{profile?.currentStreak || 7}</span>
+            </div>
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="p-2 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800"
-              aria-label="Toggle menu"
+              className="p-1.5 rounded text-[#8c8c8c] hover:text-white hover:bg-[#282828]"
             >
-              {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+              {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
             </button>
           </div>
         </div>
@@ -150,56 +145,55 @@ export const Navbar: React.FC = () => {
 
       {/* Mobile Drawer */}
       {mobileMenuOpen && (
-        <div className="md:hidden border-b border-slate-800 bg-slate-950/95 backdrop-blur-xl px-4 pt-3 pb-5 space-y-2">
+        <div className="md:hidden border-t border-[#282828] bg-[#1a1a1a] px-4 py-3 space-y-1">
           {navLinks.map((link) => {
-            const Icon = link.icon;
-            const isActive = pathname.startsWith(link.href);
+            const isActive = link.href === '/' ? pathname === '/' : pathname.startsWith(link.href);
             return (
               <Link
                 key={link.href}
                 href={link.href}
                 onClick={() => setMobileMenuOpen(false)}
-                className={`flex items-center gap-3 px-3.5 py-2.5 rounded-xl font-medium text-sm transition-colors ${
+                className={`block px-3 py-2 rounded text-sm ${
                   isActive
-                    ? 'bg-blue-600/20 text-blue-300 border border-blue-500/30'
-                    : 'text-slate-300 hover:bg-slate-900 hover:text-white'
+                    ? 'text-white font-medium bg-[#282828]'
+                    : 'text-[#8c8c8c] hover:text-white'
                 }`}
               >
-                <Icon className={`w-4 h-4 ${isActive ? 'text-blue-400' : 'text-slate-400'}`} />
                 {link.label}
               </Link>
             );
           })}
-          <div className="pt-3 border-t border-slate-800 flex flex-col gap-2">
-            {user ? (
-              <div className="flex items-center justify-between py-2 px-2">
-                <span className="text-sm font-medium text-slate-200">{user.fullName}</span>
-                <button
-                  onClick={logout}
-                  className="text-xs text-rose-400 flex items-center gap-1 font-medium hover:underline"
-                >
-                  <LogOut className="w-3.5 h-3.5" /> Sign Out
-                </button>
-              </div>
-            ) : (
-              <div className="grid grid-cols-2 gap-2 pt-1">
-                <Link
-                  href="/auth/login"
-                  onClick={() => setMobileMenuOpen(false)}
-                  className="w-full text-center py-2 rounded-xl text-slate-200 bg-slate-900 hover:bg-slate-800 text-xs font-semibold border border-slate-800"
-                >
-                  Sign In
-                </Link>
-                <Link
-                  href="/auth/register"
-                  onClick={() => setMobileMenuOpen(false)}
-                  className="w-full text-center py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold shadow-md shadow-blue-600/20"
-                >
-                  Start Learning
-                </Link>
-              </div>
-            )}
-          </div>
+          {user ? (
+            <div className="pt-3 border-t border-[#282828] flex items-center justify-between">
+              <span className="text-xs text-[#8c8c8c]">{user.email}</span>
+              <button
+                onClick={() => {
+                  logout();
+                  setMobileMenuOpen(false);
+                }}
+                className="text-xs text-[#ff375f] font-medium"
+              >
+                Sign Out
+              </button>
+            </div>
+          ) : (
+            <div className="pt-3 border-t border-[#282828] flex gap-2">
+              <Link
+                href="/auth/login"
+                onClick={() => setMobileMenuOpen(false)}
+                className="w-1/2 py-2 text-center text-xs font-medium text-white bg-[#282828] rounded"
+              >
+                Sign In
+              </Link>
+              <Link
+                href="/auth/register"
+                onClick={() => setMobileMenuOpen(false)}
+                className="w-1/2 py-2 text-center text-xs font-semibold text-black bg-[#ffa116] rounded"
+              >
+                Register
+              </Link>
+            </div>
+          )}
         </div>
       )}
     </header>

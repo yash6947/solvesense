@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Atom, Lock, Mail, ArrowRight, AlertCircle, Sparkles, CheckCircle2 } from 'lucide-react';
+import { Code2, Lock, Mail, ArrowRight, AlertCircle, Sparkles } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 
 export default function LoginPage() {
@@ -37,50 +37,43 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="flex-1 flex items-center justify-center px-4 py-16 sm:px-6 lg:px-8 relative overflow-hidden">
-      {/* Background ambient flow light */}
-      <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-96 h-96 bg-blue-500/10 rounded-full blur-3xl pointer-events-none" />
-
-      <div className="w-full max-w-md space-y-7 relative z-10">
+    <div className="flex-1 flex items-center justify-center px-4 py-16 bg-[#1a1a1a]">
+      <div className="w-full max-w-sm space-y-6">
         {/* Header */}
         <div className="text-center">
-          <div className="inline-flex p-3 rounded-2xl bg-gradient-to-br from-blue-600/30 via-indigo-600/20 to-transparent border border-blue-500/30 shadow-lg shadow-blue-500/10 mb-4">
-            <Atom className="w-8 h-8 text-blue-400" />
+          <div className="mx-auto w-10 h-10 rounded bg-[#ffa116] flex items-center justify-center mb-3">
+            <Code2 className="w-5 h-5 text-black stroke-[2.5]" />
           </div>
-          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-semibold bg-blue-500/10 text-blue-400 border border-blue-500/20 mb-3 block w-fit mx-auto">
-            <Sparkles className="w-3 h-3 text-cyan-400" />
-            <span>AI Physics Mentorship</span>
-          </div>
-          <h2 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
-            Welcome back, Aspirant
+          <h2 className="text-xl font-bold text-white tracking-tight">
+            Sign In to ZenithCode
           </h2>
-          <p className="mt-2 text-sm text-slate-400">
-            Sign in to resume your JEE problem-solving session & diagnostic drills
+          <p className="mt-1 text-xs text-[#8c8c8c]">
+            Resume your competitive physics practice session
           </p>
         </div>
 
         {/* Demo Account Quick-Fill Card */}
-        <div className="p-4 rounded-xl bg-slate-900/80 border border-blue-500/30 shadow-sm flex items-center justify-between gap-3">
-          <div className="text-xs space-y-1">
-            <div className="font-semibold text-slate-200 flex items-center gap-1.5">
-              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-              <span>One-Click Demo Account</span>
+        <div className="p-3 rounded bg-[#262626] border border-[#333333] flex items-center justify-between gap-3 text-xs">
+          <div className="space-y-0.5">
+            <div className="font-semibold text-white flex items-center gap-1.5">
+              <span className="w-2 h-2 rounded-full bg-[#00b8a3]" />
+              <span>Demo Student Account</span>
             </div>
-            <div className="text-slate-400 font-mono text-[11px]">arjun@jee.zenith.edu • JEE Adv &apos;26</div>
+            <div className="text-[#8c8c8c] font-mono text-[11px]">arjun@jee.zenith.edu</div>
           </div>
           <button
             type="button"
             onClick={fillDemoStudent}
-            className="px-3 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold shadow-sm transition-all shrink-0"
+            className="px-2.5 py-1 rounded bg-[#333333] hover:bg-[#3d3d3d] text-white text-[11px] font-semibold border border-[#404040] transition-colors"
           >
             Auto-Fill
           </button>
         </div>
 
         {/* Form Card */}
-        <div className="flow-card p-6 sm:p-8 rounded-2xl shadow-xl space-y-6">
+        <div className="p-6 rounded-lg bg-[#262626] border border-[#333333] space-y-4">
           {error && (
-            <div className="p-3.5 rounded-xl bg-red-500/10 border border-red-500/30 text-red-400 text-xs sm:text-sm flex items-start gap-2.5">
+            <div className="p-3 rounded bg-[#381a1f] border border-[#ff375f] text-[#ff375f] text-xs flex items-start gap-2">
               <AlertCircle className="w-4 h-4 mt-0.5 shrink-0" />
               <span>{error}</span>
             </div>
@@ -88,43 +81,43 @@ export default function LoginPage() {
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1.5">
+              <label className="block text-xs font-medium text-[#8c8c8c] mb-1.5">
                 Email Address
               </label>
               <div className="relative">
-                <Mail className="w-4 h-4 text-slate-400 absolute left-3.5 top-3.5 pointer-events-none" />
+                <Mail className="w-4 h-4 text-[#8c8c8c] absolute left-3 top-2.5 pointer-events-none" />
                 <input
                   type="email"
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="student@example.com"
-                  className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-slate-900/90 border border-slate-700/70 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 text-white placeholder-slate-500 text-sm outline-none transition-all"
+                  className="w-full pl-9 pr-3 py-2 rounded bg-[#1f1f1f] border border-[#383838] focus:border-[#ffa116] text-white placeholder-[#6b7280] text-xs outline-none"
                 />
               </div>
             </div>
 
             <div>
               <div className="flex items-center justify-between mb-1.5">
-                <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300">
+                <label className="block text-xs font-medium text-[#8c8c8c]">
                   Password
                 </label>
                 <Link
                   href="/auth/forgot-password"
-                  className="text-xs text-blue-400 hover:text-blue-300 transition-colors"
+                  className="text-xs text-[#ffa116] hover:underline"
                 >
-                  Forgot password?
+                  Forgot?
                 </Link>
               </div>
               <div className="relative">
-                <Lock className="w-4 h-4 text-slate-400 absolute left-3.5 top-3.5 pointer-events-none" />
+                <Lock className="w-4 h-4 text-[#8c8c8c] absolute left-3 top-2.5 pointer-events-none" />
                 <input
                   type="password"
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••"
-                  className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-slate-900/90 border border-slate-700/70 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 text-white placeholder-slate-500 text-sm outline-none transition-all"
+                  className="w-full pl-9 pr-3 py-2 rounded bg-[#1f1f1f] border border-[#383838] focus:border-[#ffa116] text-white placeholder-[#6b7280] text-xs outline-none"
                 />
               </div>
             </div>
@@ -132,17 +125,17 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={isLoading}
-              className="w-full py-3 px-4 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-semibold text-sm shadow-md shadow-blue-500/20 transition-all flex items-center justify-center gap-2 disabled:opacity-50 mt-2"
+              className="w-full py-2.5 px-4 rounded bg-[#ffa116] hover:bg-[#ff9500] text-black font-bold text-xs shadow transition-colors flex items-center justify-center gap-2 disabled:opacity-50 mt-2"
             >
-              {isLoading ? 'Verifying Credentials...' : 'Sign In to Workspace'}
-              <ArrowRight className="w-4 h-4" />
+              {isLoading ? 'Verifying...' : 'Sign In'}
+              <ArrowRight className="w-3.5 h-3.5 stroke-[2.5]" />
             </button>
           </form>
 
-          <div className="pt-4 border-t border-slate-800 text-center text-xs text-slate-400">
+          <div className="pt-3 border-t border-[#333333] text-center text-xs text-[#8c8c8c]">
             Don&apos;t have an account yet?{' '}
-            <Link href="/auth/register" className="text-blue-400 hover:text-blue-300 font-semibold transition-colors">
-              Create student account
+            <Link href="/auth/register" className="text-[#ffa116] font-semibold hover:underline">
+              Register here
             </Link>
           </div>
         </div>

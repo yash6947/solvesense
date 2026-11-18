@@ -10,10 +10,10 @@ import {
   AlertTriangle, 
   ShieldCheck, 
   Search, 
-  RefreshCw,
-  TrendingUp,
-  Zap,
-  Activity
+  RefreshCw, 
+  TrendingUp, 
+  Zap, 
+  Activity 
 } from 'lucide-react';
 import { apiRequest } from '@/lib/api';
 
@@ -41,10 +41,10 @@ export default function InstitutesPortalPage() {
 
   if (isLoading || !dashboardData) {
     return (
-      <div className="flex-1 flex items-center justify-center py-24">
+      <div className="flex-1 flex items-center justify-center py-24 text-[#8c8c8c]">
         <div className="flex flex-col items-center gap-3">
-          <RefreshCw className="w-8 h-8 text-blue-400 animate-spin" />
-          <span className="text-slate-400 text-sm font-medium">Loading Institute Multi-Tenant Portal...</span>
+          <div className="w-6 h-6 border-2 border-[#ffa116] border-t-transparent rounded-full animate-spin" />
+          <span className="text-xs font-mono">Loading institute portal...</span>
         </div>
       </div>
     );
@@ -62,114 +62,92 @@ export default function InstitutesPortalPage() {
   });
 
   return (
-    <div className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
-      {/* 1. Header Banner (Flowbite Clean Header) */}
-      <div className="p-6 sm:p-8 rounded-2xl flow-card-elevated shadow-xl flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
-        <div className="space-y-2">
-          <div className="flex items-center gap-2">
-            <span className="flow-pill flow-pill-blue">
-              <Building2 className="w-3.5 h-3.5" />
-              <span>Coaching Institute Portal</span>
-            </span>
+    <div className="flex-1 max-w-[1440px] w-full mx-auto px-4 sm:px-6 py-6 space-y-6">
+      {/* 1. Header Banner */}
+      <div className="p-5 rounded-lg bg-[#262626] border border-[#333333] flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+        <div>
+          <div className="flex items-center gap-2 mb-1">
+            <Building2 className="w-4 h-4 text-[#ffa116]" />
+            <span className="text-xs font-mono font-semibold uppercase text-[#ffa116]">Coaching Partner Dashboard</span>
             {institute.isVerified && (
-              <span className="flow-pill flow-pill-emerald">
-                <ShieldCheck className="w-3.5 h-3.5" /> Verified SME Partner
+              <span className="text-[10px] font-mono px-1.5 py-0.2 rounded bg-[#1b4329] text-[#00b8a3] border border-[#00b8a3]/20">
+                Verified
               </span>
             )}
           </div>
-          <h1 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
+          <h1 className="text-xl sm:text-2xl font-bold text-white tracking-tight">
             {institute.name}
           </h1>
-          <p className="text-xs text-slate-400">
-            Center Code: <span className="font-mono text-slate-200 font-semibold">{institute.code}</span> • Location: {institute.city} • Role: Institute Staff / SME Admin
+          <p className="text-xs text-[#8c8c8c] mt-1">
+            Center: <span className="text-white font-mono">{institute.code}</span> • Location: {institute.city} • Role: SME Admin / Faculty
           </p>
         </div>
 
         <Link
           href="/scholarships"
-          className="px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-semibold text-xs shadow-md shadow-blue-600/20 transition-all shrink-0"
+          className="px-4 py-2 rounded bg-[#ffa116] hover:bg-[#ff9500] text-black font-semibold text-xs transition-colors shrink-0"
         >
-          Manage Talent Scholarships
+          Manage Scholarships
         </Link>
       </div>
 
-      {/* 2. Key Analytics Metric Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="p-5 rounded-2xl flow-card space-y-2">
-          <div className="flex items-center justify-between text-slate-400 text-xs font-semibold uppercase tracking-wider">
-            <span>Enrolled Students</span>
-            <div className="p-1.5 rounded-lg bg-blue-500/10 text-blue-400">
-              <Users className="w-4 h-4" />
-            </div>
-          </div>
-          <div className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">{metrics.totalStudents}</div>
-          <div className="text-xs text-slate-400">Across {metrics.activeBatchesCount} batches</div>
+      {/* 2. Key Metrics Strip */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        <div className="p-4 rounded-lg bg-[#262626] border border-[#333333]">
+          <div className="text-[11px] text-[#8c8c8c] uppercase font-semibold">Total Students</div>
+          <div className="text-2xl font-bold font-mono text-white mt-1">{metrics.totalStudents}</div>
+          <div className="text-[11px] text-[#8c8c8c] mt-1">Across {metrics.activeBatchesCount} batches</div>
         </div>
 
-        <div className="p-5 rounded-2xl flow-card space-y-2">
-          <div className="flex items-center justify-between text-slate-400 text-xs font-semibold uppercase tracking-wider">
-            <span>Batch Accuracy</span>
-            <div className="p-1.5 rounded-lg bg-emerald-500/10 text-emerald-400">
-              <TrendingUp className="w-4 h-4" />
-            </div>
-          </div>
-          <div className="text-2xl sm:text-3xl font-extrabold text-emerald-400 tracking-tight">{metrics.averageAccuracy}%</div>
-          <div className="text-xs text-slate-400">Physics solving benchmark</div>
+        <div className="p-4 rounded-lg bg-[#262626] border border-[#333333]">
+          <div className="text-[11px] text-[#8c8c8c] uppercase font-semibold">Batch Accuracy</div>
+          <div className="text-2xl font-bold font-mono text-[#00b8a3] mt-1">{metrics.averageAccuracy}%</div>
+          <div className="text-[11px] text-[#8c8c8c] mt-1">Classroom benchmark</div>
         </div>
 
-        <div className="p-5 rounded-2xl flow-card space-y-2">
-          <div className="flex items-center justify-between text-slate-400 text-xs font-semibold uppercase tracking-wider">
-            <span>Average PSI</span>
-            <div className="p-1.5 rounded-lg bg-cyan-500/10 text-cyan-400">
-              <Zap className="w-4 h-4" />
-            </div>
-          </div>
-          <div className="text-2xl sm:text-3xl font-extrabold text-cyan-300 tracking-tight">{metrics.averagePsi}</div>
-          <div className="text-xs text-slate-400">Composite capability metric</div>
+        <div className="p-4 rounded-lg bg-[#262626] border border-[#333333]">
+          <div className="text-[11px] text-[#8c8c8c] uppercase font-semibold">Average PSI</div>
+          <div className="text-2xl font-bold font-mono text-white mt-1">{metrics.averagePsi}</div>
+          <div className="text-[11px] text-[#8c8c8c] mt-1">Multi-factor capability</div>
         </div>
 
-        <div className="p-5 rounded-2xl flow-card border-rose-500/30 space-y-2 bg-rose-500/5">
-          <div className="flex items-center justify-between text-rose-400 text-xs font-semibold uppercase tracking-wider">
-            <span>Requires Support</span>
-            <div className="p-1.5 rounded-lg bg-rose-500/10 text-rose-400">
-              <AlertTriangle className="w-4 h-4" />
-            </div>
-          </div>
-          <div className="text-2xl sm:text-3xl font-extrabold text-rose-400 tracking-tight">{metrics.attentionNeededCount}</div>
-          <div className="text-xs text-rose-300">Accuracy &lt; 50% or concept gap</div>
+        <div className="p-4 rounded-lg bg-[#262626] border border-[#333333]">
+          <div className="text-[11px] text-[#ff375f] uppercase font-semibold">Needs Support</div>
+          <div className="text-2xl font-bold font-mono text-[#ff375f] mt-1">{metrics.attentionNeededCount}</div>
+          <div className="text-[11px] text-[#8c8c8c] mt-1">Accuracy &lt; 50% or gap</div>
         </div>
       </div>
 
-      {/* 3. Teacher Academic Intervention Drawer */}
+      {/* 3. Teacher Intervention Alerts */}
       {studentsRequiringAttention.length > 0 && (
-        <div className="p-6 rounded-2xl flow-card border-amber-500/30 shadow-lg space-y-4">
+        <div className="p-5 rounded-lg bg-[#262626] border border-[#333333] space-y-3">
           <div className="flex items-center justify-between">
-            <h2 className="text-sm font-bold text-amber-400 flex items-center gap-2">
-              <AlertTriangle className="w-4 h-4" />
-              <span>Teacher Alert: Aspirants Requiring Academic Support</span>
+            <h2 className="text-xs font-bold text-white uppercase tracking-wider flex items-center gap-1.5">
+              <AlertTriangle className="w-3.5 h-3.5 text-[#ffa116]" />
+              <span>Aspirants Flagged For Academic Review</span>
             </h2>
-            <span className="flow-pill flow-pill-slate text-[11px]">
-              Automated Prerequisite Detection
+            <span className="text-[11px] font-mono text-[#8c8c8c]">
+              Automatic Detection
             </span>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             {studentsRequiringAttention.map((s: any) => (
               <div
                 key={s.id}
-                className="p-4 rounded-xl bg-slate-900 border border-slate-800 flex items-start justify-between gap-4"
+                className="p-3.5 rounded bg-[#1f1f1f] border border-[#333333] flex items-start justify-between gap-3 text-xs"
               >
-                <div className="space-y-1">
-                  <div className="text-sm font-bold text-white">{s.name}</div>
-                  <div className="text-xs text-slate-400">{s.batchName}</div>
-                  <div className="text-xs text-rose-400 font-medium pt-1">
-                    Acute Weakness: {s.weakConcept}
+                <div className="space-y-0.5">
+                  <div className="font-bold text-white">{s.name}</div>
+                  <div className="text-[11px] text-[#8c8c8c]">{s.batchName}</div>
+                  <div className="text-[11px] text-[#ff375f] font-medium pt-1">
+                    Diagnosed Weakness: {s.weakConcept}
                   </div>
                 </div>
 
                 <div className="text-right shrink-0">
-                  <div className="text-sm font-bold text-rose-400">{s.accuracy}% Acc</div>
-                  <div className="text-[10px] text-slate-500 font-mono">PSI: {s.problemSolvingIndex}</div>
+                  <div className="font-mono font-bold text-[#ff375f]">{s.accuracy}% Acc</div>
+                  <div className="text-[10px] text-[#8c8c8c] font-mono">PSI: {s.problemSolvingIndex}</div>
                 </div>
               </div>
             ))}
@@ -177,69 +155,29 @@ export default function InstitutesPortalPage() {
         </div>
       )}
 
-      {/* 4. Batches Breakdown */}
-      <div className="p-6 rounded-2xl flow-card shadow-lg space-y-5">
-        <h2 className="text-base font-bold text-white flex items-center gap-2">
-          <GraduationCap className="w-4 h-4 text-cyan-400" />
-          <span>Active Student Batches</span>
-        </h2>
-
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {batches.map((batch: any) => (
-            <div
-              key={batch.id}
-              className="p-5 rounded-xl bg-slate-900 border border-slate-800 space-y-3"
-            >
-              <div className="flex items-center justify-between">
-                <span className="font-bold text-white text-sm">{batch.name}</span>
-                <span className="flow-pill flow-pill-slate text-[10px]">
-                  {batch.targetYear}
-                </span>
-              </div>
-
-              <div className="space-y-1.5 text-xs">
-                <div className="flex items-center justify-between text-slate-400">
-                  <span>Enrolled:</span>
-                  <span className="text-white font-semibold">{batch.studentCount} students</span>
-                </div>
-                <div className="flex items-center justify-between text-slate-400">
-                  <span>Avg Accuracy:</span>
-                  <span className="text-emerald-400 font-semibold">{batch.avgAccuracy}%</span>
-                </div>
-                <div className="flex items-center justify-between text-slate-400 pt-1">
-                  <span>Top Weak Chapter:</span>
-                  <span className="text-amber-400 font-medium">{batch.topWeakChapter}</span>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* 5. Student Roster Table (Flowbite Clean Table) */}
-      <div className="rounded-2xl flow-card overflow-hidden shadow-xl space-y-4 p-6">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <h2 className="text-base font-bold text-white flex items-center gap-2">
-            <Users className="w-4 h-4 text-blue-400" />
-            <span>Enrolled Students Roster</span>
+      {/* 4. Student Roster Table */}
+      <div className="rounded-lg border border-[#333333] overflow-hidden bg-[#262626] p-5 space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <h2 className="text-sm font-bold text-white uppercase tracking-wider">
+            Enrolled Aspirants Roster
           </h2>
 
-          <div className="flex items-center gap-2.5">
+          <div className="flex items-center gap-2">
             <div className="relative w-48">
-              <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-3 pointer-events-none" />
+              <Search className="w-3.5 h-3.5 text-[#8c8c8c] absolute left-2.5 top-2.5 pointer-events-none" />
               <input
                 type="text"
                 value={searchRoster}
                 onChange={(e) => setSearchRoster(e.target.value)}
-                placeholder="Search student..."
-                className="w-full pl-9 pr-3 py-1.5 rounded-xl bg-slate-900 border border-slate-800 text-xs text-white outline-none focus:border-blue-500 transition-colors"
+                placeholder="Search aspirant..."
+                className="w-full pl-8 pr-3 py-1.5 rounded bg-[#1f1f1f] border border-[#383838] text-xs text-white placeholder-[#6b7280] outline-none focus:border-[#ffa116]"
               />
             </div>
 
             <select
               value={selectedBatch}
               onChange={(e) => setSelectedBatch(e.target.value)}
-              className="px-3 py-1.5 rounded-xl bg-slate-900 border border-slate-800 text-xs text-white outline-none focus:border-blue-500 font-medium"
+              className="px-2.5 py-1.5 rounded bg-[#1f1f1f] border border-[#383838] text-xs text-white outline-none focus:border-[#ffa116]"
             >
               <option value="">All Batches</option>
               {batches.map((b: any) => (
@@ -251,38 +189,38 @@ export default function InstitutesPortalPage() {
           </div>
         </div>
 
-        <div className="overflow-x-auto pt-2">
-          <table className="w-full text-left text-xs">
-            <thead className="bg-slate-900/80 text-slate-400 border-b border-slate-800 uppercase text-[10px] tracking-wider">
-              <tr>
-                <th className="py-3 px-4 font-semibold">Student Name</th>
-                <th className="py-3 px-4 font-semibold">Batch</th>
-                <th className="py-3 px-4 font-semibold text-center">PSI Score</th>
-                <th className="py-3 px-4 font-semibold text-center">Accuracy</th>
-                <th className="py-3 px-4 font-semibold">Diagnosed Weakness</th>
+        <div className="overflow-x-auto">
+          <table className="w-full text-left text-xs border-collapse">
+            <thead>
+              <tr className="border-b border-[#333333] bg-[#212121] text-[#8c8c8c] uppercase tracking-wider text-[11px] font-semibold">
+                <th className="py-2.5 px-3">Aspirant Name</th>
+                <th className="py-2.5 px-3">Batch</th>
+                <th className="py-2.5 px-3 text-center">PSI Score</th>
+                <th className="py-2.5 px-3 text-center">Accuracy</th>
+                <th className="py-2.5 px-3">Diagnosed Weakness</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-800">
+            <tbody className="divide-y divide-[#303030]">
               {filteredStudents.map((st: any) => (
-                <tr key={st.id} className="hover:bg-slate-900/50 transition-colors">
-                  <td className="py-3.5 px-4">
-                    <div className="font-semibold text-white">{st.name}</div>
-                    <div className="text-[10px] text-slate-500 font-mono">{st.maskedEmail}</div>
+                <tr key={st.id} className="lc-row">
+                  <td className="py-3 px-3">
+                    <div className="font-semibold text-[#eff1f6]">{st.name}</div>
+                    <div className="text-[10px] text-[#8c8c8c] font-mono">{st.maskedEmail}</div>
                   </td>
-                  <td className="py-3.5 px-4 text-slate-300">{st.batchName}</td>
-                  <td className="py-3.5 px-4 text-center font-mono font-bold text-cyan-300">
+                  <td className="py-3 px-3 text-[#8c8c8c]">{st.batchName}</td>
+                  <td className="py-3 px-3 text-center font-mono font-bold text-white">
                     {st.problemSolvingIndex}
                   </td>
-                  <td className="py-3.5 px-4 text-center font-mono font-bold text-slate-200">
+                  <td className="py-3 px-3 text-center font-mono font-bold text-[#00b8a3]">
                     {st.accuracy}%
                   </td>
-                  <td className="py-3.5 px-4">
+                  <td className="py-3 px-3">
                     <span
-                      className={
+                      className={`text-[10px] font-mono px-2 py-0.5 rounded border ${
                         st.needsAttention
-                          ? 'flow-pill flow-pill-rose text-[11px]'
-                          : 'flow-pill flow-pill-slate text-[11px]'
-                      }
+                          ? 'text-[#ff375f] bg-[#ff375f]/10 border-[#ff375f]/20'
+                          : 'text-[#8c8c8c] bg-[#1f1f1f] border-[#383838]'
+                      }`}
                     >
                       {st.weakConcept}
                     </span>

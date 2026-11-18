@@ -115,34 +115,28 @@ export default function TakeContestPage() {
   const finalizeSubmission = async () => {
     setIsSubmitting(true);
     try {
-      const submissionList = Object.entries(answers).map(([qid, ans]) => ({
-        questionId: qid,
-        submittedAnswer: ans,
-      }));
-
-      const elapsedSec = (contestData?.durationMinutes * 60 || 3600) - timeLeftSec;
-
-      const res = await apiRequest(`/contests/${contestId}/submit`, {
+      await apiRequest(`/contests/${contestId}/submit`, {
         method: 'POST',
         body: JSON.stringify({
-          submissions: submissionList,
-          timeSpentSeconds: Math.max(1, elapsedSec),
+          answers,
+          timeSpentSeconds: (contestData?.durationMinutes || 60) * 60 - timeLeftSec,
         }),
       });
 
       router.push(`/contests/${contestId}/leaderboard`);
     } catch (err: any) {
-      console.error('Failed to submit contest:', err);
-      alert('Error submitting contest: ' + err.message);
+      console.error('Error submitting contest:', err);
+      alert(err.message || 'Failed to submit contest paper.');
+    } finally {
       setIsSubmitting(false);
       setShowSubmitModal(false);
     }
   };
 
-  const formatTimer = (totalSec: number) => {
-    const hours = Math.floor(totalSec / 3600);
-    const mins = Math.floor((totalSec % 3600) / 60);
-    const secs = totalSec % 60;
+  const formatTimer = (totalSeconds: number) => {
+    const hours = Math.floor(totalSeconds / 3600);
+    const mins = Math.floor((totalSeconds % 3600) / 60);
+    const secs = totalSeconds % 60;
     if (hours > 0) {
       return `${hours}:${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
     }
@@ -151,10 +145,10 @@ export default function TakeContestPage() {
 
   if (isLoading || !contestData) {
     return (
-      <div className="flex-1 flex items-center justify-center py-24">
+      <div className="flex-1 flex items-center justify-center py-24 text-[#8c8c8c]">
         <div className="flex flex-col items-center gap-3">
-          <RefreshCw className="w-8 h-8 text-blue-400 animate-spin" />
-          <span className="text-slate-400 text-sm font-medium">Entering Proctored Exam Environment...</span>
+          <div className="w-6 h-6 border-2 border-[#ffa116] border-t-transparent rounded-full animate-spin" />
+          <span className="text-xs font-mono">Entering exam hall environment...</span>
         </div>
       </div>
     );
@@ -167,34 +161,34 @@ export default function TakeContestPage() {
   const unattemptedCount = questions.length - answeredCount;
 
   return (
-    <div className="flex-1 flex flex-col h-[calc(100vh-4rem)] overflow-hidden bg-slate-950">
-      {/* 1. Proctored Exam Top Bar (Flowbite Header) */}
-      <div className="h-14 border-b border-slate-800 bg-slate-950 px-6 flex items-center justify-between text-xs shrink-0">
-        <div className="flex items-center gap-4">
-          <span className="font-bold text-white text-sm sm:text-base tracking-tight truncate max-w-xs sm:max-w-md">
+    <div className="flex-1 flex flex-col h-[calc(100vh-3.25rem)] overflow-hidden bg-[#1a1a1a]">
+      {/* 1. Proctored Exam Top Bar */}
+      <div className="h-12 border-b border-[#282828] bg-[#212121] px-4 flex items-center justify-between text-xs shrink-0 select-none">
+        <div className="flex items-center gap-3">
+          <span className="font-bold text-white text-sm tracking-tight truncate max-w-xs sm:max-w-md">
             {contestData.title}
           </span>
-          <span className="flow-pill flow-pill-blue hidden sm:inline-flex text-[11px] py-0 px-2">
+          <span className="text-[11px] font-mono px-2 py-0.5 rounded bg-[#1f1f1f] text-[#8c8c8c] border border-[#383838]">
             Section: Physics
           </span>
         </div>
 
-        {/* Live Timer Pill */}
+        {/* Live Timer Pill & Submit */}
         <div className="flex items-center gap-3">
           <div
-            className={`flex items-center gap-2 px-3.5 py-1.5 rounded-xl border font-mono font-bold text-sm ${
+            className={`flex items-center gap-2 px-3 py-1 rounded border font-mono font-bold text-xs ${
               timeLeftSec <= 300
-                ? 'bg-rose-500/20 border-rose-500 text-rose-300 animate-pulse'
-                : 'bg-slate-900 border-slate-800 text-slate-200'
+                ? 'bg-[#381a1f] border-[#ff375f] text-[#ff375f] animate-pulse'
+                : 'bg-[#1a1a1a] border-[#333333] text-white'
             }`}
           >
-            <Clock className={`w-4 h-4 ${timeLeftSec <= 300 ? 'text-rose-400' : 'text-blue-400'}`} />
+            <Clock className={`w-3.5 h-3.5 ${timeLeftSec <= 300 ? 'text-[#ff375f]' : 'text-[#ffa116]'}`} />
             <span>{formatTimer(timeLeftSec)}</span>
           </div>
 
           <button
             onClick={() => setShowSubmitModal(true)}
-            className="px-4 py-2 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-semibold text-xs shadow-md shadow-rose-600/30 transition-all"
+            className="px-3.5 py-1 rounded bg-[#ff375f] hover:bg-[#e03152] text-white font-semibold text-xs transition-colors"
           >
             Finish Test
           </button>
@@ -204,41 +198,41 @@ export default function TakeContestPage() {
       {/* 2. Main Exam Body (Question View Left + Palette Right) */}
       <div className="flex-1 grid grid-cols-1 lg:grid-cols-12 overflow-hidden">
         {/* Left (8 cols): Question Formulation & Answer Input */}
-        <div className="lg:col-span-8 p-6 overflow-y-auto space-y-6 flex flex-col justify-between border-r border-slate-800">
+        <div className="lg:col-span-8 p-6 overflow-y-auto space-y-6 flex flex-col justify-between border-r border-[#282828] bg-[#1e1e1e]">
           <div className="space-y-6">
             {/* Question Header */}
-            <div className="flex items-center justify-between pb-3 border-b border-slate-800">
+            <div className="flex items-center justify-between pb-3 border-b border-[#282828]">
               <div className="flex items-center gap-2.5">
-                <span className="w-7 h-7 rounded-lg bg-blue-600/30 text-cyan-300 font-bold text-xs flex items-center justify-center border border-blue-500/40">
+                <span className="w-6 h-6 rounded bg-[#282828] border border-[#383838] text-[#ffa116] font-bold font-mono text-xs flex items-center justify-center">
                   {currentIdx + 1}
                 </span>
-                <span className="text-xs font-semibold text-slate-300">
+                <span className="text-xs font-semibold text-[#eff1f6]">
                   Question {currentIdx + 1} of {questions.length}
                 </span>
               </div>
 
               <div className="flex items-center gap-3 text-xs">
-                <span className="font-mono text-slate-300 bg-slate-900 px-2.5 py-1 rounded-lg border border-slate-800">
+                <span className="font-mono text-[#8c8c8c] bg-[#1f1f1f] px-2 py-0.5 rounded border border-[#333333]">
                   {currentQ.questionType.replace('_', ' ')}
                 </span>
-                <span className="text-emerald-400 font-semibold">+{currentQ.marks}</span>
-                <span className="text-rose-400 font-semibold">-{currentQ.negativeMarks}</span>
+                <span className="text-[#00b8a3] font-semibold">+{currentQ.marks}</span>
+                <span className="text-[#ff375f] font-semibold">-{currentQ.negativeMarks}</span>
               </div>
             </div>
 
             {/* Question Statement */}
-            <div className="text-slate-200 text-sm leading-relaxed space-y-4">
+            <div className="text-[#eff1f6] text-sm leading-relaxed space-y-4">
               <MathRenderer content={currentQ.contentLatex} />
             </div>
 
             {/* Diagram */}
             {currentQ.imageUrl && (
-              <div className="p-4 rounded-xl bg-slate-900 border border-slate-800">
+              <div className="p-4 rounded bg-[#262626] border border-[#333333]">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src={currentQ.imageUrl}
                   alt="Diagram"
-                  className="max-h-60 mx-auto object-contain rounded-lg"
+                  className="max-h-60 mx-auto object-contain rounded"
                 />
               </div>
             )}
@@ -246,24 +240,24 @@ export default function TakeContestPage() {
             {/* Options Selection */}
             <div className="space-y-3 pt-2">
               {currentQ.questionType === 'SINGLE_CORRECT' && (
-                <div className="space-y-2.5">
+                <div className="space-y-2">
                   {currentQ.options?.map((opt: any) => {
                     const isSelected = answers[currentQ.id]?.[0] === opt.optionKey;
                     return (
                       <div
                         key={opt.optionKey}
                         onClick={() => handleSelectOption(currentQ.id, opt.optionKey, false)}
-                        className={`p-3.5 rounded-xl border text-sm flex items-center gap-3 cursor-pointer transition-all ${
+                        className={`p-3.5 rounded border text-xs flex items-center gap-3 cursor-pointer transition-colors ${
                           isSelected
-                            ? 'bg-blue-600/20 border-blue-500 text-white shadow-sm shadow-blue-500/10'
-                            : 'bg-slate-900/60 border-slate-800 text-slate-300 hover:bg-slate-900 hover:border-slate-700'
+                            ? 'bg-[#2b2416] border-[#ffa116] text-white'
+                            : 'bg-[#262626] border-[#333333] text-[#d1d5db] hover:border-[#4a4a4a] hover:bg-[#2a2a2a]'
                         }`}
                       >
                         <div
-                          className={`w-6 h-6 rounded-full border flex items-center justify-center text-xs font-bold ${
+                          className={`w-5 h-5 rounded-full border flex items-center justify-center text-xs font-mono font-bold ${
                             isSelected
-                              ? 'border-blue-400 bg-blue-600 text-white'
-                              : 'border-slate-600 text-slate-400'
+                              ? 'border-[#ffa116] bg-[#ffa116] text-black'
+                              : 'border-[#4a4a4a] text-[#8c8c8c]'
                           }`}
                         >
                           {opt.optionKey}
@@ -278,7 +272,7 @@ export default function TakeContestPage() {
               )}
 
               {currentQ.questionType === 'MULTIPLE_CORRECT' && (
-                <div className="space-y-2.5">
+                <div className="space-y-2">
                   {currentQ.options?.map((opt: any) => {
                     const selectedList = answers[currentQ.id] || [];
                     const isSelected = selectedList.includes(opt.optionKey);
@@ -286,17 +280,17 @@ export default function TakeContestPage() {
                       <div
                         key={opt.optionKey}
                         onClick={() => handleSelectOption(currentQ.id, opt.optionKey, true)}
-                        className={`p-3.5 rounded-xl border text-sm flex items-center gap-3 cursor-pointer transition-all ${
+                        className={`p-3.5 rounded border text-xs flex items-center gap-3 cursor-pointer transition-colors ${
                           isSelected
-                            ? 'bg-blue-600/20 border-blue-500 text-white shadow-sm shadow-blue-500/10'
-                            : 'bg-slate-900/60 border-slate-800 text-slate-300 hover:bg-slate-900 hover:border-slate-700'
+                            ? 'bg-[#2b2416] border-[#ffa116] text-white'
+                            : 'bg-[#262626] border-[#333333] text-[#d1d5db] hover:border-[#4a4a4a] hover:bg-[#2a2a2a]'
                         }`}
                       >
                         <div
-                          className={`w-5 h-5 rounded-md border flex items-center justify-center text-xs font-bold ${
+                          className={`w-5 h-5 rounded border flex items-center justify-center text-xs font-mono font-bold ${
                             isSelected
-                              ? 'border-blue-400 bg-blue-600 text-white'
-                              : 'border-slate-600 text-slate-400'
+                              ? 'border-[#ffa116] bg-[#ffa116] text-black'
+                              : 'border-[#4a4a4a] text-[#8c8c8c]'
                           }`}
                         >
                           {isSelected ? '✓' : opt.optionKey}
@@ -311,8 +305,8 @@ export default function TakeContestPage() {
               )}
 
               {currentQ.questionType === 'NUMERICAL' && (
-                <div className="space-y-3">
-                  <div className="text-xs text-slate-400 font-medium">
+                <div className="space-y-2">
+                  <div className="text-xs text-[#8c8c8c] font-medium">
                     Enter calculated value (Tolerance: ±0.05):
                   </div>
                   <input
@@ -321,7 +315,7 @@ export default function TakeContestPage() {
                     value={answers[currentQ.id] || ''}
                     onChange={(e) => handleNumericalChange(currentQ.id, e.target.value)}
                     placeholder="Enter decimal answer"
-                    className="w-full px-4 py-3 rounded-xl bg-slate-900 border border-slate-800 focus:border-blue-500 text-white text-lg font-mono outline-none"
+                    className="w-full px-4 py-2.5 rounded bg-[#262626] border border-[#333333] focus:border-[#ffa116] text-white text-sm font-mono outline-none"
                   />
                 </div>
               )}
@@ -329,15 +323,15 @@ export default function TakeContestPage() {
           </div>
 
           {/* Bottom Action Controls */}
-          <div className="pt-6 border-t border-slate-800 flex flex-wrap items-center justify-between gap-3">
+          <div className="pt-4 border-t border-[#282828] flex flex-wrap items-center justify-between gap-3">
             <div className="flex items-center gap-2">
               <button
                 type="button"
                 onClick={() => handleToggleReview(currentQ.id)}
-                className={`px-3.5 py-2 rounded-xl text-xs font-semibold border flex items-center gap-1.5 transition-all ${
+                className={`px-3 py-1.5 rounded text-xs border flex items-center gap-1.5 transition-colors ${
                   markedForReview.includes(currentQ.id)
-                    ? 'bg-amber-500/20 border-amber-500 text-amber-300'
-                    : 'bg-slate-900 border-slate-800 text-slate-400 hover:text-white hover:bg-slate-800'
+                    ? 'bg-[#2b2416] border-[#4a3b1d] text-[#ffa116]'
+                    : 'bg-[#262626] border-[#383838] text-[#8c8c8c] hover:text-white'
                 }`}
               >
                 <Flag className="w-3.5 h-3.5" />
@@ -347,7 +341,7 @@ export default function TakeContestPage() {
               <button
                 type="button"
                 onClick={() => handleClearResponse(currentQ.id)}
-                className="px-3.5 py-2 rounded-xl text-xs font-semibold bg-slate-900 border border-slate-800 text-slate-400 hover:text-white hover:bg-slate-800 flex items-center gap-1.5 transition-colors"
+                className="px-3 py-1.5 rounded text-xs bg-[#262626] border border-[#383838] text-[#8c8c8c] hover:text-white flex items-center gap-1.5 transition-colors"
               >
                 <RotateCcw className="w-3.5 h-3.5" />
                 <span>Clear Response</span>
@@ -358,9 +352,9 @@ export default function TakeContestPage() {
               <button
                 disabled={currentIdx === 0}
                 onClick={() => setCurrentIdx(currentIdx - 1)}
-                className="px-4 py-2 rounded-xl bg-slate-900 border border-slate-800 disabled:opacity-30 text-white text-xs font-semibold flex items-center gap-1"
+                className="px-3.5 py-1.5 rounded bg-[#262626] border border-[#383838] disabled:opacity-30 text-white text-xs font-semibold flex items-center gap-1"
               >
-                <ChevronLeft className="w-4 h-4" />
+                <ChevronLeft className="w-3.5 h-3.5" />
                 <span>Previous</span>
               </button>
 
@@ -372,59 +366,59 @@ export default function TakeContestPage() {
                     setCurrentIdx(currentIdx + 1);
                   }
                 }}
-                className="px-5 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold flex items-center gap-1 shadow-md shadow-blue-600/30 transition-all"
+                className="px-4 py-1.5 rounded bg-[#2cbb5d] hover:bg-[#26a050] text-white text-xs font-semibold flex items-center gap-1 transition-colors"
               >
                 <span>{isLastQuestion ? 'Review & Submit' : 'Save & Next'}</span>
-                <ChevronRight className="w-4 h-4" />
+                <ChevronRight className="w-3.5 h-3.5" />
               </button>
             </div>
           </div>
         </div>
 
         {/* Right (4 cols): Question Navigation Palette */}
-        <div className="lg:col-span-4 p-6 bg-slate-950/70 overflow-y-auto space-y-6">
+        <div className="lg:col-span-4 p-5 bg-[#1a1a1a] overflow-y-auto space-y-5">
           <div className="space-y-1">
-            <h3 className="text-xs font-bold uppercase tracking-wider text-slate-300">
+            <h3 className="text-xs font-bold uppercase tracking-wider text-white">
               Question Palette
             </h3>
             <div className="grid grid-cols-3 gap-2 pt-2 text-[11px]">
-              <div className="flex items-center gap-1.5 text-slate-300">
-                <span className="w-3 h-3 rounded-full bg-emerald-500 inline-block" />
-                <span>Answered ({answeredCount})</span>
+              <div className="flex items-center gap-1.5 text-[#8c8c8c]">
+                <span className="w-2.5 h-2.5 rounded-full bg-[#00b8a3] inline-block" />
+                <span>Ans ({answeredCount})</span>
               </div>
-              <div className="flex items-center gap-1.5 text-slate-300">
-                <span className="w-3 h-3 rounded-full bg-amber-500 inline-block" />
-                <span>Review ({markedCount})</span>
+              <div className="flex items-center gap-1.5 text-[#8c8c8c]">
+                <span className="w-2.5 h-2.5 rounded-full bg-[#ffa116] inline-block" />
+                <span>Rev ({markedCount})</span>
               </div>
-              <div className="flex items-center gap-1.5 text-slate-300">
-                <span className="w-3 h-3 rounded-full bg-slate-700 inline-block" />
-                <span>Unvisited ({unattemptedCount})</span>
+              <div className="flex items-center gap-1.5 text-[#8c8c8c]">
+                <span className="w-2.5 h-2.5 rounded-full bg-[#4a4a4a] inline-block" />
+                <span>Unv ({unattemptedCount})</span>
               </div>
             </div>
           </div>
 
           {/* Palette Grid */}
-          <div className="grid grid-cols-5 sm:grid-cols-6 gap-2.5 pt-2">
+          <div className="grid grid-cols-5 gap-2 pt-2">
             {questions.map((q, idx) => {
               const isAnswered = answers[q.id] !== undefined;
               const isMarked = markedForReview.includes(q.id);
               const isCurrent = currentIdx === idx;
 
-              let btnStyle = 'bg-slate-900 border-slate-800 text-slate-400';
+              let btnStyle = 'bg-[#262626] border-[#383838] text-[#8c8c8c]';
               if (isAnswered && isMarked) {
-                btnStyle = 'bg-purple-600/30 border-purple-500 text-purple-300';
+                btnStyle = 'bg-[#2b2416] border-[#ffa116] text-[#ffa116]';
               } else if (isAnswered) {
-                btnStyle = 'bg-emerald-600/30 border-emerald-500 text-emerald-300 font-bold';
+                btnStyle = 'bg-[#1b4329] border-[#00b8a3] text-[#00b8a3] font-bold';
               } else if (isMarked) {
-                btnStyle = 'bg-amber-600/30 border-amber-500 text-amber-300';
+                btnStyle = 'bg-[#2b2416] border-[#ffa116] text-[#ffa116]';
               }
 
               return (
                 <button
                   key={q.id}
                   onClick={() => setCurrentIdx(idx)}
-                  className={`h-10 rounded-xl border font-mono font-bold text-xs transition-all ${btnStyle} ${
-                    isCurrent ? 'ring-2 ring-blue-500 scale-105' : ''
+                  className={`h-9 rounded border font-mono font-bold text-xs transition-colors ${btnStyle} ${
+                    isCurrent ? 'ring-1 ring-white' : ''
                   }`}
                 >
                   {idx + 1}
@@ -433,14 +427,11 @@ export default function TakeContestPage() {
             })}
           </div>
 
-          {/* Test Guidance Warning */}
-          <div className="p-4 rounded-xl flow-card text-xs text-slate-400 space-y-2">
-            <div className="font-semibold text-slate-200 flex items-center gap-1.5">
-              <AlertTriangle className="w-4 h-4 text-amber-400" />
-              <span>Standard Marking Scheme</span>
-            </div>
-            <p className="leading-relaxed text-[11px]">
-              Single Correct: +4 / -1. Multiple Correct: +4, partial marking per correct option, -2 for incorrect choice. Numerical: +4 / 0.
+          {/* Marking Rules */}
+          <div className="p-3.5 rounded bg-[#262626] border border-[#333333] text-xs text-[#8c8c8c] space-y-1.5">
+            <div className="font-semibold text-white">JEE Exam Rules</div>
+            <p className="text-[11px] leading-relaxed">
+              Single-correct: +4 / -1. Multi-correct: +4 full, +2 partial, -2 negative. Numerical: +4 / 0.
             </p>
           </div>
         </div>
@@ -448,37 +439,37 @@ export default function TakeContestPage() {
 
       {/* 3. Final Submission Confirmation Modal */}
       {showSubmitModal && (
-        <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-md flex items-center justify-center p-4">
-          <div className="max-w-md w-full p-6 rounded-2xl flow-card shadow-2xl space-y-5">
-            <h2 className="text-lg font-bold text-white flex items-center gap-2">
-              <AlertCircle className="w-5 h-5 text-amber-400" />
+        <div className="fixed inset-0 z-50 bg-black/75 flex items-center justify-center p-4">
+          <div className="max-w-md w-full p-5 rounded bg-[#262626] border border-[#333333] shadow-2xl space-y-4">
+            <h2 className="text-base font-bold text-white flex items-center gap-2">
+              <AlertCircle className="w-5 h-5 text-[#ffa116]" />
               <span>Confirm Final Submission</span>
             </h2>
 
-            <p className="text-xs text-slate-400">
+            <p className="text-xs text-[#8c8c8c]">
               Are you sure you want to conclude the test? Once submitted, your paper will be locked and graded instantaneously.
             </p>
 
-            <div className="grid grid-cols-3 gap-2 p-3 rounded-xl bg-slate-900 border border-slate-800 text-center text-xs">
+            <div className="grid grid-cols-3 gap-2 p-3 rounded bg-[#1f1f1f] border border-[#333333] text-center text-xs">
               <div>
-                <div className="font-bold text-emerald-400 text-lg">{answeredCount}</div>
-                <div className="text-[10px] text-slate-500">Answered</div>
+                <div className="font-bold text-[#00b8a3] text-lg font-mono">{answeredCount}</div>
+                <div className="text-[10px] text-[#8c8c8c]">Answered</div>
               </div>
               <div>
-                <div className="font-bold text-amber-400 text-lg">{markedCount}</div>
-                <div className="text-[10px] text-slate-500">Review</div>
+                <div className="font-bold text-[#ffa116] text-lg font-mono">{markedCount}</div>
+                <div className="text-[10px] text-[#8c8c8c]">Review</div>
               </div>
               <div>
-                <div className="font-bold text-slate-400 text-lg">{unattemptedCount}</div>
-                <div className="text-[10px] text-slate-500">Unanswered</div>
+                <div className="font-bold text-[#8c8c8c] text-lg font-mono">{unattemptedCount}</div>
+                <div className="text-[10px] text-[#8c8c8c]">Unanswered</div>
               </div>
             </div>
 
-            <div className="flex items-center gap-3 pt-2">
+            <div className="flex items-center gap-2 pt-2">
               <button
                 type="button"
                 onClick={() => setShowSubmitModal(false)}
-                className="flex-1 py-2.5 rounded-xl bg-slate-900 border border-slate-800 text-slate-300 text-xs font-semibold hover:bg-slate-800"
+                className="flex-1 py-2 rounded bg-[#333333] hover:bg-[#3d3d3d] text-white text-xs font-semibold"
               >
                 Return to Paper
               </button>
@@ -487,7 +478,7 @@ export default function TakeContestPage() {
                 type="button"
                 onClick={finalizeSubmission}
                 disabled={isSubmitting}
-                className="flex-1 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white text-xs font-semibold shadow-lg shadow-rose-600/30 flex items-center justify-center gap-1.5"
+                className="flex-1 py-2 rounded bg-[#ff375f] hover:bg-[#e03152] text-white text-xs font-semibold flex items-center justify-center gap-1.5"
               >
                 {isSubmitting ? (
                   <>

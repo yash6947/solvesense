@@ -3,369 +3,359 @@
 import React from 'react';
 import Link from 'next/link';
 import { 
-  Sparkles, 
+  Code2, 
   ArrowRight, 
   CheckCircle2, 
-  HelpCircle, 
-  BrainCircuit, 
-  Target, 
+  Terminal, 
   BookOpen, 
-  Layers, 
-  Compass,
-  Cpu,
-  Flame,
-  Check,
-  Shield,
-  Zap
+  Trophy, 
+  Shuffle, 
+  Flame, 
+  ShieldCheck, 
+  Cpu, 
+  Layers,
+  ChevronRight,
+  TrendingUp,
+  FileCode2
 } from 'lucide-react';
 import MathRenderer from '@/components/MathRenderer';
 
 export default function HomePage() {
-  const sampleLatexFormula = '$$\\tau = I\\alpha \\implies \\vec{L} = \\int (\\vec{r} \\times \\vec{v}) \\, dm$$';
+  const featuredProblems = [
+    {
+      id: 'rot-001',
+      code: 'ROT-001',
+      title: 'Uniform Solid Cylinder on Rough Incline under External Torque',
+      chapter: 'Rotational Motion',
+      diff: 'HARD',
+      diffColor: 'text-[#ff375f]',
+      acceptance: '38.4%',
+      marks: '+4 / -1',
+      isPYQ: true,
+      year: '2024'
+    },
+    {
+      id: 'kin-001',
+      code: 'KIN-001',
+      title: 'Relative Velocity of Pursuit in Two Dimensions with Constant Speed',
+      chapter: 'Kinematics',
+      diff: 'MEDIUM',
+      diffColor: 'text-[#ffc01e]',
+      acceptance: '52.1%',
+      marks: '+4 / -1',
+      isPYQ: false,
+      year: null
+    },
+    {
+      id: 'thermo-001',
+      code: 'THM-001',
+      title: 'Polytropic Gas Expansion along Non-Standard Indicator Diagram',
+      chapter: 'Thermodynamics',
+      diff: 'HARD',
+      diffColor: 'text-[#ff375f]',
+      acceptance: '34.2%',
+      marks: '+4 / -2',
+      isPYQ: true,
+      year: '2023'
+    },
+    {
+      id: 'elec-001',
+      code: 'ELE-001',
+      title: 'Concentric Conducting Spherical Shells with Grounding Switches',
+      chapter: 'Electrostatics',
+      diff: 'MEDIUM',
+      diffColor: 'text-[#ffc01e]',
+      acceptance: '47.8%',
+      marks: '+4 / -1',
+      isPYQ: true,
+      year: '2024'
+    },
+    {
+      id: 'wep-001',
+      code: 'WEP-001',
+      title: 'Non-Conservative Work in Variable Tension Loop-the-Loop',
+      chapter: 'Work, Energy & Power',
+      diff: 'EASY',
+      diffColor: 'text-[#00b8a3]',
+      acceptance: '68.5%',
+      marks: '+4 / -1',
+      isPYQ: false,
+      year: null
+    }
+  ];
+
+  const tracks = [
+    {
+      name: 'Rotational Dynamics Mastery',
+      problems: 12,
+      desc: 'Moment of inertia integration, instantaneous axis, pure rolling, and angular momentum conservation.',
+      badge: 'Core Track',
+      color: 'border-[#ffa116]/30 text-[#ffa116]',
+    },
+    {
+      name: 'Classical Mechanics & Calculus',
+      problems: 14,
+      desc: 'Constrained motion, variable mass systems, impulse-momentum, and non-inertial reference frames.',
+      badge: 'Foundation',
+      color: 'border-[#00b8a3]/30 text-[#00b8a3]',
+    },
+    {
+      name: 'Thermal Physics & Kinetic Theory',
+      problems: 7,
+      desc: 'First and second laws, cyclic processes, heat engines, and degree of freedom calculations.',
+      badge: 'Standard Track',
+      color: 'border-[#ffc01e]/30 text-[#ffc01e]',
+    },
+    {
+      name: 'Electrodynamics & Field Theory',
+      problems: 9,
+      desc: 'Gauss law applications, image charges, multipole potentials, and dielectric boundary conditions.',
+      badge: 'Advanced Track',
+      color: 'border-[#a855f7]/30 text-[#a855f7]',
+    },
+  ];
 
   return (
-    <div className="flex flex-col w-full">
-      {/* 1. HERO SECTION (Flowbite + Flow Aesthetic) */}
-      <section className="relative overflow-hidden pt-20 pb-24 md:pt-28 md:pb-36">
-        {/* Subtle radial ambient glows */}
-        <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[650px] h-[380px] bg-blue-600/12 blur-[140px] rounded-full pointer-events-none" />
-        <div className="absolute top-1/3 right-12 w-[350px] h-[350px] bg-cyan-500/10 blur-[120px] rounded-full pointer-events-none" />
-        <div className="absolute bottom-10 left-12 w-[300px] h-[300px] bg-indigo-500/10 blur-[100px] rounded-full pointer-events-none" />
-
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 text-center">
-          {/* Top Pill Announcement */}
-          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-slate-900/90 border border-slate-800 text-xs sm:text-sm font-medium mb-8 backdrop-blur-md shadow-sm">
-            <span className="flex h-2 w-2 rounded-full bg-cyan-400 animate-ping"></span>
-            <span className="text-slate-300">Powered by</span>
-            <span className="font-semibold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-cyan-300">Google Gemini AI</span>
-            <span className="text-slate-500">•</span>
-            <span className="text-slate-400 hidden sm:inline">JEE Physics Diagnostic Engine</span>
+    <div className="flex flex-col w-full bg-[#1a1a1a] text-[#eff1f6]">
+      {/* 1. HERO SECTION (LeetCode / GFG Style) */}
+      <section className="border-b border-[#282828] py-16 sm:py-20 px-4 sm:px-6">
+        <div className="max-w-[1200px] mx-auto text-center space-y-6">
+          {/* Engineering Badge */}
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded bg-[#262626] border border-[#333333] text-xs font-mono text-[#8c8c8c]">
+            <span className="w-2 h-2 rounded-full bg-[#00b8a3]" />
+            <span className="text-white font-medium">ZenithPhysics Platform</span>
+            <span>•</span>
+            <span>Deterministic JEE Problem Solving</span>
           </div>
 
-          {/* Master Headline */}
-          <h1 className="text-4xl sm:text-6xl lg:text-7xl font-extrabold tracking-tight text-white max-w-5xl mx-auto leading-[1.12]">
-            Don&apos;t Just Solve Questions.{' '}
-            <span className="block mt-2 text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-cyan-300 to-indigo-300">
-              Master the Concepts Behind Them.
-            </span>
+          <h1 className="text-3xl sm:text-5xl lg:text-6xl font-extrabold text-white tracking-tight max-w-4xl mx-auto leading-tight">
+            A New Way to Master <br />
+            <span className="text-[#ffa116]">Competitive Exam Physics</span>
           </h1>
 
-          {/* Subtitle */}
-          <p className="mt-6 text-base sm:text-xl text-slate-300 max-w-3xl mx-auto leading-relaxed">
-            An intelligent problem-solving platform engineered for JEE Main & Advanced aspirants. Uncover your conceptual gaps, track prerequisite learning debt, and improve with real-time AI guidance.
+          <p className="max-w-2xl mx-auto text-sm sm:text-base text-[#8c8c8c] leading-relaxed">
+            The deliberate practice platform built for JEE Main & Advanced aspirants. Solve verified questions with full KaTeX math precision, deterministic scoring, and progressive conceptual hints.
           </p>
 
-          {/* Call to Actions */}
-          <div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4">
-            <Link
-              href="/auth/register"
-              className="w-full sm:w-auto inline-flex items-center justify-center gap-2.5 px-8 py-3.5 rounded-xl font-semibold text-white bg-blue-600 hover:bg-blue-500 shadow-lg shadow-blue-600/30 transition-all text-sm sm:text-base group"
-            >
-              <span>Start Learning Free</span>
-              <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-            </Link>
-
+          {/* Action CTAs */}
+          <div className="pt-2 flex flex-wrap items-center justify-center gap-3">
             <Link
               href="/solve"
-              className="w-full sm:w-auto inline-flex items-center justify-center gap-2.5 px-8 py-3.5 rounded-xl font-semibold text-slate-200 bg-slate-900/80 hover:bg-slate-800 border border-slate-800 hover:border-slate-700 transition-all text-sm sm:text-base"
+              className="px-6 py-2.5 rounded bg-[#ffa116] hover:bg-[#ff9500] text-black font-bold text-sm shadow transition-colors flex items-center gap-2"
             >
-              <BookOpen className="w-4 h-4 text-cyan-400" />
-              <span>Browse 37+ Problems</span>
+              <span>Browse Problemset</span>
+              <ArrowRight className="w-4 h-4 stroke-[2.5]" />
+            </Link>
+
+            <Link
+              href="/auth/register"
+              className="px-6 py-2.5 rounded bg-[#262626] hover:bg-[#303030] text-[#eff1f6] hover:text-white border border-[#333333] font-semibold text-sm transition-colors"
+            >
+              Create Account
             </Link>
           </div>
 
-          {/* Stats Bar (Flowbite Clean Metrics) */}
-          <div className="mt-16 grid grid-cols-2 sm:grid-cols-4 gap-4 max-w-4xl mx-auto">
-            <div className="p-4 rounded-xl flow-card text-left">
-              <div className="flex items-center justify-between mb-1">
-                <span className="text-xs font-medium text-slate-400 uppercase tracking-wider">Hints</span>
-                <Sparkles className="w-4 h-4 text-cyan-400" />
-              </div>
-              <div className="text-2xl font-bold text-white tracking-tight">4-Tier</div>
-              <div className="text-xs text-slate-400 mt-0.5">Progressive Socratic Clues</div>
+          {/* Stats Bar */}
+          <div className="pt-8 border-t border-[#282828] max-w-3xl mx-auto grid grid-cols-2 sm:grid-cols-4 gap-4 text-center">
+            <div>
+              <div className="text-xl sm:text-2xl font-bold font-mono text-white">37+</div>
+              <div className="text-xs text-[#8c8c8c] mt-0.5">Calibrated Problems</div>
             </div>
-
-            <div className="p-4 rounded-xl flow-card text-left">
-              <div className="flex items-center justify-between mb-1">
-                <span className="text-xs font-medium text-slate-400 uppercase tracking-wider">Diagnosis</span>
-                <BrainCircuit className="w-4 h-4 text-indigo-400" />
-              </div>
-              <div className="text-2xl font-bold text-white tracking-tight">9 Classes</div>
-              <div className="text-xs text-slate-400 mt-0.5">Cognitive Mistake Taxonomy</div>
+            <div>
+              <div className="text-xl sm:text-2xl font-bold font-mono text-[#00b8a3]">100%</div>
+              <div className="text-xs text-[#8c8c8c] mt-0.5">Deterministic Grading</div>
             </div>
-
-            <div className="p-4 rounded-xl flow-card text-left">
-              <div className="flex items-center justify-between mb-1">
-                <span className="text-xs font-medium text-slate-400 uppercase tracking-wider">Concept Graph</span>
-                <Layers className="w-4 h-4 text-emerald-400" />
-              </div>
-              <div className="text-2xl font-bold text-white tracking-tight">DAG Traversal</div>
-              <div className="text-xs text-slate-400 mt-0.5">Prerequisite Gap Detection</div>
+            <div>
+              <div className="text-xl sm:text-2xl font-bold font-mono text-[#ffa116]">4-Tier</div>
+              <div className="text-xs text-[#8c8c8c] mt-0.5">Progressive Hints</div>
             </div>
-
-            <div className="p-4 rounded-xl flow-card text-left">
-              <div className="flex items-center justify-between mb-1">
-                <span className="text-xs font-medium text-slate-400 uppercase tracking-wider">Index</span>
-                <Zap className="w-4 h-4 text-amber-400" />
-              </div>
-              <div className="text-2xl font-bold text-white tracking-tight">PSI Score</div>
-              <div className="text-xs text-slate-400 mt-0.5">Multi-Factor Skill Metric</div>
+            <div>
+              <div className="text-xl sm:text-2xl font-bold font-mono text-[#ff375f]">JEE Main/Adv</div>
+              <div className="text-xs text-[#8c8c8c] mt-0.5">Negative Marking</div>
             </div>
           </div>
         </div>
       </section>
 
-      {/* 2. LEETCODE-STYLE WORKSPACE DEMO PREVIEW */}
-      <section className="py-20 border-t border-slate-800/80 bg-slate-950/40">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center max-w-3xl mx-auto mb-14">
-            <div className="flow-pill flow-pill-blue mb-3">
-              <Compass className="w-3.5 h-3.5" />
-              <span>The Workspace</span>
-            </div>
-            <h2 className="text-3xl sm:text-4xl font-extrabold text-white tracking-tight">
-              A 3-Panel Problem Interface Built for Real Competitive Physics
+      {/* 2. FEATURED PROBLEM & LIVE TABLE PREVIEW */}
+      <section className="py-14 px-4 sm:px-6 max-w-[1200px] mx-auto w-full space-y-8">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div>
+            <h2 className="text-xl sm:text-2xl font-bold text-white tracking-tight flex items-center gap-2">
+              <Code2 className="w-5 h-5 text-[#ffa116]" />
+              <span>Trending JEE Physics Problems</span>
             </h2>
-            <p className="mt-4 text-slate-400 text-sm sm:text-base leading-relaxed">
-              No generic PDF solutions. Active problem solving with integrated KaTeX typography, real-time scratchpads, and deterministic grading.
+            <p className="text-xs text-[#8c8c8c] mt-1">
+              Hand-picked practice problems spanning core mechanics and electrodynamics.
             </p>
           </div>
 
-          {/* Interactive UI Mock Window */}
-          <div className="rounded-2xl border border-slate-800 bg-slate-900/90 overflow-hidden shadow-2xl shadow-black/40">
-            {/* Window Title Bar */}
-            <div className="bg-slate-950 px-5 py-3 border-b border-slate-800 flex items-center justify-between text-xs text-slate-400">
-              <div className="flex items-center gap-2">
-                <span className="w-3 h-3 rounded-full bg-rose-500/80 inline-block" />
-                <span className="w-3 h-3 rounded-full bg-amber-500/80 inline-block" />
-                <span className="w-3 h-3 rounded-full bg-emerald-500/80 inline-block" />
-                <span className="ml-2 font-mono text-slate-300 font-medium">PHY-ADV-24-ROT-01 • Rotational Dynamics</span>
-              </div>
-              <div className="flex items-center gap-3">
-                <span className="flow-pill flow-pill-rose text-[11px] py-0.5">
-                  HARD • 4 Marks
-                </span>
-                <span className="font-mono text-slate-300 bg-slate-900 px-2.5 py-0.5 rounded border border-slate-800">
-                  03:42
-                </span>
-              </div>
-            </div>
+          <Link
+            href="/solve"
+            className="text-xs font-semibold text-[#ffa116] hover:underline flex items-center gap-1 self-start sm:self-auto"
+          >
+            <span>View all 37 questions</span>
+            <ChevronRight className="w-4 h-4" />
+          </Link>
+        </div>
 
-            {/* 3 Panels */}
-            <div className="grid grid-cols-1 lg:grid-cols-12 min-h-[420px]">
-              {/* Left Panel: Problem Statement */}
-              <div className="lg:col-span-5 p-6 border-b lg:border-b-0 lg:border-r border-slate-800 space-y-4">
-                <div className="flex items-center gap-2 text-xs font-semibold text-blue-400 uppercase tracking-wider">
-                  <Compass className="w-4 h-4" />
-                  <span>Question Statement</span>
-                </div>
-                <div className="text-slate-200 text-sm leading-relaxed">
-                  <MathRenderer content="A uniform solid cylinder of mass $M$ and radius $R$ is placed on a rough horizontal surface with coefficient of friction $\mu$. A horizontal force $F$ is applied at height $h = \frac{3R}{2}$ above the central axis:" />
-                </div>
-                <MathRenderer content={sampleLatexFormula} />
-                <div className="text-slate-300 text-sm">
-                  <MathRenderer content="What is the linear acceleration $a_{cm}$ of the center of mass if the cylinder rolls without slipping?" />
-                </div>
-              </div>
-
-              {/* Center Panel: Answer Input */}
-              <div className="lg:col-span-4 p-6 border-b lg:border-b-0 lg:border-r border-slate-800 space-y-4 flex flex-col justify-between">
-                <div>
-                  <div className="flex items-center gap-2 text-xs text-slate-400 font-semibold uppercase tracking-wider mb-4">
-                    <Target className="w-4 h-4 text-cyan-400" />
-                    <span>Select Correct Option</span>
-                  </div>
-                  <div className="space-y-2.5">
-                    {[
-                      { key: 'A', text: '$a_{cm} = \\frac{F}{M}$' },
-                      { key: 'B', text: '$a_{cm} = \\frac{5F}{3M}$', selected: true },
-                      { key: 'C', text: '$a_{cm} = \\frac{2F}{3M}$' },
-                      { key: 'D', text: '$a_{cm} = \\frac{4F}{3M}$' },
-                    ].map((opt) => (
-                      <div
-                        key={opt.key}
-                        className={`p-3.5 rounded-xl border text-sm flex items-center justify-between cursor-pointer transition-all ${
-                          opt.selected
-                            ? 'bg-blue-600/15 border-blue-500/50 text-white shadow-sm shadow-blue-500/10'
-                            : 'bg-slate-950/50 border-slate-800 text-slate-300 hover:bg-slate-800/50 hover:border-slate-700'
-                        }`}
+        {/* LeetCode Clean Problem Table */}
+        <div className="rounded border border-[#333333] overflow-hidden bg-[#262626]">
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-xs border-collapse">
+              <thead>
+                <tr className="border-b border-[#333333] bg-[#212121] text-[#8c8c8c] uppercase tracking-wider text-[11px] font-semibold">
+                  <th className="py-3 px-4 w-12 text-center">#</th>
+                  <th className="py-3 px-4">Title</th>
+                  <th className="py-3 px-4 w-32">Topic</th>
+                  <th className="py-3 px-4 w-24 text-right">Acceptance</th>
+                  <th className="py-3 px-4 w-24 text-center">Difficulty</th>
+                  <th className="py-3 px-4 w-28 text-right">Marks</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-[#303030]">
+                {featuredProblems.map((p, idx) => (
+                  <tr
+                    key={p.id}
+                    className="lc-row cursor-pointer group"
+                  >
+                    <td className="py-3 px-4 text-center font-mono text-[#8c8c8c]">
+                      {idx + 1}
+                    </td>
+                    <td className="py-3 px-4">
+                      <Link
+                        href={`/solve/${p.id}`}
+                        className="text-[#eff1f6] group-hover:text-[#ffa116] font-medium transition-colors flex items-center gap-2"
                       >
-                        <span className={`font-mono font-bold mr-2 text-xs ${opt.selected ? 'text-blue-400' : 'text-slate-500'}`}>
-                          {opt.key}.
-                        </span>
-                        <div className="flex-1 font-medium">
-                          <MathRenderer content={opt.text} inline />
-                        </div>
-                        {opt.selected && <CheckCircle2 className="w-4 h-4 text-blue-400 ml-2" />}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="pt-4 border-t border-slate-800 flex items-center justify-between">
-                  <span className="text-xs text-slate-400">JEE Marking: +4.0 / -1.0</span>
-                  <button className="px-5 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold shadow-md shadow-blue-600/30 transition-all">
-                    Submit Answer
-                  </button>
-                </div>
-              </div>
-
-              {/* Right Panel: AI Mentor */}
-              <div className="lg:col-span-3 p-6 bg-slate-950/40 space-y-4">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-1.5 text-xs text-amber-400 font-semibold uppercase tracking-wider">
-                    <Sparkles className="w-3.5 h-3.5" />
-                    <span>Gemini AI Mentor</span>
-                  </div>
-                  <span className="flow-pill flow-pill-purple text-[10px] py-0.5">
-                    Strict Mode
-                  </span>
-                </div>
-
-                <div className="space-y-3 text-xs">
-                  <div className="p-3.5 rounded-xl bg-slate-900 border border-slate-800 text-slate-300 space-y-1.5 shadow-sm">
-                    <div className="font-semibold text-white flex items-center gap-1.5">
-                      <HelpCircle className="w-3.5 h-3.5 text-cyan-400" />
-                      <span>Level 1 Hint: Contact Point</span>
-                    </div>
-                    <p className="text-slate-400 leading-normal">
-                      Take torque about the instantaneous axis of rotation passing through the contact point with the floor to eliminate friction.
-                    </p>
-                  </div>
-
-                  <div className="p-3.5 rounded-xl bg-emerald-500/10 border border-emerald-500/25 text-emerald-300 space-y-1">
-                    <div className="font-semibold text-emerald-200 flex items-center gap-1.5">
-                      <Check className="w-3.5 h-3.5 text-emerald-400" />
-                      <span>Concept Verified</span>
-                    </div>
-                    <div className="text-emerald-300/90 leading-normal text-[11px]">
-                      <MathRenderer content="Parallel axis theorem: $I_P = I_{cm} + MR^2 = \frac{3}{2}MR^2$." inline />
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
+                        <span>{p.title}</span>
+                        {p.isPYQ && (
+                          <span className="text-[10px] font-mono px-1.5 py-0.2 rounded bg-[#2b2416] text-[#ffa116] border border-[#4a3b1d]">
+                            PYQ {p.year}
+                          </span>
+                        )}
+                      </Link>
+                    </td>
+                    <td className="py-3 px-4 text-[#8c8c8c] font-medium">
+                      {p.chapter}
+                    </td>
+                    <td className="py-3 px-4 text-right font-mono text-[#8c8c8c]">
+                      {p.acceptance}
+                    </td>
+                    <td className="py-3 px-4 text-center font-semibold">
+                      <span className={p.diffColor}>{p.diff}</span>
+                    </td>
+                    <td className="py-3 px-4 text-right font-mono text-[#8c8c8c]">
+                      {p.marks}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         </div>
       </section>
 
-      {/* 3. CORE VALUE PILLARS (Flowbite 4-Column Feature Grid) */}
-      <section className="py-24 border-t border-slate-800/80">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center max-w-3xl mx-auto mb-16">
-            <div className="flow-pill flow-pill-blue mb-3">
-              <Shield className="w-3.5 h-3.5" />
-              <span>Diagnostic System</span>
-            </div>
-            <h2 className="text-3xl sm:text-4xl font-extrabold text-white tracking-tight">
-              The Four Questions Our AI System Answers
+      {/* 3. CURATED CURRICULUM TRACKS */}
+      <section className="border-t border-[#282828] py-14 px-4 sm:px-6 bg-[#212121]">
+        <div className="max-w-[1200px] mx-auto space-y-8">
+          <div>
+            <h2 className="text-xl sm:text-2xl font-bold text-white tracking-tight">
+              Curated JEE Physics Study Tracks
             </h2>
-            <p className="mt-4 text-slate-400 text-sm sm:text-base leading-relaxed">
-              Traditional mock test sites tell you your score. ZenithPhysics uncovers the exact cognitive bottleneck in your reasoning.
+            <p className="text-xs text-[#8c8c8c] mt-1">
+              Structured progressive tracks designed to systematically eliminate conceptual prerequisites gaps.
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {/* Pillar 1 */}
-            <div className="p-6 rounded-2xl flow-card flex flex-col justify-between">
-              <div>
-                <div className="w-12 h-12 rounded-xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center mb-5">
-                  <CheckCircle2 className="w-6 h-6 text-blue-400" />
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            {tracks.map((track) => (
+              <div
+                key={track.name}
+                className="p-5 rounded bg-[#262626] border border-[#333333] hover:border-[#4a4a4a] transition-all flex flex-col justify-between"
+              >
+                <div>
+                  <div className="flex items-center justify-between mb-3">
+                    <span className={`text-[10px] font-mono uppercase tracking-wider font-semibold px-2 py-0.5 rounded border ${track.color}`}>
+                      {track.badge}
+                    </span>
+                    <span className="text-xs font-mono text-[#8c8c8c]">
+                      {track.problems} Qs
+                    </span>
+                  </div>
+                  <h3 className="text-sm font-bold text-white mb-2 leading-snug">
+                    {track.name}
+                  </h3>
+                  <p className="text-xs text-[#8c8c8c] leading-relaxed">
+                    {track.desc}
+                  </p>
                 </div>
-                <h3 className="text-lg font-bold text-white mb-2">1. What can you solve?</h3>
-                <p className="text-slate-400 text-sm leading-relaxed">
-                  Demonstrated mastery verified through deterministic evaluation across Single-Correct, Multi-Correct partial marking, and Numerical problems.
-                </p>
-              </div>
-              <div className="mt-6 pt-4 border-t border-slate-800 text-xs font-mono text-cyan-400 font-semibold">
-                Calibrated Accuracy Tracking
-              </div>
-            </div>
 
-            {/* Pillar 2 */}
-            <div className="p-6 rounded-2xl flow-card flex flex-col justify-between">
-              <div>
-                <div className="w-12 h-12 rounded-xl bg-purple-500/10 border border-purple-500/20 flex items-center justify-center mb-5">
-                  <Layers className="w-6 h-6 text-purple-400" />
+                <div className="mt-5 pt-3 border-t border-[#333333]">
+                  <Link
+                    href="/solve"
+                    className="text-xs font-semibold text-[#ffa116] hover:underline flex items-center justify-between"
+                  >
+                    <span>Start Practice</span>
+                    <ChevronRight className="w-3.5 h-3.5" />
+                  </Link>
                 </div>
-                <h3 className="text-lg font-bold text-white mb-2">2. What do you understand?</h3>
-                <p className="text-slate-400 text-sm leading-relaxed">
-                  Prerequisite concept graphs track your understanding of foundational principles: from calculus differentiation to rotational dynamics.
-                </p>
               </div>
-              <div className="mt-6 pt-4 border-t border-slate-800 text-xs font-mono text-purple-400 font-semibold">
-                Directed Concept Mapping
-              </div>
-            </div>
-
-            {/* Pillar 3 */}
-            <div className="p-6 rounded-2xl flow-card flex flex-col justify-between">
-              <div>
-                <div className="w-12 h-12 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center mb-5">
-                  <BrainCircuit className="w-6 h-6 text-amber-400" />
-                </div>
-                <h3 className="text-lg font-bold text-white mb-2">3. Where are you struggling?</h3>
-                <p className="text-slate-400 text-sm leading-relaxed">
-                  9-class mistake classification distinguishes between calculation errors, sign convention slip-ups, or deep prerequisite conceptual gaps.
-                </p>
-              </div>
-              <div className="mt-6 pt-4 border-t border-slate-800 text-xs font-mono text-amber-400 font-semibold">
-                9-Class Mistake Taxonomy
-              </div>
-            </div>
-
-            {/* Pillar 4 */}
-            <div className="p-6 rounded-2xl flow-card flex flex-col justify-between">
-              <div>
-                <div className="w-12 h-12 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center mb-5">
-                  <Cpu className="w-6 h-6 text-emerald-400" />
-                </div>
-                <h3 className="text-lg font-bold text-white mb-2">4. What to practise next?</h3>
-                <p className="text-slate-400 text-sm leading-relaxed">
-                  Adaptive recommendation engine schedules calibrated practice targeting your exact missing prerequisites to eliminate learning debt.
-                </p>
-              </div>
-              <div className="mt-6 pt-4 border-t border-slate-800 text-xs font-mono text-emerald-400 font-semibold">
-                Dynamic Recommender Engine
-              </div>
-            </div>
+            ))}
           </div>
         </div>
       </section>
 
-      {/* 4. CALL TO ACTION (Flowbite Clean Gradient Box) */}
-      <section className="py-24 border-t border-slate-800/80 bg-slate-950/60">
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <div className="p-10 sm:p-14 rounded-3xl bg-gradient-to-b from-slate-900 to-slate-950 border border-slate-800 shadow-2xl shadow-blue-500/5 relative overflow-hidden">
-            <div className="relative z-10 space-y-6">
-              <div className="flow-pill flow-pill-blue mx-auto">
-                <Flame className="w-3.5 h-3.5" />
-                <span>Begin Preparation Today</span>
-              </div>
-              <h2 className="text-3xl sm:text-5xl font-extrabold text-white tracking-tight">
-                Ready to Master JEE Physics?
-              </h2>
-              <p className="text-slate-300 max-w-2xl mx-auto text-base sm:text-lg leading-relaxed">
-                Join competitive aspirants solving JEE Main & Advanced Physics problems with diagnostic AI mentoring and concept mastery tracking.
-              </p>
-              <div className="pt-3 flex flex-col sm:flex-row items-center justify-center gap-4">
-                <Link
-                  href="/auth/register"
-                  className="w-full sm:w-auto px-8 py-3.5 rounded-xl font-semibold text-white bg-blue-600 hover:bg-blue-500 shadow-lg shadow-blue-600/30 transition-all text-sm sm:text-base"
-                >
-                  Create Student Account
-                </Link>
-                <Link
-                  href="/solve"
-                  className="w-full sm:w-auto px-8 py-3.5 rounded-xl font-semibold text-slate-200 bg-slate-900 hover:bg-slate-800 border border-slate-800 hover:border-slate-700 transition-all text-sm sm:text-base"
-                >
-                  Try Sample Problems
-                </Link>
-              </div>
+      {/* 4. PLATFORM ARCHITECTURE */}
+      <section className="border-t border-[#282828] py-14 px-4 sm:px-6 max-w-[1200px] mx-auto w-full">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="p-5 rounded bg-[#262626] border border-[#333333] space-y-3">
+            <div className="w-8 h-8 rounded bg-[#1f1f1f] border border-[#383838] flex items-center justify-center text-[#00b8a3]">
+              <CheckCircle2 className="w-4 h-4" />
             </div>
+            <h3 className="text-sm font-bold text-white">Deterministic Grading Engine</h3>
+            <p className="text-xs text-[#8c8c8c] leading-relaxed">
+              Official JEE marking schemes. Single-correct (+4/-1), Multi-correct partial scoring (+4/+2/-2), and numerical evaluation with precision tolerances.
+            </p>
+          </div>
+
+          <div className="p-5 rounded bg-[#262626] border border-[#333333] space-y-3">
+            <div className="w-8 h-8 rounded bg-[#1f1f1f] border border-[#383838] flex items-center justify-center text-[#ffa116]">
+              <Layers className="w-4 h-4" />
+            </div>
+            <h3 className="text-sm font-bold text-white">Concept Dependency DAG</h3>
+            <p className="text-xs text-[#8c8c8c] leading-relaxed">
+              Directed prerequisite graphs track root causes. If you miss a rolling dynamics question, the engine identifies whether your bottleneck is friction or moment of inertia.
+            </p>
+          </div>
+
+          <div className="p-5 rounded bg-[#262626] border border-[#333333] space-y-3">
+            <div className="w-8 h-8 rounded bg-[#1f1f1f] border border-[#383838] flex items-center justify-center text-[#ff375f]">
+              <ShieldCheck className="w-4 h-4" />
+            </div>
+            <h3 className="text-sm font-bold text-white">9-Class Mistake Taxonomy</h3>
+            <p className="text-xs text-[#8c8c8c] leading-relaxed">
+              Automated classification distinguishes calculation slips from sign errors, wrong approximations, or missing physics prerequisites.
+            </p>
           </div>
         </div>
       </section>
+
+      {/* 5. FOOTER */}
+      <footer className="border-t border-[#282828] py-8 px-4 sm:px-6 bg-[#171717] text-xs text-[#8c8c8c]">
+        <div className="max-w-[1200px] mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div className="flex items-center gap-2">
+            <span className="font-bold text-white">ZenithCode Physics</span>
+            <span>•</span>
+            <span>Deterministic Competitive Exam Platform</span>
+          </div>
+          <div className="flex items-center gap-4">
+            <Link href="/solve" className="hover:text-white">Problems</Link>
+            <Link href="/contests" className="hover:text-white">Contests</Link>
+            <Link href="/analytics" className="hover:text-white">Analytics</Link>
+            <Link href="/institutes" className="hover:text-white">Institutes</Link>
+          </div>
+        </div>
+      </footer>
     </div>
   );
 }
