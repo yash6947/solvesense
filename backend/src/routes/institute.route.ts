@@ -22,7 +22,7 @@ const optionalJwt = (req: Request, _res: Response, next: NextFunction) => {
 
 router.get('/', InstituteController.getInstitutes);
 router.get('/scholarships', InstituteController.getScholarships);
-router.post('/scholarships/:id/apply', authenticateJwt, InstituteController.applyForScholarship);
+router.post('/scholarships/:id/apply', optionalJwt, InstituteController.applyForScholarship);
 router.get('/:id/dashboard', optionalJwt, InstituteController.getInstituteDashboard);
 
 export default router;

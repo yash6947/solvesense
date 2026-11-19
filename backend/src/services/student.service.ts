@@ -1,5 +1,6 @@
 import { memoryStore } from './store.service.js';
 import { JEE_PHYSICS_SYLLABUS } from '../data/seedData.js';
+import { JEE_PHYSICS_QUESTIONS } from '../data/questionsData.js';
 
 export interface DashboardMetrics {
   profile: {
@@ -128,9 +129,14 @@ export class StudentService {
       return {
         chapterId: chap.id,
         chapterName: chap.name,
+        name: chap.name,
         slug: chap.slug,
+        chapterSlug: chap.slug,
         topicsCount: chap.topics.length,
         attemptedCount: chapAttempts.length,
+        solvedCount: chapCorrect,
+        totalQuestions: Math.max(chapAttempts.length, chap.topics.length * 2),
+        masteryScore: chapAccuracy,
         accuracyPercentage: chapAccuracy,
       };
     });
@@ -191,17 +197,32 @@ export class StudentService {
         subjectName: 'Physics',
         chapters: chaptersProgress,
       },
-      weakConcepts,
-      recentActivity: attempts.slice(0, 10).map((a) => ({
-        attemptId: a.id,
-        questionId: a.questionId,
-        isCorrect: a.isCorrect,
-        marksEarned: a.marksEarned,
-        timeSpentSeconds: a.timeSpentSeconds,
-        diagnosedMistake: a.diagnosedMistake,
-        aiMentorFeedback: a.aiMentorFeedback,
-        createdAt: a.createdAt.toISOString(),
+      weakConcepts: weakConcepts.map(wc => ({
+        ...wc,
+        topic: wc.name,
       })),
+      recentActivity: attempts.slice(0, 10).map((a) => {
+        const matchedQ = JEE_PHYSICS_QUESTIONS.find(
+          (q) => q.id === a.questionId || q.code === a.questionId
+        );
+        const resolvedId = matchedQ ? matchedQ.id : a.questionId;
+        const resolvedTitle = matchedQ
+          ? `${matchedQ.code} (${matchedQ.topicSlug.replace(/-/g, ' ')})`
+          : `Problem ${a.questionId}`;
+
+        return {
+          attemptId: a.id,
+          questionId: resolvedId,
+          questionTitle: resolvedTitle,
+          isCorrect: a.isCorrect,
+          marksEarned: a.marksEarned,
+          marksAwarded: a.marksEarned,
+          timeSpentSeconds: a.timeSpentSeconds,
+          diagnosedMistake: a.diagnosedMistake,
+          aiMentorFeedback: a.aiMentorFeedback,
+          createdAt: a.createdAt.toISOString(),
+        };
+      }),
       learningRoadmap: roadmap,
     };
   }

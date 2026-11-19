@@ -37,6 +37,24 @@ export const authenticateJwt = (
   }
 };
 
+export const optionalJwt = (
+  req: Request,
+  _res: Response,
+  next: NextFunction
+) => {
+  const authHeader = req.headers.authorization;
+  if (authHeader && authHeader.startsWith('Bearer ')) {
+    try {
+      const token = authHeader.split(' ')[1];
+      const decoded = jwt.verify(token, ENV.JWT_SECRET) as AuthUserPayload;
+      req.user = decoded;
+    } catch {
+      // Ignore token verification failure for optional endpoints
+    }
+  }
+  return next();
+};
+
 export const requireRole = (allowedRoles: string[]) => {
   return (req: Request, res: Response, next: NextFunction) => {
     if (!req.user) {

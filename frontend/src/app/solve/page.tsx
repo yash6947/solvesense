@@ -109,6 +109,9 @@ function ProblemBankContent() {
   const easyCount = questions.filter((q) => q.difficulty === 'EASY').length;
   const medCount = questions.filter((q) => q.difficulty === 'MEDIUM').length;
   const hardCount = questions.filter((q) => q.difficulty === 'HARD' || q.difficulty === 'ADVANCED').length;
+  const easySolved = questions.filter((q) => q.difficulty === 'EASY' && q.isSolved).length;
+  const medSolved = questions.filter((q) => q.difficulty === 'MEDIUM' && q.isSolved).length;
+  const hardSolved = questions.filter((q) => (q.difficulty === 'HARD' || q.difficulty === 'ADVANCED') && q.isSolved).length;
   const solvedCount = questions.filter((q) => q.isSolved).length;
 
   return (
@@ -177,30 +180,30 @@ function ProblemBankContent() {
             <div>
               <div className="flex justify-between text-[11px] mb-1">
                 <span className="text-[#00b8a3] font-medium">Easy</span>
-                <span className="text-[#8c8c8c]">0 / {easyCount}</span>
+                <span className="text-[#8c8c8c]">{easySolved} / {easyCount}</span>
               </div>
               <div className="w-full h-1.5 rounded-full bg-[#1f1f1f] overflow-hidden">
-                <div className="h-full bg-[#00b8a3]" style={{ width: '0%' }} />
+                <div className="h-full bg-[#00b8a3] transition-all duration-500" style={{ width: `${easyCount > 0 ? (easySolved / easyCount) * 100 : 0}%` }} />
               </div>
             </div>
 
             <div>
               <div className="flex justify-between text-[11px] mb-1">
                 <span className="text-[#ffc01e] font-medium">Medium</span>
-                <span className="text-[#8c8c8c]">0 / {medCount}</span>
+                <span className="text-[#8c8c8c]">{medSolved} / {medCount}</span>
               </div>
               <div className="w-full h-1.5 rounded-full bg-[#1f1f1f] overflow-hidden">
-                <div className="h-full bg-[#ffc01e]" style={{ width: '0%' }} />
+                <div className="h-full bg-[#ffc01e] transition-all duration-500" style={{ width: `${medCount > 0 ? (medSolved / medCount) * 100 : 0}%` }} />
               </div>
             </div>
 
             <div>
               <div className="flex justify-between text-[11px] mb-1">
                 <span className="text-[#ff375f] font-medium">Hard</span>
-                <span className="text-[#8c8c8c]">0 / {hardCount}</span>
+                <span className="text-[#8c8c8c]">{hardSolved} / {hardCount}</span>
               </div>
               <div className="w-full h-1.5 rounded-full bg-[#1f1f1f] overflow-hidden">
-                <div className="h-full bg-[#ff375f]" style={{ width: '0%' }} />
+                <div className="h-full bg-[#ff375f] transition-all duration-500" style={{ width: `${hardCount > 0 ? (hardSolved / hardCount) * 100 : 0}%` }} />
               </div>
             </div>
           </div>

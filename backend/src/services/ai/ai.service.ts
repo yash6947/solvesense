@@ -139,13 +139,19 @@ export class AiService {
 
       resultPayload = {
         mistakeType,
+        mistakeCategory: mistakeType.replace(/_/g, ' '),
         divergencePoint: divergence,
         analysisTextLatex:
           params.mentorMode === 'STRICT'
             ? `Strict Analysis: Your submission was incorrect. ${q.solution.commonPitfalls}\n\nRe-verify: Is your coordinate system inertial? Are you assuming an unverified conservation law?`
             : `Collaborative Analysis: Let's trace where things went off track. ${q.solution.commonPitfalls}\n\nNotice that ${q.solution.keyFormulas.join(', ')} dictates the system's acceleration.`,
+        feedback:
+          params.mentorMode === 'STRICT'
+            ? `Your submission was incorrect. ${q.solution.commonPitfalls}`
+            : `Let's trace where things went off track. ${q.solution.commonPitfalls}`,
         prerequisiteWarning: q.chapterSlug.includes('rot') ? 'Torque vector cross product' : 'Friction limits',
         suggestedReview: review,
+        remedialAction: review,
         mentorMode: params.mentorMode,
         engineUsed: 'RULE_BASED_SME_ENGINE',
       };

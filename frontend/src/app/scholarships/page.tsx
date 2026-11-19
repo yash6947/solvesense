@@ -42,11 +42,6 @@ export default function ScholarshipsPage() {
   };
 
   const handleApply = async (schId: string) => {
-    if (!token) {
-      alert('Please sign in to check your eligibility and submit your academic application.');
-      return;
-    }
-
     setApplyingId(schId);
     try {
       const result = await apiRequest(`/institutes/scholarships/${schId}/apply`, {
@@ -55,7 +50,7 @@ export default function ScholarshipsPage() {
       setApplicationResults((prev) => ({ ...prev, [schId]: result }));
     } catch (err: any) {
       console.error('Application failed:', err);
-      alert('Application error: ' + err.message);
+      alert('Application error: ' + (err.message || 'Failed to submit scholarship application'));
     } finally {
       setApplyingId(null);
     }

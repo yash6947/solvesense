@@ -6,7 +6,8 @@ import { sendSuccess, sendError } from '../utils/response.util.js';
 
 const hintSchema = z.object({
   questionId: z.string().min(1),
-  level: z.number().int().min(1).max(4),
+  level: z.number().int().min(1).max(4).optional(),
+  requestedLevel: z.number().int().min(1).max(4).optional(),
   mentorMode: z.enum(['STRICT', 'COLLABORATIVE']).optional(),
 });
 
@@ -27,9 +28,10 @@ export class AiController {
   static getHint(req: Request, res: Response, next: NextFunction) {
     try {
       const validated = hintSchema.parse(req.body);
+      const level = validated.level || validated.requestedLevel || 1;
       const hint = AiService.getProgressiveHint(
         validated.questionId,
-        validated.level,
+        level,
         validated.mentorMode || 'COLLABORATIVE'
       );
       return sendSuccess(res, hint);

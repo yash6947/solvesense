@@ -15,15 +15,17 @@ import {
   Edit3, 
   AlertCircle, 
   ArrowLeft,
+  ChevronLeft,
+  ChevronRight,
   RefreshCw,
   Send,
   MessageSquare,
   FileText,
   History,
   Check,
-  ChevronRight,
   RotateCcw,
-  BookOpen
+  BookOpen,
+  ArrowRight
 } from 'lucide-react';
 import { apiRequest } from '@/lib/api';
 import { useAuth } from '@/context/AuthContext';
@@ -74,6 +76,21 @@ export default function QuestionWorkspacePage() {
   const [chatInput, setChatInput] = useState('');
   const [isChatSending, setIsChatSending] = useState(false);
 
+  // Reset state when questionId changes (e.g. clicking Next/Prev)
+  useEffect(() => {
+    setSelectedSingleKey('');
+    setSelectedMultiKeys([]);
+    setNumericalInput('');
+    setSubmissionResult(null);
+    setMistakeAnalysis(null);
+    setUnlockedHintLevel(0);
+    setHintsCache({});
+    setSeconds(0);
+    setIsTimerRunning(true);
+    setLeftTab('description');
+    fetchQuestionDetails();
+  }, [questionId]);
+
   // Timer effect
   useEffect(() => {
     let interval: any = null;
@@ -84,10 +101,6 @@ export default function QuestionWorkspacePage() {
     }
     return () => clearInterval(interval);
   }, [isTimerRunning, submissionResult]);
-
-  useEffect(() => {
-    fetchQuestionDetails();
-  }, [questionId]);
 
   const fetchQuestionDetails = async () => {
     setIsLoading(true);
@@ -103,6 +116,7 @@ export default function QuestionWorkspacePage() {
   };
 
   const handleToggleMultiOption = (key: string) => {
+    if (submissionResult) return; // Prevent changing after submit
     if (selectedMultiKeys.includes(key)) {
       setSelectedMultiKeys(selectedMultiKeys.filter((k) => k !== key));
     } else {
@@ -122,6 +136,7 @@ export default function QuestionWorkspacePage() {
         method: 'POST',
         body: JSON.stringify({
           questionId,
+          level,
           requestedLevel: level,
           mentorMode,
         }),
@@ -164,11 +179,11 @@ export default function QuestionWorkspacePage() {
 
     setIsSubmitting(true);
     try {
-      const result = await apiRequest(`/questions/${questionId}/submit`, {
+      const result = await apiRequest(`/questions/${questionId}/attempts`, {
         method: 'POST',
         body: JSON.stringify({
           submittedAnswer,
-          timeSpentSeconds: seconds,
+          timeSpentSeconds: Math.max(seconds, 1),
           hintsRequested: unlockedHintLevel,
         }),
       });
@@ -190,12 +205,12 @@ export default function QuestionWorkspacePage() {
   const triggerMistakeAnalysis = async (submittedAnswer: any) => {
     setIsLoadingMistake(true);
     try {
-      const analysis = await apiRequest('/ai/mistake-analysis', {
+      const analysis = await apiRequest('/ai/analyze-mistake', {
         method: 'POST',
         body: JSON.stringify({
           questionId,
           submittedAnswer,
-          timeSpentSeconds: seconds,
+          timeSpentSeconds: Math.max(seconds, 1),
           mentorMode,
         }),
       });
@@ -231,7 +246,7 @@ export default function QuestionWorkspacePage() {
 
       setChatMessages((prev) => [
         ...prev,
-        { sender: 'mentor', text: response.replyLatex, time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) },
+        { sender: 'mentor', text: response.replyLatex || response.reply, time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) },
       ]);
     } catch (err: any) {
       console.error('Chat error:', err);
@@ -311,16 +326,45 @@ export default function QuestionWorkspacePage() {
     <div className="flex-1 flex flex-col h-[calc(100vh-3.25rem)] overflow-hidden bg-[#1a1a1a]">
       {/* LeetCode Workspace Top Sub-Navbar */}
       <div className="h-11 border-b border-[#282828] bg-[#212121] px-4 flex items-center justify-between text-xs shrink-0 select-none">
-        {/* Left: Back Link & Problem Code / Difficulty */}
+        {/* Left: Back Link & Problem Code / Navigation */}
         <div className="flex items-center gap-3">
           <Link
             href="/solve"
             className="text-[#8c8c8c] hover:text-[#eff1f6] flex items-center gap-1.5 font-medium transition-colors"
           >
             <ArrowLeft className="w-3.5 h-3.5" />
-            <span className="hidden sm:inline font-mono">Problem List</span>
+            <span className="hidden sm:inline font-mono">Problemset</span>
           </Link>
           <span className="text-[#3a3a3a]">|</span>
+
+          {/* Quick Problem Switcher (< and >) */}
+          <div className="flex items-center gap-1">
+            <button
+              disabled={!question.prevQuestionId}
+              onClick={() => {
+                if (question.prevQuestionId) {
+                  router.push(`/solve/${question.prevQuestionId}`);
+                }
+              }}
+              title="Previous Problem"
+              className="p-1 rounded bg-[#262626] border border-[#383838] text-[#8c8c8c] hover:text-white disabled:opacity-30 disabled:pointer-events-none transition-colors"
+            >
+              <ChevronLeft className="w-3.5 h-3.5" />
+            </button>
+            <button
+              disabled={!question.nextQuestionId}
+              onClick={() => {
+                if (question.nextQuestionId) {
+                  router.push(`/solve/${question.nextQuestionId}`);
+                }
+              }}
+              title="Next Problem"
+              className="p-1 rounded bg-[#262626] border border-[#383838] text-[#8c8c8c] hover:text-white disabled:opacity-30 disabled:pointer-events-none transition-colors"
+            >
+              <ChevronRight className="w-3.5 h-3.5" />
+            </button>
+          </div>
+
           <span className="font-mono text-[#eff1f6] font-bold">
             {question.code}
           </span>
@@ -520,12 +564,12 @@ export default function QuestionWorkspacePage() {
                   </p>
                 </div>
 
-                {submissionResult?.solutionLatex || question.solutionLatex ? (
+                {submissionResult?.solutionLatex || question.solutionLatex || submissionResult?.verifiedSolution ? (
                   <div className="p-4 rounded bg-[#262626] border border-[#333333] space-y-3">
                     <div className="text-xs font-mono font-bold text-[#00b8a3]">DERIVATION & PROOF:</div>
                     <div className="text-sm text-[#d1d5db] leading-relaxed">
                       <MathRenderer
-                        content={submissionResult?.solutionLatex || question.solutionLatex}
+                        content={submissionResult?.solutionLatex || submissionResult?.verifiedSolution || question.solutionLatex}
                       />
                     </div>
                   </div>
@@ -576,8 +620,8 @@ export default function QuestionWorkspacePage() {
                       </div>
                       <div className="p-2 rounded bg-[#1f1f1f]">
                         <div className="text-[#8c8c8c] text-[10px] uppercase">Marks</div>
-                        <div className={`font-mono font-bold mt-0.5 ${submissionResult.marksAwarded >= 0 ? 'text-[#00b8a3]' : 'text-[#ff375f]'}`}>
-                          {submissionResult.marksAwarded > 0 ? `+${submissionResult.marksAwarded}` : submissionResult.marksAwarded}
+                        <div className={`font-mono font-bold mt-0.5 ${(submissionResult.marksAwarded ?? submissionResult.marksEarned) >= 0 ? 'text-[#00b8a3]' : 'text-[#ff375f]'}`}>
+                          {(submissionResult.marksAwarded ?? submissionResult.marksEarned) > 0 ? `+${submissionResult.marksAwarded ?? submissionResult.marksEarned}` : (submissionResult.marksAwarded ?? submissionResult.marksEarned)}
                         </div>
                       </div>
                       <div className="p-2 rounded bg-[#1f1f1f]">
@@ -751,31 +795,47 @@ export default function QuestionWorkspacePage() {
                 {question.options &&
                   question.options.map((opt: any) => {
                     const isSelected = selectedSingleKey === opt.optionKey;
+                    const isSubmitted = !!submissionResult;
+                    const isCorrectAnswer = submissionResult?.correctAnswer?.includes(opt.optionKey);
+                    const isWrongSelection = isSubmitted && isSelected && !isCorrectAnswer;
+
+                    let cardClass = 'bg-[#262626] border-[#333333] text-[#d1d5db] hover:border-[#4a4a4a] hover:bg-[#2a2a2a]';
+                    let badgeClass = 'bg-[#1f1f1f] text-[#8c8c8c] border border-[#383838]';
+
+                    if (isSubmitted) {
+                      if (isCorrectAnswer) {
+                        cardClass = 'bg-[#1b4329] border-[#00b8a3] text-white';
+                        badgeClass = 'bg-[#00b8a3] text-black font-bold';
+                      } else if (isWrongSelection) {
+                        cardClass = 'bg-[#381a1f] border-[#ff375f] text-white';
+                        badgeClass = 'bg-[#ff375f] text-white font-bold';
+                      }
+                    } else if (isSelected) {
+                      cardClass = 'bg-[#2b2416] border-[#ffa116] text-white';
+                      badgeClass = 'bg-[#ffa116] text-black font-bold';
+                    }
+
                     return (
                       <div
                         key={opt.id || opt.optionKey}
-                        onClick={() => setSelectedSingleKey(opt.optionKey)}
-                        className={`p-3.5 rounded border text-xs flex items-center justify-between cursor-pointer transition-colors ${
-                          isSelected
-                            ? 'bg-[#2b2416] border-[#ffa116] text-white'
-                            : 'bg-[#262626] border-[#333333] text-[#d1d5db] hover:border-[#4a4a4a] hover:bg-[#2a2a2a]'
-                        }`}
+                        onClick={() => {
+                          if (!submissionResult) setSelectedSingleKey(opt.optionKey);
+                        }}
+                        className={`p-3.5 rounded border text-xs flex items-center justify-between transition-colors ${
+                          !submissionResult ? 'cursor-pointer' : 'cursor-default'
+                        } ${cardClass}`}
                       >
                         <div className="flex items-center gap-3 flex-1">
-                          <span
-                            className={`w-6 h-6 rounded flex items-center justify-center font-mono font-bold shrink-0 ${
-                              isSelected
-                                ? 'bg-[#ffa116] text-black'
-                                : 'bg-[#1f1f1f] text-[#8c8c8c] border border-[#383838]'
-                            }`}
-                          >
+                          <span className={`w-6 h-6 rounded flex items-center justify-center font-mono font-bold shrink-0 ${badgeClass}`}>
                             {opt.optionKey}
                           </span>
                           <div className="flex-1 font-medium">
                             <MathRenderer content={opt.contentLatex} inline />
                           </div>
                         </div>
-                        {isSelected && <Check className="w-4 h-4 text-[#ffa116] shrink-0 ml-2" />}
+                        {isSelected && !isSubmitted && <Check className="w-4 h-4 text-[#ffa116] shrink-0 ml-2" />}
+                        {isCorrectAnswer && isSubmitted && <CheckCircle2 className="w-4 h-4 text-[#00b8a3] shrink-0 ml-2" />}
+                        {isWrongSelection && isSubmitted && <XCircle className="w-4 h-4 text-[#ff375f] shrink-0 ml-2" />}
                       </div>
                     );
                   })}
@@ -791,31 +851,45 @@ export default function QuestionWorkspacePage() {
                 {question.options &&
                   question.options.map((opt: any) => {
                     const isSelected = selectedMultiKeys.includes(opt.optionKey);
+                    const isSubmitted = !!submissionResult;
+                    const isCorrectAnswer = submissionResult?.correctAnswer?.includes(opt.optionKey);
+                    const isWrongSelection = isSubmitted && isSelected && !isCorrectAnswer;
+
+                    let cardClass = 'bg-[#262626] border-[#333333] text-[#d1d5db] hover:border-[#4a4a4a] hover:bg-[#2a2a2a]';
+                    let badgeClass = 'bg-[#1f1f1f] text-[#8c8c8c] border border-[#383838]';
+
+                    if (isSubmitted) {
+                      if (isCorrectAnswer) {
+                        cardClass = 'bg-[#1b4329] border-[#00b8a3] text-white';
+                        badgeClass = 'bg-[#00b8a3] text-black font-bold';
+                      } else if (isWrongSelection) {
+                        cardClass = 'bg-[#381a1f] border-[#ff375f] text-white';
+                        badgeClass = 'bg-[#ff375f] text-white font-bold';
+                      }
+                    } else if (isSelected) {
+                      cardClass = 'bg-[#2b2416] border-[#ffa116] text-white';
+                      badgeClass = 'bg-[#ffa116] text-black font-bold';
+                    }
+
                     return (
                       <div
                         key={opt.id || opt.optionKey}
                         onClick={() => handleToggleMultiOption(opt.optionKey)}
-                        className={`p-3.5 rounded border text-xs flex items-center justify-between cursor-pointer transition-colors ${
-                          isSelected
-                            ? 'bg-[#2b2416] border-[#ffa116] text-white'
-                            : 'bg-[#262626] border-[#333333] text-[#d1d5db] hover:border-[#4a4a4a] hover:bg-[#2a2a2a]'
-                        }`}
+                        className={`p-3.5 rounded border text-xs flex items-center justify-between transition-colors ${
+                          !submissionResult ? 'cursor-pointer' : 'cursor-default'
+                        } ${cardClass}`}
                       >
                         <div className="flex items-center gap-3 flex-1">
-                          <span
-                            className={`w-6 h-6 rounded flex items-center justify-center font-mono font-bold shrink-0 ${
-                              isSelected
-                                ? 'bg-[#ffa116] text-black'
-                                : 'bg-[#1f1f1f] text-[#8c8c8c] border border-[#383838]'
-                            }`}
-                          >
+                          <span className={`w-6 h-6 rounded flex items-center justify-center font-mono font-bold shrink-0 ${badgeClass}`}>
                             {opt.optionKey}
                           </span>
                           <div className="flex-1 font-medium">
                             <MathRenderer content={opt.contentLatex} inline />
                           </div>
                         </div>
-                        {isSelected && <Check className="w-4 h-4 text-[#ffa116] shrink-0 ml-2" />}
+                        {isSelected && !isSubmitted && <Check className="w-4 h-4 text-[#ffa116] shrink-0 ml-2" />}
+                        {isCorrectAnswer && isSubmitted && <CheckCircle2 className="w-4 h-4 text-[#00b8a3] shrink-0 ml-2" />}
+                        {isWrongSelection && isSubmitted && <XCircle className="w-4 h-4 text-[#ff375f] shrink-0 ml-2" />}
                       </div>
                     );
                   })}
@@ -826,16 +900,17 @@ export default function QuestionWorkspacePage() {
             {question.questionType === 'NUMERICAL' && (
               <div className="space-y-3">
                 <label className="block text-xs text-[#8c8c8c] font-medium">
-                  Enter final numerical answer (Rounded to 2 decimal places):
+                  Enter final numerical answer (Tolerance ±0.05):
                 </label>
                 <div className="relative max-w-sm">
                   <input
                     type="number"
                     step="any"
+                    disabled={!!submissionResult}
                     value={numericalInput}
                     onChange={(e) => setNumericalInput(e.target.value)}
                     placeholder="e.g. 1.25"
-                    className="w-full px-4 py-2.5 rounded bg-[#262626] border border-[#333333] focus:border-[#ffa116] font-mono text-base text-white outline-none"
+                    className="w-full px-4 py-2.5 rounded bg-[#262626] border border-[#333333] focus:border-[#ffa116] font-mono text-base text-white outline-none disabled:opacity-75"
                   />
                   <span className="absolute right-3 top-3 text-xs font-mono text-[#8c8c8c]">
                     SI Units
@@ -876,13 +951,13 @@ export default function QuestionWorkspacePage() {
                   </div>
 
                   <span className="font-mono text-xs">
-                    Marks: <span className="font-bold">{submissionResult.marksAwarded > 0 ? `+${submissionResult.marksAwarded}` : submissionResult.marksAwarded}</span>
+                    Marks: <span className="font-bold">{(submissionResult.marksAwarded ?? submissionResult.marksEarned) > 0 ? `+${submissionResult.marksAwarded ?? submissionResult.marksEarned}` : (submissionResult.marksAwarded ?? submissionResult.marksEarned)}</span>
                   </span>
                 </div>
 
                 {/* Explanation text */}
                 <div className="text-xs text-[#d1d5db] leading-relaxed pt-1 border-t border-[#383838]">
-                  <MathRenderer content={submissionResult.explanation} />
+                  <MathRenderer content={submissionResult.explanation || submissionResult.solutionLatex || submissionResult.verifiedSolution} />
                 </div>
 
                 {/* Mistake analysis card if incorrect */}
@@ -890,16 +965,37 @@ export default function QuestionWorkspacePage() {
                   <div className="p-3 rounded bg-[#1f1f1f] border border-[#404040] space-y-1.5 text-xs mt-2">
                     <div className="font-bold text-[#ffa116] flex items-center gap-1.5">
                       <AlertCircle className="w-3.5 h-3.5" />
-                      <span>Cognitive Diagnostic: {mistakeAnalysis.mistakeCategory}</span>
+                      <span>Cognitive Diagnostic: {mistakeAnalysis.mistakeCategory || mistakeAnalysis.mistakeType}</span>
                     </div>
-                    <p className="text-[#9ca3af]">{mistakeAnalysis.feedback}</p>
-                    {mistakeAnalysis.remedialAction && (
+                    <p className="text-[#9ca3af]">{mistakeAnalysis.feedback || mistakeAnalysis.analysisTextLatex || mistakeAnalysis.divergencePoint}</p>
+                    {(mistakeAnalysis.remedialAction || mistakeAnalysis.suggestedReview) && (
                       <p className="text-[#00b8a3] font-mono text-[11px]">
-                        Remedy: {mistakeAnalysis.remedialAction}
+                        Remedy: {mistakeAnalysis.remedialAction || mistakeAnalysis.suggestedReview}
                       </p>
                     )}
                   </div>
                 )}
+
+                {/* Post-submission fluent action buttons */}
+                <div className="pt-2 flex items-center gap-2 flex-wrap">
+                  <button
+                    onClick={() => setLeftTab('editorial')}
+                    className="px-3 py-1 rounded bg-[#262626] hover:bg-[#303030] text-[#00b8a3] border border-[#00b8a3]/30 font-medium text-xs flex items-center gap-1 transition-colors"
+                  >
+                    <BookOpen className="w-3 h-3" />
+                    <span>View Step-by-Step Editorial</span>
+                  </button>
+
+                  {question.nextQuestionId && (
+                    <button
+                      onClick={() => router.push(`/solve/${question.nextQuestionId}`)}
+                      className="px-3 py-1 rounded bg-[#ffa116] hover:bg-[#ff9500] text-black font-semibold text-xs flex items-center gap-1 transition-colors ml-auto"
+                    >
+                      <span>Next Problem</span>
+                      <ArrowRight className="w-3 h-3 stroke-[2.5]" />
+                    </button>
+                  )}
+                </div>
               </div>
             ) : (
               <div className="flex items-center justify-between text-xs text-[#8c8c8c]">

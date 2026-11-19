@@ -1,12 +1,10 @@
 import { Router } from 'express';
 import { StudentController } from '../controllers/student.controller.js';
-import { authenticateJwt } from '../middlewares/auth.middleware.js';
+import { authenticateJwt, optionalJwt } from '../middlewares/auth.middleware.js';
 
 const router = Router();
 
-router.use(authenticateJwt);
-
-router.get('/dashboard', StudentController.getDashboard);
-router.patch('/profile', StudentController.updateProfile);
+router.get('/dashboard', optionalJwt, StudentController.getDashboard);
+router.patch('/profile', authenticateJwt, StudentController.updateProfile);
 
 export default router;

@@ -104,11 +104,16 @@ export class QuestionService {
       contentLatex: opt.contentLatex,
     }));
 
+    const currentIndex = JEE_PHYSICS_QUESTIONS.findIndex((item) => item.id === id || item.code === id);
+    const prevQuestion = currentIndex > 0 ? JEE_PHYSICS_QUESTIONS[currentIndex - 1] : null;
+    const nextQuestion = currentIndex >= 0 && currentIndex < JEE_PHYSICS_QUESTIONS.length - 1 ? JEE_PHYSICS_QUESTIONS[currentIndex + 1] : null;
+
     return {
       id: q.id,
       code: q.code,
       chapterSlug: q.chapterSlug,
       topicSlug: q.topicSlug,
+      topic: { id: q.topicSlug, name: q.topicSlug.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase()) },
       examType: q.examType,
       questionType: q.questionType,
       difficulty: q.difficulty,
@@ -122,6 +127,9 @@ export class QuestionService {
       options: safeOptions,
       unit: q.unit,
       availableHintsCount: q.hints.length,
+      solutionLatex: q.solution.solutionTextLatex,
+      prevQuestionId: prevQuestion?.id || null,
+      nextQuestionId: nextQuestion?.id || null,
       previousAttempts: userAttempts.map((a) => ({
         id: a.id,
         isCorrect: a.isCorrect,
@@ -247,10 +255,13 @@ export class QuestionService {
       attemptId,
       isCorrect,
       marksEarned,
+      marksAwarded: marksEarned,
       timeSpentSeconds: dto.timeSpentSeconds,
       correctAnswer,
       diagnosedMistake,
-      verifiedSolution: q.solution,
+      verifiedSolution: q.solution.solutionTextLatex || q.solution,
+      solutionLatex: q.solution.solutionTextLatex || q.solution,
+      explanation: q.solution.solutionTextLatex || q.solution,
     };
   }
 

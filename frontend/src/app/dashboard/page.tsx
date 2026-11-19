@@ -31,15 +31,8 @@ export default function DashboardPage() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!authLoading && !token) {
-      router.push('/auth/login');
-      return;
-    }
-
-    if (token) {
-      fetchDashboard();
-    }
-  }, [token, authLoading]);
+    fetchDashboard();
+  }, [token]);
 
   const fetchDashboard = async () => {
     setIsLoading(true);
@@ -86,6 +79,10 @@ export default function DashboardPage() {
 
   const { profile, performance, subjectProgress, weakConcepts, recentActivity, learningRoadmap } =
     dashboardData;
+
+  const chaptersList: any[] = Array.isArray(subjectProgress)
+    ? subjectProgress
+    : subjectProgress?.chapters || [];
 
   // Generate 28 mock streak heatmap squares
   const heatmapDays = Array.from({ length: 28 }, (_, i) => {
@@ -319,32 +316,45 @@ export default function DashboardPage() {
             </div>
 
             <div className="space-y-3">
-              {subjectProgress.map((chap: any) => (
-                <div
-                  key={chap.chapterSlug}
-                  className="p-3 rounded bg-[#1f1f1f] border border-[#333333] hover:border-[#404040] transition-colors"
-                >
-                  <div className="flex items-center justify-between text-xs mb-2">
-                    <div className="flex items-center gap-2">
-                      <span className="font-semibold text-white">{chap.chapterName}</span>
-                      <span className="font-mono text-[10px] text-[#8c8c8c]">
-                        {chap.solvedCount} / {chap.totalQuestions} Solved
+              {chaptersList.map((chap: any) => {
+                const chapterSlug = chap.slug || chap.chapterSlug || 'rotational-motion';
+                const chapterName = chap.chapterName || chap.name || 'Chapter';
+                const mastery = chap.masteryScore ?? chap.accuracyPercentage ?? 0;
+                const solved = chap.solvedCount ?? chap.attemptedCount ?? 0;
+                const total = chap.totalQuestions || 10;
+
+                return (
+                  <div
+                    key={chapterSlug}
+                    className="p-3 rounded bg-[#1f1f1f] border border-[#333333] hover:border-[#404040] transition-colors"
+                  >
+                    <div className="flex items-center justify-between text-xs mb-2">
+                      <div className="flex items-center gap-2">
+                        <Link
+                          href={`/solve?chapter=${chapterSlug}`}
+                          className="font-semibold text-white hover:text-[#ffa116] transition-colors"
+                        >
+                          {chapterName}
+                        </Link>
+                        <span className="font-mono text-[10px] text-[#8c8c8c]">
+                          {solved} / {total} Solved
+                        </span>
+                      </div>
+                      <span className="font-mono text-xs font-bold text-[#00b8a3]">
+                        {mastery}% Mastery
                       </span>
                     </div>
-                    <span className="font-mono text-xs font-bold text-[#00b8a3]">
-                      {chap.masteryScore}% Mastery
-                    </span>
-                  </div>
 
-                  {/* Progress bar */}
-                  <div className="w-full h-1.5 rounded-full bg-[#141414] overflow-hidden">
-                    <div
-                      className="h-full bg-[#00b8a3] rounded-full transition-all duration-500"
-                      style={{ width: `${chap.masteryScore}%` }}
-                    />
+                    {/* Progress bar */}
+                    <div className="w-full h-1.5 rounded-full bg-[#141414] overflow-hidden">
+                      <div
+                        className="h-full bg-[#00b8a3] rounded-full transition-all duration-500"
+                        style={{ width: `${Math.min(100, Math.max(5, mastery))}%` }}
+                      />
+                    </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
 

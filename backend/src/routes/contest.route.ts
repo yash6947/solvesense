@@ -23,7 +23,8 @@ const optionalJwt = (req: Request, _res: Response, next: NextFunction) => {
 router.get('/', ContestController.getContests);
 router.get('/:id', ContestController.getContestById);
 router.get('/:id/paper', optionalJwt, ContestController.getContestPaper);
-router.post('/:id/submit', authenticateJwt, ContestController.submitContest);
+router.get('/:id/take', optionalJwt, ContestController.getContestPaper);
+router.post('/:id/submit', optionalJwt, ContestController.submitContest);
 router.get('/:id/leaderboard', optionalJwt, ContestController.getLeaderboard);
 
 export default router;

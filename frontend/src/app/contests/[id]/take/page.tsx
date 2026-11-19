@@ -40,12 +40,8 @@ export default function TakeContestPage() {
   const [showSubmitModal, setShowSubmitModal] = useState(false);
 
   useEffect(() => {
-    if (!token) {
-      router.push('/auth/login');
-      return;
-    }
     fetchContestPaper();
-  }, [contestId, token]);
+  }, [contestId]);
 
   // Countdown timer
   useEffect(() => {

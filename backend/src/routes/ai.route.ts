@@ -22,7 +22,9 @@ const optionalJwt = (req: Request, _res: Response, next: NextFunction) => {
 router.use(optionalJwt);
 
 router.post('/hint', AiController.getHint);
+router.post('/hints', AiController.getHint);
 router.post('/analyze-mistake', AiController.analyzeMistake);
+router.post('/mistake-analysis', AiController.analyzeMistake);
 router.post('/chat', AiController.chat);
 
 export default router;

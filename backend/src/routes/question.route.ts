@@ -24,6 +24,7 @@ const optionalJwt = (req: Request, _res: Response, next: NextFunction) => {
 router.get('/', optionalJwt, QuestionController.getQuestions);
 router.get('/:id', optionalJwt, QuestionController.getQuestionById);
 router.get('/:id/hints', QuestionController.getHint);
-router.post('/:id/attempts', authenticateJwt, QuestionController.submitAttempt);
+router.post('/:id/attempts', optionalJwt, QuestionController.submitAttempt);
+router.post('/:id/submit', optionalJwt, QuestionController.submitAttempt);
 
 export default router;
