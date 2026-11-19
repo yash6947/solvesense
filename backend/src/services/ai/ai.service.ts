@@ -157,6 +157,10 @@ export class AiService {
       };
     }
 
+    if (!resultPayload) {
+      throw new Error('Failed to generate mistake analysis');
+    }
+
     return resultPayload;
   }
 

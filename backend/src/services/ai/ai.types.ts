@@ -14,6 +14,9 @@ export type MistakeClass =
 
 export interface MistakeAnalysisResponse {
   mistakeType: MistakeClass;
+  mistakeCategory?: string;
+  feedback?: string;
+  remedialAction?: string;
   analysisTextLatex: string;
   divergencePoint: string;
   prerequisiteWarning?: string | null;
