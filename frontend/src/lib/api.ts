@@ -307,9 +307,11 @@ function handleOfflineFallback<T = any>(endpoint: string, options: RequestInit =
         if (p) savedProfile = JSON.parse(p);
       } catch (_) {}
     }
+    const user = savedUser || { id: 'u-1', fullName: 'Student Aspirant', email: 'student@solvesense.dev', role: 'STUDENT' };
+    const profile = savedProfile ? { ...savedProfile, fullName: user.fullName } : { ...FALLBACK_DASHBOARD.profile, fullName: user.fullName };
     return {
-      user: savedUser || { id: 'u-1', fullName: 'Yash Sharma', email: 'yash@solvesense.dev', role: 'STUDENT' },
-      profile: savedProfile || FALLBACK_DASHBOARD.profile,
+      user,
+      profile,
     } as any;
   }
 

@@ -93,7 +93,7 @@ export const FALLBACK_CHAPTERS = [
 
 export const FALLBACK_DASHBOARD = {
   profile: {
-    fullName: 'Yash Sharma',
+    fullName: 'Student Aspirant',
     targetExam: 'JEE_ADVANCED',
     targetYear: 2026,
     academicLevel: 'Class 12 / Dropper Advanced',
@@ -169,7 +169,7 @@ export const FALLBACK_LEADERBOARD = {
     { rank: 1, studentName: 'Aditya Verma', instituteName: 'Apex Kota - Super 30', timeSpentSeconds: 2450, score: 68 },
     { rank: 2, studentName: 'Ananya Deshmukh', instituteName: 'Allen Mumbai Star Batch', timeSpentSeconds: 2680, score: 64 },
     { rank: 3, studentName: 'Rohan Sen', instituteName: 'FIITJEE Delhi Pinnacle', timeSpentSeconds: 2890, score: 60 },
-    { rank: 4, studentName: 'Yash Sharma (You)', instituteName: 'Independent Aspirant', timeSpentSeconds: 3120, score: 56 },
+    { rank: 4, studentName: 'You (Aspirant)', instituteName: 'Independent Aspirant', timeSpentSeconds: 3120, score: 56 },
     { rank: 5, studentName: 'Kavya Nair', instituteName: 'Narayana Hyderabad', timeSpentSeconds: 3200, score: 52 },
   ],
 };
@@ -280,7 +280,7 @@ export const FALLBACK_INSTITUTE_DASHBOARD = {
   studentRoster: [
     { id: 'st-01', name: 'Aditya Verma', maskedEmail: 'adi***@apex.edu', batchName: 'Super-30 Batch A', psi: 88.5, questionsSolved: 142, streak: 28 },
     { id: 'st-02', name: 'Ananya Deshmukh', maskedEmail: 'ana***@allen.edu', batchName: 'Super-30 Batch A', psi: 86.2, questionsSolved: 135, streak: 24 },
-    { id: 'st-03', name: 'Yash Sharma', maskedEmail: 'yash***@solvesense.dev', batchName: 'Super-30 Batch A', psi: 84.1, questionsSolved: 120, streak: 18 },
+    { id: 'st-03', name: 'Aarav Patel', maskedEmail: 'aarav***@solvesense.dev', batchName: 'Super-30 Batch A', psi: 84.1, questionsSolved: 120, streak: 18 },
     { id: 'st-04', name: 'Rohan Sen', maskedEmail: 'rohan***@fiitjee.edu', batchName: 'Super-30 Batch B', psi: 79.4, questionsSolved: 98, streak: 14 },
     { id: 'st-05', name: 'Kavya Nair', maskedEmail: 'kavya***@gmail.com', batchName: 'Super-30 Batch B', psi: 74.8, questionsSolved: 85, streak: 11 },
   ],

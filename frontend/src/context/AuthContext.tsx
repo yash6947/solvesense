@@ -45,11 +45,37 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const initAuth = async () => {
     try {
       const storedToken = localStorage.getItem('zenith_token');
+      const storedUser = localStorage.getItem('zenith_user');
+      const storedProfile = localStorage.getItem('zenith_profile');
+
+      let parsedUser: User | null = null;
+      if (storedUser) {
+        try {
+          parsedUser = JSON.parse(storedUser);
+          setUser(parsedUser);
+        } catch (_) {}
+      }
+      if (storedProfile) {
+        try {
+          setProfile(JSON.parse(storedProfile));
+        } catch (_) {}
+      }
+
       if (storedToken) {
         setToken(storedToken);
         const data = await apiRequest<{ user: User; profile: StudentProfile }>('/auth/me');
-        setUser(data.user);
-        setProfile(data.profile);
+        if (data?.user) {
+          const resolvedUser = parsedUser?.fullName
+            ? { ...data.user, fullName: parsedUser.fullName }
+            : data.user;
+          setUser(resolvedUser);
+        }
+        if (data?.profile) {
+          const resolvedProfile = parsedUser?.fullName
+            ? { ...data.profile, fullName: parsedUser.fullName }
+            : data.profile;
+          setProfile(resolvedProfile);
+        }
       }
     } catch (err) {
       console.warn('Session expired or invalid:', err);
