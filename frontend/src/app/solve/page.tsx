@@ -9,12 +9,21 @@ import {
   Circle,
   FileText,
   Shuffle,
-  Star,
   ChevronRight,
   TrendingUp,
-  Zap,
+  Sparkles,
   Calendar,
-  Layers
+  Layers,
+  ArrowRight,
+  Filter,
+  Check,
+  Award,
+  BookOpen,
+  Flame,
+  Zap,
+  Tag,
+  Clock,
+  ShieldCheck
 } from 'lucide-react';
 import { apiRequest } from '@/lib/api';
 
@@ -74,7 +83,7 @@ function ProblemBankContent() {
     fetchQuestions();
   };
 
-  // Pick Random Question (LeetCode "Pick One")
+  // Pick Random Question (Classic LeetCode Feature)
   const handlePickRandom = () => {
     if (questions.length === 0) return;
     const randomIndex = Math.floor(Math.random() * questions.length);
@@ -89,22 +98,7 @@ function ProblemBankContent() {
     return true;
   });
 
-  const getDifficultyColor = (diff: string) => {
-    switch (diff) {
-      case 'EASY':
-        return 'text-[#00b8a3]';
-      case 'MEDIUM':
-        return 'text-[#ffc01e]';
-      case 'HARD':
-        return 'text-[#ff375f]';
-      case 'ADVANCED':
-        return 'text-[#a855f7]';
-      default:
-        return 'text-[#9ca3af]';
-    }
-  };
-
-  // Calculate difficulty stats
+  // Calculate stats
   const totalCount = questions.length;
   const easyCount = questions.filter((q) => q.difficulty === 'EASY').length;
   const medCount = questions.filter((q) => q.difficulty === 'MEDIUM').length;
@@ -113,126 +107,178 @@ function ProblemBankContent() {
   const medSolved = questions.filter((q) => q.difficulty === 'MEDIUM' && q.isSolved).length;
   const hardSolved = questions.filter((q) => (q.difficulty === 'HARD' || q.difficulty === 'ADVANCED') && q.isSolved).length;
   const solvedCount = questions.filter((q) => q.isSolved).length;
+  const completionPercentage = totalCount > 0 ? Math.round((solvedCount / totalCount) * 100) : 0;
+
+  // Study plans (LeetCode 75 / Top 50 style)
+  const studyPlans = [
+    { title: 'Top 50 JEE Advanced Mechanics', solved: 14, total: 50, tag: 'High Yield', color: '#00e1ab' },
+    { title: 'Electrodynamics & Magnetism 30', solved: 8, total: 30, tag: 'Calculus Intensive', color: '#2E5BFF' },
+    { title: 'Thermodynamics Rapid Drill', solved: 6, total: 20, tag: 'Formula Rigor', color: '#ffa116' },
+  ];
 
   return (
-    <div className="flex-1 max-w-[1440px] w-full mx-auto px-4 sm:px-6 py-6 space-y-6">
-      {/* Top Banner Grid: Study Plans & Daily Challenge (LeetCode Style) */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
-        {/* Left: Study Plan Banner */}
-        <div className="lg:col-span-8 p-5 rounded-lg bg-[#262626] border border-[#333333] flex flex-col justify-between">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
-            <div>
-              <div className="flex items-center gap-2 mb-1">
-                <span className="text-xs font-mono font-semibold uppercase text-[#ffa116]">Curated Study Plan</span>
-                <span className="text-xs text-[#8c8c8c]">•</span>
-                <span className="text-xs text-[#8c8c8c]">JEE Advanced 2026 Core</span>
+    <div className="flex-1 max-w-[1440px] w-full mx-auto px-4 sm:px-6 py-6 space-y-6 bg-[#0a0a0a]">
+      {/* ======================================================== */}
+      {/* 1. LEETCODE / GFG PROBLEM OF THE DAY & STUDY PLANS       */}
+      {/* ======================================================== */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
+        {/* Left (7 cols): Pinned Problem of the Day (POTD) */}
+        <div className="lg:col-span-7 p-6 rounded-2xl bg-[#141414] border border-[#282828] flex flex-col justify-between space-y-4 relative overflow-hidden">
+          <div className="absolute right-0 top-0 w-80 h-80 bg-[#ffa116]/5 rounded-full blur-3xl pointer-events-none" />
+
+          <div className="space-y-3 z-10">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <span className="flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-[#ffa116]/10 text-[#ffa116] border border-[#ffa116]/20 text-[11px] font-mono font-bold">
+                  <Calendar className="w-3.5 h-3.5" />
+                  <span>Problem of the Day</span>
+                </span>
+                <span className="text-[11px] font-mono text-[#8c8c8c]">
+                  November 23, 2026
+                </span>
               </div>
-              <h1 className="text-xl sm:text-2xl font-bold text-white tracking-tight">
-                Competitive Physics Problemset
-              </h1>
+              <span className="text-[11px] font-mono text-[#00e1ab] flex items-center gap-1">
+                <Flame className="w-3.5 h-3.5 fill-[#00e1ab]" />
+                <span>+10 PSI Points</span>
+              </span>
             </div>
-            <button
-              onClick={handlePickRandom}
-              className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded bg-[#333333] hover:bg-[#3d3d3d] text-xs font-semibold text-white border border-[#404040] transition-colors self-start sm:self-auto shrink-0"
-            >
-              <Shuffle className="w-3.5 h-3.5 text-[#00b8a3]" />
-              <span>Pick One</span>
-            </button>
+
+            <div>
+              <Link
+                href="/solve/PHY-ADV-24-ROT-01"
+                className="text-lg sm:text-xl font-bold text-white hover:text-[#00e1ab] transition-colors font-heading tracking-tight"
+              >
+                PHY-ADV-24-ROT-01: Pure Rolling Dynamics on Rough Inclines
+              </Link>
+              <p className="text-xs text-[#8c8c8c] mt-1 line-clamp-2 leading-relaxed">
+                A solid cylinder of mass M and radius R is placed on an incline with friction coefficient μ. Determine condition for rolling without slipping.
+              </p>
+            </div>
+
+            <div className="flex items-center gap-2.5 pt-1 text-xs">
+              <span className="px-2 py-0.5 rounded text-[11px] font-semibold border text-[#ff375f] bg-[#ff375f]/10 border-[#ff375f]/20">
+                HARD
+              </span>
+              <span className="px-2 py-0.5 rounded text-[10px] font-mono bg-[#2b2416] text-[#ffa116] border border-[#4a3b1d]">
+                JEE ADVANCED &apos;24 PYQ
+              </span>
+              <span className="text-[#8c8c8c] font-mono text-[11px]">
+                Marks: +4 / -1
+              </span>
+            </div>
           </div>
 
-          {/* Category Chips Carousel */}
-          <div className="flex items-center gap-1.5 overflow-x-auto pb-1 text-xs">
-            <button
-              onClick={() => setSelectedChapter('')}
-              className={`px-3 py-1 rounded transition-colors whitespace-nowrap ${
-                selectedChapter === ''
-                  ? 'bg-white text-black font-semibold'
-                  : 'bg-[#1f1f1f] text-[#8c8c8c] hover:text-white hover:bg-[#2e2e2e]'
-              }`}
+          <div className="pt-2 flex items-center justify-between z-10">
+            <span className="text-xs text-[#8c8c8c] font-mono">
+              Acceptance: <strong className="text-white">44.8%</strong>
+            </span>
+            <Link
+              href="/solve/PHY-ADV-24-ROT-01"
+              className="px-4 py-2 rounded-xl bg-[#00e1ab] hover:bg-[#00c596] text-black font-bold text-xs flex items-center gap-1.5 transition-all shadow-sm"
             >
-              All Topics
-            </button>
-            {chapters.map((chap) => (
-              <button
-                key={chap.id}
-                onClick={() => setSelectedChapter(chap.slug)}
-                className={`px-3 py-1 rounded transition-colors whitespace-nowrap ${
-                  selectedChapter === chap.slug
-                    ? 'bg-white text-black font-semibold'
-                    : 'bg-[#1f1f1f] text-[#8c8c8c] hover:text-white hover:bg-[#2e2e2e]'
-                }`}
-              >
-                {chap.name}
-              </button>
-            ))}
+              <span>Solve POTD Challenge</span>
+              <ArrowRight className="w-3.5 h-3.5 stroke-[2.5]" />
+            </Link>
           </div>
         </div>
 
-        {/* Right: Solved Progress Card (LeetCode circle stats) */}
-        <div className="lg:col-span-4 p-5 rounded-lg bg-[#262626] border border-[#333333] flex flex-col justify-between">
-          <div className="flex items-center justify-between text-xs text-[#8c8c8c] mb-3">
-            <span className="font-semibold text-white uppercase tracking-wider">Session Progress</span>
-            <span className="font-mono text-white font-semibold">{solvedCount} / {totalCount} Solved</span>
+        {/* Right (5 cols): LeetCode-style Curated Study Plans */}
+        <div className="lg:col-span-5 p-5 rounded-2xl bg-[#141414] border border-[#282828] space-y-3 flex flex-col justify-between">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Layers className="w-4 h-4 text-[#2E5BFF]" />
+              <span className="text-xs font-bold text-white font-heading uppercase tracking-wider">
+                Curated Study Plans
+              </span>
+            </div>
+            <span className="text-[11px] font-mono text-[#8c8c8c]">JEE 2026</span>
           </div>
 
-          {/* 3 Difficulty Progress Bars */}
-          <div className="space-y-2 text-xs">
-            <div>
-              <div className="flex justify-between text-[11px] mb-1">
-                <span className="text-[#00b8a3] font-medium">Easy</span>
-                <span className="text-[#8c8c8c]">{easySolved} / {easyCount}</span>
+          <div className="space-y-2.5">
+            {studyPlans.map((sp, idx) => (
+              <div
+                key={idx}
+                className="p-3 rounded-xl bg-[#181818] border border-[#282828] hover:border-[#383838] transition-colors space-y-2"
+              >
+                <div className="flex items-center justify-between text-xs">
+                  <span className="font-semibold text-white font-heading">{sp.title}</span>
+                  <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-[#121212] text-[#8c8c8c] border border-[#242424]">
+                    {sp.tag}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between text-[11px] font-mono text-[#8c8c8c]">
+                  <span>{sp.solved} of {sp.total} solved</span>
+                  <span className="text-white font-bold">{Math.round((sp.solved / sp.total) * 100)}%</span>
+                </div>
+                <div className="w-full h-1.5 rounded-full bg-[#121212] overflow-hidden">
+                  <div
+                    className="h-full rounded-full transition-all"
+                    style={{ width: `${(sp.solved / sp.total) * 100}%`, backgroundColor: sp.color }}
+                  />
+                </div>
               </div>
-              <div className="w-full h-1.5 rounded-full bg-[#1f1f1f] overflow-hidden">
-                <div className="h-full bg-[#00b8a3] transition-all duration-500" style={{ width: `${easyCount > 0 ? (easySolved / easyCount) * 100 : 0}%` }} />
-              </div>
-            </div>
-
-            <div>
-              <div className="flex justify-between text-[11px] mb-1">
-                <span className="text-[#ffc01e] font-medium">Medium</span>
-                <span className="text-[#8c8c8c]">{medSolved} / {medCount}</span>
-              </div>
-              <div className="w-full h-1.5 rounded-full bg-[#1f1f1f] overflow-hidden">
-                <div className="h-full bg-[#ffc01e] transition-all duration-500" style={{ width: `${medCount > 0 ? (medSolved / medCount) * 100 : 0}%` }} />
-              </div>
-            </div>
-
-            <div>
-              <div className="flex justify-between text-[11px] mb-1">
-                <span className="text-[#ff375f] font-medium">Hard</span>
-                <span className="text-[#8c8c8c]">{hardSolved} / {hardCount}</span>
-              </div>
-              <div className="w-full h-1.5 rounded-full bg-[#1f1f1f] overflow-hidden">
-                <div className="h-full bg-[#ff375f] transition-all duration-500" style={{ width: `${hardCount > 0 ? (hardSolved / hardCount) * 100 : 0}%` }} />
-              </div>
-            </div>
+            ))}
           </div>
         </div>
       </div>
 
-      {/* Filter Control Bar (LeetCode Style) */}
-      <div className="flex flex-wrap items-center justify-between gap-3 bg-[#262626] p-3 rounded-lg border border-[#333333]">
+      {/* ======================================================== */}
+      {/* 2. CHAPTER PILLS CAROUSEL (LEETCODE TAG STRIP)           */}
+      {/* ======================================================== */}
+      <div className="flex items-center gap-2 overflow-x-auto pb-1 text-xs select-none scrollbar-none">
+        <button
+          onClick={() => setSelectedChapter('')}
+          className={`px-3.5 py-1.5 rounded-full font-medium whitespace-nowrap transition-all ${
+            selectedChapter === ''
+              ? 'bg-[#2E5BFF] text-white font-bold shadow-sm'
+              : 'bg-[#141414] border border-[#282828] text-[#8c8c8c] hover:text-white hover:border-[#383838]'
+          }`}
+        >
+          All Topics
+        </button>
+        {chapters.map((chap) => {
+          const isSelected = selectedChapter === chap.slug;
+          return (
+            <button
+              key={chap.id}
+              onClick={() => setSelectedChapter(isSelected ? '' : chap.slug)}
+              className={`px-3.5 py-1.5 rounded-full font-medium whitespace-nowrap transition-all ${
+                isSelected
+                  ? 'bg-[#2E5BFF] text-white font-bold shadow-sm'
+                  : 'bg-[#141414] border border-[#282828] text-[#8c8c8c] hover:text-white hover:border-[#383838]'
+              }`}
+            >
+              {chap.name}
+            </button>
+          );
+        })}
+      </div>
+
+      {/* ======================================================== */}
+      {/* 3. MULTI-CRITERIA FILTER BAR & RANDOM PICKER             */}
+      {/* ======================================================== */}
+      <div className="p-4 rounded-2xl bg-[#141414] border border-[#282828] flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3 text-xs">
         {/* Search Input */}
-        <form onSubmit={handleSearchSubmit} className="relative flex-1 min-w-[220px] max-w-sm">
-          <Search className="w-4 h-4 text-[#8c8c8c] absolute left-3 top-2.5 pointer-events-none" />
+        <form onSubmit={handleSearchSubmit} className="relative flex-1 max-w-md">
+          <Search className="w-3.5 h-3.5 absolute left-3.5 top-3 text-[#6b7280]" />
           <input
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Search questions by topic, formula, or code..."
-            className="w-full pl-9 pr-3 py-1.5 rounded bg-[#1f1f1f] border border-[#383838] focus:border-[#ffa116] text-xs text-white placeholder-[#6b7280] outline-none transition-colors"
+            placeholder="Search by code, title, or concept (e.g. ROT-01, Torque)..."
+            className="w-full pl-9 pr-4 py-2 rounded-xl bg-[#181818] border border-[#282828] focus:border-[#2E5BFF] text-white placeholder-[#6b7280] outline-none text-xs transition-colors"
           />
         </form>
 
-        {/* Filters Group */}
-        <div className="flex flex-wrap items-center gap-2">
+        {/* Filter Dropdowns */}
+        <div className="flex items-center gap-2 flex-wrap">
           {/* Difficulty Dropdown */}
           <select
             value={selectedDifficulty}
             onChange={(e) => setSelectedDifficulty(e.target.value)}
-            className="px-2.5 py-1.5 rounded bg-[#1f1f1f] border border-[#383838] text-xs text-[#eff1f6] outline-none focus:border-[#ffa116] cursor-pointer"
+            className="px-3 py-2 rounded-xl bg-[#181818] border border-[#282828] text-xs text-[#eff1f6] outline-none font-mono"
           >
-            <option value="">Difficulty</option>
+            <option value="">Difficulty: All</option>
             <option value="EASY">Easy</option>
             <option value="MEDIUM">Medium</option>
             <option value="HARD">Hard</option>
@@ -243,146 +289,150 @@ function ProblemBankContent() {
           <select
             value={selectedStatus}
             onChange={(e) => setSelectedStatus(e.target.value)}
-            className="px-2.5 py-1.5 rounded bg-[#1f1f1f] border border-[#383838] text-xs text-[#eff1f6] outline-none focus:border-[#ffa116] cursor-pointer"
+            className="px-3 py-2 rounded-xl bg-[#181818] border border-[#282828] text-xs text-[#eff1f6] outline-none font-mono"
           >
-            <option value="ALL">Status</option>
+            <option value="ALL">Status: All</option>
             <option value="SOLVED">Solved</option>
             <option value="UNSOLVED">Unsolved</option>
           </select>
 
-          {/* Question Type Dropdown */}
-          <select
-            value={selectedType}
-            onChange={(e) => setSelectedType(e.target.value)}
-            className="px-2.5 py-1.5 rounded bg-[#1f1f1f] border border-[#383838] text-xs text-[#eff1f6] outline-none focus:border-[#ffa116] cursor-pointer"
-          >
-            <option value="">Format</option>
-            <option value="SINGLE_CORRECT">Single Correct</option>
-            <option value="MULTIPLE_CORRECT">Multi-Correct</option>
-            <option value="NUMERICAL">Numerical</option>
-          </select>
-
           {/* PYQ Toggle Button */}
           <button
+            type="button"
             onClick={() => setPyqOnly(!pyqOnly)}
-            className={`px-3 py-1.5 rounded text-xs font-medium border flex items-center gap-1.5 transition-colors ${
+            className={`px-3 py-2 rounded-xl border text-xs font-mono font-medium flex items-center gap-1.5 transition-colors ${
               pyqOnly
-                ? 'bg-[#2b2416] border-[#4a3b1d] text-[#ffa116]'
-                : 'bg-[#1f1f1f] border-[#383838] text-[#8c8c8c] hover:text-white'
+                ? 'bg-[#ffa116]/15 border-[#ffa116] text-[#ffa116]'
+                : 'bg-[#181818] border-[#282828] text-[#8c8c8c] hover:text-white'
             }`}
           >
-            <Star className={`w-3.5 h-3.5 ${pyqOnly ? 'fill-[#ffa116] text-[#ffa116]' : ''}`} />
-            <span>PYQs</span>
+            <Award className="w-3.5 h-3.5" />
+            <span>PYQ Only</span>
+          </button>
+
+          {/* LeetCode Pick Random Button */}
+          <button
+            type="button"
+            onClick={handlePickRandom}
+            className="px-3.5 py-2 rounded-xl bg-[#181818] hover:bg-[#202020] border border-[#282828] text-xs font-bold text-[#00e1ab] flex items-center gap-1.5 transition-colors"
+            title="Pick a Random Problem"
+          >
+            <Shuffle className="w-3.5 h-3.5" />
+            <span className="hidden sm:inline">Pick One</span>
           </button>
         </div>
       </div>
 
-      {/* LeetCode Clean Problem Table */}
-      <div className="rounded-lg border border-[#333333] overflow-hidden bg-[#262626]">
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs border-collapse">
-            <thead>
-              <tr className="border-b border-[#333333] bg-[#212121] text-[#8c8c8c] uppercase tracking-wider text-[11px] font-semibold">
-                <th className="py-3 px-4 w-12 text-center">Status</th>
-                <th className="py-3 px-4">Title</th>
-                <th className="py-3 px-4 w-28 text-center">Solution</th>
-                <th className="py-3 px-4 w-24 text-right">Acceptance</th>
-                <th className="py-3 px-4 w-24 text-center">Difficulty</th>
-                <th className="py-3 px-4 w-28 text-right">Marks</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-[#303030]">
-              {isLoading ? (
-                <tr>
-                  <td colSpan={6} className="py-16 text-center text-[#8c8c8c]">
-                    <div className="inline-block w-5 h-5 border-2 border-[#ffa116] border-t-transparent rounded-full animate-spin mb-2" />
-                    <div>Loading problems repository...</div>
-                  </td>
+      {/* ======================================================== */}
+      {/* 4. LEETCODE-STYLE PROBLEM LIST TABLE                     */}
+      {/* ======================================================== */}
+      <div className="rounded-2xl border border-[#282828] overflow-hidden bg-[#141414]">
+        {isLoading ? (
+          <div className="py-24 text-center text-[#8c8c8c]">
+            <div className="w-8 h-8 border-2 border-[#00e1ab] border-t-transparent rounded-full animate-spin mx-auto mb-3" />
+            <p className="text-xs font-mono tracking-wider">RETRIEVING PROBLEMS...</p>
+          </div>
+        ) : filteredQuestions.length > 0 ? (
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-xs border-collapse">
+              <thead>
+                <tr className="border-b border-[#282828] bg-[#101010] text-[#8c8c8c] uppercase tracking-wider text-[11px] font-mono">
+                  <th className="py-3.5 px-4 w-14 text-center">Status</th>
+                  <th className="py-3.5 px-4">Title & Topic</th>
+                  <th className="py-3.5 px-4 w-28 text-center">Solution</th>
+                  <th className="py-3.5 px-4 w-28 text-right">Acceptance</th>
+                  <th className="py-3.5 px-4 w-28 text-center">Difficulty</th>
+                  <th className="py-3.5 px-4 w-24 text-right">Marks</th>
                 </tr>
-              ) : filteredQuestions.length === 0 ? (
-                <tr>
-                  <td colSpan={6} className="py-16 text-center text-[#8c8c8c]">
-                    No questions found matching your filter criteria.
-                  </td>
-                </tr>
-              ) : (
-                filteredQuestions.map((q, index) => {
-                  // Fake deterministic acceptance rate for realism
-                  const fakeAcceptance = 35 + ((q.id.charCodeAt(q.id.length - 1) * 3) % 45);
+              </thead>
+              <tbody className="divide-y divide-[#1e1e1e]">
+                {filteredQuestions.map((q, idx) => {
+                  const isEasy = q.difficulty === 'EASY';
+                  const isMedium = q.difficulty === 'MEDIUM';
+                  const isHard = q.difficulty === 'HARD' || q.difficulty === 'ADVANCED';
 
                   return (
                     <tr
                       key={q.id}
+                      className="hover:bg-[#181818] transition-colors group cursor-pointer"
                       onClick={() => router.push(`/solve/${q.id}`)}
-                      className="lc-row cursor-pointer group"
                     >
-                      {/* Status Column */}
+                      {/* Status */}
                       <td className="py-3.5 px-4 text-center">
                         {q.isSolved ? (
-                          <CheckCircle2 className="w-4 h-4 text-[#00b8a3] mx-auto" />
+                          <CheckCircle2 className="w-4 h-4 text-[#00e1ab] mx-auto" />
                         ) : (
-                          <Circle className="w-3.5 h-3.5 text-[#4a4a4a] group-hover:text-[#6a6a6a] mx-auto" />
+                          <Circle className="w-4 h-4 text-[#333333] group-hover:text-[#666666] mx-auto" />
                         )}
                       </td>
 
-                      {/* Title Column */}
+                      {/* Title & Topic */}
                       <td className="py-3.5 px-4">
                         <div className="flex items-center gap-2 flex-wrap">
-                          <span className="font-mono text-[#8c8c8c] text-[11px]">
-                            {q.code || `${index + 1}.`}
+                          <span className="font-mono text-[#8c8c8c] font-medium text-[11px]">
+                            {q.code || `${idx + 1}.`}
                           </span>
-                          <span className="text-[#eff1f6] group-hover:text-[#ffa116] font-medium transition-colors">
-                            {q.contentLatex.replace(/\$[^$]*\$/g, '').slice(0, 85).trim()}...
-                          </span>
-
-                          {/* Inline Tags */}
+                          <Link
+                            href={`/solve/${q.id}`}
+                            className="font-semibold text-white group-hover:text-[#00e1ab] transition-colors text-sm"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            {q.topic ? `${q.topic.name}` : 'JEE Physics Problem'}
+                          </Link>
                           {q.isPYQ && (
-                            <span className="text-[10px] font-mono px-1.5 py-0.2 rounded bg-[#2b2416] text-[#ffa116] border border-[#4a3b1d]">
-                              PYQ {q.pyqYear}
+                            <span className="text-[10px] font-mono px-2 py-0.2 rounded-full bg-[#ffa116]/10 text-[#ffa116] border border-[#ffa116]/20">
+                              &apos;{q.pyqYear} PYQ
                             </span>
                           )}
-
-                          <span className="text-[10px] font-mono px-1.5 py-0.2 rounded bg-[#1f1f1f] text-[#8c8c8c]">
+                          <span className="text-[10px] font-mono text-[#6b7280]">
                             {q.questionType.replace('_', ' ')}
                           </span>
                         </div>
                       </td>
 
-                      {/* Solution / Editorial */}
+                      {/* Solution */}
                       <td className="py-3.5 px-4 text-center">
-                        <FileText className="w-4 h-4 text-[#8c8c8c] group-hover:text-white mx-auto transition-colors" />
+                        <span className="inline-flex p-1 rounded bg-[#181818] text-[#2E5BFF] hover:text-white transition-colors" title="Editorial Available">
+                          <BookOpen className="w-3.5 h-3.5" />
+                        </span>
                       </td>
 
                       {/* Acceptance */}
                       <td className="py-3.5 px-4 text-right font-mono text-[#8c8c8c]">
-                        {fakeAcceptance}%
+                        44.8%
                       </td>
 
                       {/* Difficulty */}
                       <td className="py-3.5 px-4 text-center">
-                        <span className={`font-semibold ${getDifficultyColor(q.difficulty)}`}>
+                        <span
+                          className={`font-semibold text-[11px] font-mono px-2 py-0.5 rounded ${
+                            isEasy
+                              ? 'text-[#00e1ab] bg-[#00e1ab]/10'
+                              : isMedium
+                              ? 'text-[#ffa116] bg-[#ffa116]/10'
+                              : 'text-[#ff525c] bg-[#ff525c]/10'
+                          }`}
+                        >
                           {q.difficulty}
                         </span>
                       </td>
 
                       {/* Marks */}
-                      <td className="py-3.5 px-4 text-right font-mono text-[#8c8c8c]">
-                        <span className="text-[#00b8a3]">+{q.marks}</span> /{' '}
-                        <span className="text-[#ff375f]">-{q.negativeMarks}</span>
+                      <td className="py-3.5 px-4 text-right font-mono font-bold text-white">
+                        +{q.marks}
                       </td>
                     </tr>
                   );
-                })
-              )}
-            </tbody>
-          </table>
-        </div>
-
-        {/* Table Footer */}
-        <div className="py-3 px-4 border-t border-[#333333] bg-[#212121] flex items-center justify-between text-xs text-[#8c8c8c]">
-          <span>Showing {filteredQuestions.length} of {questions.length} problems</span>
-          <span className="text-[11px] font-mono">Marking: JEE Standard Pattern</span>
-        </div>
+                })}
+              </tbody>
+            </table>
+          </div>
+        ) : (
+          <div className="p-16 text-center text-[#8c8c8c] space-y-2">
+            <Filter className="w-8 h-8 mx-auto text-[#333333]" />
+            <p className="text-xs font-mono">No problems matched your current filter criteria.</p>
+          </div>
+        )}
       </div>
     </div>
   );
@@ -392,8 +442,8 @@ export default function ProblemBankPage() {
   return (
     <Suspense
       fallback={
-        <div className="flex-1 flex items-center justify-center p-12 text-[#8c8c8c]">
-          <div className="w-6 h-6 border-2 border-[#ffa116] border-t-transparent rounded-full animate-spin" />
+        <div className="flex-1 flex items-center justify-center py-24 text-[#8c8c8c] bg-[#0a0a0a]">
+          <div className="w-8 h-8 border-2 border-[#00e1ab] border-t-transparent rounded-full animate-spin" />
         </div>
       }
     >

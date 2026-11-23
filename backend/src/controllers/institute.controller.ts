@@ -34,7 +34,7 @@ export class InstituteController {
   static applyForScholarship(req: Request, res: Response, next: NextFunction) {
     try {
       const { id } = req.params;
-      const userId = req.user?.userId || 'demo-student-uuid-001';
+      const userId = req.user?.userId || 'user-arjun-01';
 
       const result = InstituteService.applyForScholarship(id, userId);
       return sendSuccess(res, result);

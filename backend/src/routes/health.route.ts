@@ -6,7 +6,7 @@ const router = Router();
 router.get('/health', (_req: Request, res: Response) => {
   return sendSuccess(res, {
     status: 'ONLINE',
-    service: 'ZenithPhysics Backend API',
+    service: 'Solve Sense Backend API',
     version: '1.0.0',
     uptime: process.uptime(),
     timestamp: new Date().toISOString(),

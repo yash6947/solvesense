@@ -1,4 +1,4 @@
-# ZenithPhysics: AI-Powered Competitive Exam Problem-Solving Platform
+# Solve Sense: AI-Powered Competitive Exam Problem-Solving Platform
 
 > **"Don't just tell students whether they are right or wrong. Help them understand why, discover what they are missing, and show them how to improve."**
 

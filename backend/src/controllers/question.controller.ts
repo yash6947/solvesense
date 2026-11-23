@@ -49,7 +49,7 @@ export class QuestionController {
   static submitAttempt(req: Request, res: Response, next: NextFunction) {
     try {
       const { id } = req.params;
-      const userId = req.user?.userId || 'demo-student-uuid-001';
+      const userId = req.user?.userId || 'user-arjun-01';
 
       const validated = submitAttemptSchema.parse(req.body);
       const result = QuestionService.evaluateSubmission(id, userId, validated);

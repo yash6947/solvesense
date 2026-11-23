@@ -4,17 +4,20 @@ import React, { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
-  Code2,
+  Sparkles,
   Flame,
   BarChart2,
-  Terminal,
   Trophy,
   Building2,
   Menu,
   X,
   LogOut,
   User,
-  GraduationCap
+  GraduationCap,
+  Layers,
+  ArrowRight,
+  BookOpen,
+  Code2
 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 
@@ -26,33 +29,35 @@ export const Navbar: React.FC = () => {
   const navLinks = [
     { href: '/solve', label: 'Problems' },
     { href: '/contests', label: 'Contest' },
-    { href: '/analytics', label: 'Analytics' },
     { href: '/dashboard', label: 'Dashboard' },
+    { href: '/analytics', label: 'Analytics' },
     { href: '/institutes', label: 'Institutes' },
     { href: '/scholarships', label: 'Scholarships' },
   ];
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b border-[#282828] bg-[#1a1a1a] select-none">
+    <header className="sticky top-0 z-50 w-full border-b border-[#242424] bg-[#0a0a0a]/95 backdrop-blur-md select-none">
       <div className="max-w-[1440px] mx-auto px-4 sm:px-6">
-        <div className="flex items-center justify-between h-13 py-2.5">
+        <div className="flex items-center justify-between h-13 py-2">
           {/* Brand Logo & Main Nav */}
-          <div className="flex items-center gap-6">
-            <Link href="/" className="flex items-center gap-2 group">
-              <div className="w-7 h-7 rounded bg-[#ffa116] flex items-center justify-center font-bold text-black text-sm shadow-sm group-hover:opacity-90 transition-opacity">
-                <Code2 className="w-4 h-4 text-[#1a1a1a] stroke-[2.5]" />
+          <div className="flex items-center gap-7">
+            <Link href="/" className="flex items-center gap-2.5 group">
+              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-[#2E5BFF] to-[#00e1ab] p-[1px] shadow-glow-primary group-hover:scale-105 transition-transform">
+                <div className="w-full h-full bg-[#121212] rounded-lg flex items-center justify-center">
+                  <Sparkles className="w-4 h-4 text-[#00e1ab]" />
+                </div>
               </div>
               <div className="flex items-center gap-1.5">
-                <span className="font-bold text-base text-white tracking-tight">
-                  Zenith<span className="text-[#ffa116]">Code</span>
+                <span className="font-headline font-bold text-lg text-white tracking-tight">
+                  Solve<span className="text-[#00e1ab]">Sense</span>
                 </span>
-                <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-[#282828] text-[#8c8c8c] border border-[#383838]">
-                  Physics
+                <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-[#181818] text-[#8c8c8c] border border-[#262626]">
+                  JEE Physics
                 </span>
               </div>
             </Link>
 
-            {/* LeetCode Style Desktop Nav Tabs */}
+            {/* Desktop Nav Tabs */}
             <nav className="hidden md:flex items-center gap-1">
               {navLinks.map((link) => {
                 const isActive = link.href === '/' ? pathname === '/' : pathname.startsWith(link.href);
@@ -60,10 +65,10 @@ export const Navbar: React.FC = () => {
                   <Link
                     key={link.href}
                     href={link.href}
-                    className={`px-3 py-1.5 rounded text-sm transition-colors ${
+                    className={`px-3 py-1.5 rounded-lg text-xs font-headline tracking-wide uppercase transition-all ${
                       isActive
-                        ? 'text-white font-medium bg-[#282828]'
-                        : 'text-[#8c8c8c] hover:text-[#eff1f6] hover:bg-[#222222]'
+                        ? 'text-white font-semibold bg-[#1a1a1a] border border-[#2e2e2e] shadow-sm'
+                        : 'text-[#8c8c8c] hover:text-[#eff1f6] hover:bg-[#141414]'
                     }`}
                   >
                     {link.label}
@@ -76,35 +81,35 @@ export const Navbar: React.FC = () => {
           {/* Right Action Group */}
           <div className="hidden md:flex items-center gap-3">
             {/* Target Exam Badge */}
-            <div className="hidden lg:flex items-center gap-1.5 px-2.5 py-1 rounded bg-[#242424] border border-[#333333] text-xs text-[#9ca3af]">
-              <GraduationCap className="w-3.5 h-3.5 text-[#00b8a3]" />
-              <span className="font-mono text-[11px] text-[#eff1f6]">{profile?.targetExam || 'JEE ADVANCED'} &apos;26</span>
+            <div className="hidden lg:flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-[#141414] border border-[#262626] text-xs">
+              <GraduationCap className="w-3.5 h-3.5 text-[#2E5BFF]" />
+              <span className="font-mono text-[11px] text-[#eff1f6]">
+                {profile?.targetExam?.replace('_', ' ') || 'JEE ADVANCED'} &apos;26
+              </span>
             </div>
 
-            {/* LeetCode Orange Streak Flame */}
-            <div className="flex items-center gap-1.5 px-2.5 py-1 rounded bg-[#2b2416] border border-[#4a3b1d] text-xs font-semibold text-[#ffa116]">
-              <Flame className="w-3.5 h-3.5 fill-[#ffa116]" />
-              <span>{profile?.currentStreak || 7}</span>
+            {/* Streak Flame Badge */}
+            <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-[#1c160b] border border-[#3d2a0c] text-xs font-semibold text-[#ffa116]">
+              <Flame className="w-3.5 h-3.5 fill-[#ffa116] animate-pulse" />
+              <span className="font-mono text-xs">{profile?.currentStreak || 7}d Streak</span>
             </div>
 
             {user ? (
-              <div className="flex items-center gap-3 pl-3 border-l border-[#333333]">
+              <div className="flex items-center gap-3 pl-3 border-l border-[#262626]">
                 <Link
                   href="/dashboard"
-                  className="flex items-center gap-2 text-xs text-[#eff1f6] hover:text-white group px-2 py-1 rounded hover:bg-[#282828] transition-colors"
+                  className="flex items-center gap-2 text-xs text-[#eff1f6] hover:text-white group px-2 py-1 rounded-lg hover:bg-[#1a1a1a] transition-colors"
                 >
-                  <div className="w-6 h-6 rounded-full bg-[#383838] border border-[#4a4a4a] flex items-center justify-center font-bold text-[10px] text-white">
+                  <div className="w-7 h-7 rounded-lg bg-[#181818] border border-[#2e2e2e] flex items-center justify-center font-bold text-xs text-[#00e1ab] group-hover:border-[#00e1ab]/50 transition-colors">
                     {user.fullName ? user.fullName[0].toUpperCase() : 'A'}
                   </div>
-                  <span className="max-w-[100px] truncate font-medium">
-                    {user.fullName || 'Arjun'}
-                  </span>
+                  <span className="hidden xl:inline font-medium">{user.fullName?.split(' ')[0]}</span>
                 </Link>
 
                 <button
-                  onClick={() => logout()}
-                  title="Sign out"
-                  className="p-1.5 rounded text-[#8c8c8c] hover:text-[#ff375f] hover:bg-[#282828] transition-colors"
+                  onClick={logout}
+                  className="p-1.5 rounded-lg text-[#8c8c8c] hover:text-[#ff525c] hover:bg-[#1a1a1a] transition-colors"
+                  title="Sign Out"
                 >
                   <LogOut className="w-4 h-4" />
                 </button>
@@ -113,89 +118,84 @@ export const Navbar: React.FC = () => {
               <div className="flex items-center gap-2 pl-2">
                 <Link
                   href="/auth/login"
-                  className="px-3 py-1.5 text-xs font-medium text-[#eff1f6] hover:text-white transition-colors"
+                  className="px-3.5 py-1.5 rounded-lg text-xs font-medium text-[#8c8c8c] hover:text-white transition-colors"
                 >
                   Sign In
                 </Link>
                 <Link
                   href="/auth/register"
-                  className="px-3 py-1.5 text-xs font-semibold rounded bg-[#ffa116] hover:bg-[#ff9500] text-black transition-colors"
+                  className="px-4 py-1.5 rounded-lg text-xs font-bold bg-[#00e1ab] hover:bg-[#00c596] text-black shadow-sm transition-all"
                 >
-                  Register
+                  Create Account
                 </Link>
               </div>
             )}
           </div>
 
-          {/* Mobile Menu Toggle */}
+          {/* Mobile Menu Button */}
           <div className="md:hidden flex items-center gap-2">
-            <div className="flex items-center gap-1 px-2 py-0.5 rounded bg-[#2b2416] text-xs font-semibold text-[#ffa116]">
-              <Flame className="w-3 h-3 fill-[#ffa116]" />
-              <span>{profile?.currentStreak || 7}</span>
-            </div>
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="p-1.5 rounded text-[#8c8c8c] hover:text-white hover:bg-[#282828]"
+              className="p-2 rounded-lg text-[#8c8c8c] hover:text-white hover:bg-[#141414] transition-colors"
+              aria-label="Toggle menu"
             >
               {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
             </button>
           </div>
         </div>
-      </div>
 
-      {/* Mobile Drawer */}
-      {mobileMenuOpen && (
-        <div className="md:hidden border-t border-[#282828] bg-[#1a1a1a] px-4 py-3 space-y-1">
-          {navLinks.map((link) => {
-            const isActive = link.href === '/' ? pathname === '/' : pathname.startsWith(link.href);
-            return (
-              <Link
-                key={link.href}
-                href={link.href}
-                onClick={() => setMobileMenuOpen(false)}
-                className={`block px-3 py-2 rounded text-sm ${
-                  isActive
-                    ? 'text-white font-medium bg-[#282828]'
-                    : 'text-[#8c8c8c] hover:text-white'
-                }`}
-              >
-                {link.label}
-              </Link>
-            );
-          })}
-          {user ? (
-            <div className="pt-3 border-t border-[#282828] flex items-center justify-between">
-              <span className="text-xs text-[#8c8c8c]">{user.email}</span>
-              <button
-                onClick={() => {
-                  logout();
-                  setMobileMenuOpen(false);
-                }}
-                className="text-xs text-[#ff375f] font-medium"
-              >
-                Sign Out
-              </button>
+        {/* Mobile Navigation Drawer */}
+        {mobileMenuOpen && (
+          <div className="md:hidden py-4 border-t border-[#242424] space-y-3">
+            <nav className="flex flex-col space-y-1">
+              {navLinks.map((link) => {
+                const isActive = link.href === '/' ? pathname === '/' : pathname.startsWith(link.href);
+                return (
+                  <Link
+                    key={link.href}
+                    href={link.href}
+                    onClick={() => setMobileMenuOpen(false)}
+                    className={`px-3 py-2 rounded-lg text-xs font-headline uppercase ${
+                      isActive
+                        ? 'text-white font-semibold bg-[#1a1a1a]'
+                        : 'text-[#8c8c8c] hover:text-white hover:bg-[#141414]'
+                    }`}
+                  >
+                    {link.label}
+                  </Link>
+                );
+              })}
+            </nav>
+
+            <div className="pt-3 border-t border-[#242424] flex items-center justify-between text-xs">
+              <div className="flex items-center gap-2">
+                <Flame className="w-3.5 h-3.5 text-[#ffa116] fill-[#ffa116]" />
+                <span className="font-mono">{profile?.currentStreak || 7}d Streak</span>
+              </div>
+              {user ? (
+                <button
+                  onClick={() => {
+                    logout();
+                    setMobileMenuOpen(false);
+                  }}
+                  className="text-[#ff525c] flex items-center gap-1 font-medium"
+                >
+                  <LogOut className="w-3.5 h-3.5" />
+                  <span>Logout</span>
+                </button>
+              ) : (
+                <Link
+                  href="/auth/login"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="text-[#00e1ab] font-bold"
+                >
+                  Sign In
+                </Link>
+              )}
             </div>
-          ) : (
-            <div className="pt-3 border-t border-[#282828] flex gap-2">
-              <Link
-                href="/auth/login"
-                onClick={() => setMobileMenuOpen(false)}
-                className="w-1/2 py-2 text-center text-xs font-medium text-white bg-[#282828] rounded"
-              >
-                Sign In
-              </Link>
-              <Link
-                href="/auth/register"
-                onClick={() => setMobileMenuOpen(false)}
-                className="w-1/2 py-2 text-center text-xs font-semibold text-black bg-[#ffa116] rounded"
-              >
-                Register
-              </Link>
-            </div>
-          )}
-        </div>
-      )}
+          </div>
+        )}
+      </div>
     </header>
   );
 };

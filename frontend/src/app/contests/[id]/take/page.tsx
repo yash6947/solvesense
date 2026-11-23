@@ -13,7 +13,9 @@ import {
   Flag, 
   RotateCcw, 
   RefreshCw,
-  AlertTriangle
+  AlertTriangle,
+  Check,
+  X
 } from 'lucide-react';
 import { apiRequest } from '@/lib/api';
 import { useAuth } from '@/context/AuthContext';
@@ -141,10 +143,10 @@ export default function TakeContestPage() {
 
   if (isLoading || !contestData) {
     return (
-      <div className="flex-1 flex items-center justify-center py-24 text-[#8c8c8c]">
+      <div className="flex-1 flex items-center justify-center py-24 text-[#8c8c8c] bg-[#0e0e0e]">
         <div className="flex flex-col items-center gap-3">
-          <div className="w-6 h-6 border-2 border-[#ffa116] border-t-transparent rounded-full animate-spin" />
-          <span className="text-xs font-mono">Entering exam hall environment...</span>
+          <div className="w-8 h-8 border-2 border-[#00e1ab] border-t-transparent rounded-full animate-spin" />
+          <span className="text-xs font-mono tracking-wider">ENTERING OFFICIAL EXAM HALL...</span>
         </div>
       </div>
     );
@@ -157,34 +159,34 @@ export default function TakeContestPage() {
   const unattemptedCount = questions.length - answeredCount;
 
   return (
-    <div className="flex-1 flex flex-col h-[calc(100vh-3.25rem)] overflow-hidden bg-[#1a1a1a]">
+    <div className="flex-1 flex flex-col h-[calc(100vh-3.5rem)] overflow-hidden bg-[#0e0e0e]">
       {/* 1. Proctored Exam Top Bar */}
-      <div className="h-12 border-b border-[#282828] bg-[#212121] px-4 flex items-center justify-between text-xs shrink-0 select-none">
+      <div className="h-12 border-b border-[#282828] bg-[#141414] px-4 sm:px-6 flex items-center justify-between text-xs shrink-0 select-none">
         <div className="flex items-center gap-3">
-          <span className="font-bold text-white text-sm tracking-tight truncate max-w-xs sm:max-w-md">
+          <span className="font-bold text-white text-sm font-heading tracking-tight truncate max-w-xs sm:max-w-md">
             {contestData.title}
           </span>
-          <span className="text-[11px] font-mono px-2 py-0.5 rounded bg-[#1f1f1f] text-[#8c8c8c] border border-[#383838]">
-            Section: Physics
+          <span className="text-[11px] font-mono px-2.5 py-0.5 rounded-full bg-[#181818] text-[#00e1ab] border border-[#282828]">
+            Physics Paper
           </span>
         </div>
 
         {/* Live Timer Pill & Submit */}
         <div className="flex items-center gap-3">
           <div
-            className={`flex items-center gap-2 px-3 py-1 rounded border font-mono font-bold text-xs ${
+            className={`flex items-center gap-2 px-3 py-1 rounded-lg border font-mono font-bold text-xs ${
               timeLeftSec <= 300
-                ? 'bg-[#381a1f] border-[#ff375f] text-[#ff375f] animate-pulse'
-                : 'bg-[#1a1a1a] border-[#333333] text-white'
+                ? 'bg-[#ff525c]/10 border-[#ff525c] text-[#ff525c] animate-pulse'
+                : 'bg-[#0e0e0e] border-[#282828] text-white'
             }`}
           >
-            <Clock className={`w-3.5 h-3.5 ${timeLeftSec <= 300 ? 'text-[#ff375f]' : 'text-[#ffa116]'}`} />
+            <Clock className={`w-3.5 h-3.5 ${timeLeftSec <= 300 ? 'text-[#ff525c]' : 'text-[#ffa116]'}`} />
             <span>{formatTimer(timeLeftSec)}</span>
           </div>
 
           <button
             onClick={() => setShowSubmitModal(true)}
-            className="px-3.5 py-1 rounded bg-[#ff375f] hover:bg-[#e03152] text-white font-semibold text-xs transition-colors"
+            className="px-4 py-1.5 rounded-lg bg-[#ff525c] hover:bg-[#e03152] text-white font-bold text-xs transition-colors shadow-sm"
           >
             Finish Test
           </button>
@@ -194,41 +196,41 @@ export default function TakeContestPage() {
       {/* 2. Main Exam Body (Question View Left + Palette Right) */}
       <div className="flex-1 grid grid-cols-1 lg:grid-cols-12 overflow-hidden">
         {/* Left (8 cols): Question Formulation & Answer Input */}
-        <div className="lg:col-span-8 p-6 overflow-y-auto space-y-6 flex flex-col justify-between border-r border-[#282828] bg-[#1e1e1e]">
+        <div className="lg:col-span-8 p-6 overflow-y-auto space-y-6 flex flex-col justify-between border-r border-[#282828] bg-[#141414]">
           <div className="space-y-6">
             {/* Question Header */}
             <div className="flex items-center justify-between pb-3 border-b border-[#282828]">
               <div className="flex items-center gap-2.5">
-                <span className="w-6 h-6 rounded bg-[#282828] border border-[#383838] text-[#ffa116] font-bold font-mono text-xs flex items-center justify-center">
+                <span className="w-7 h-7 rounded-lg bg-[#181818] border border-[#282828] text-[#00e1ab] font-bold font-mono text-xs flex items-center justify-center">
                   {currentIdx + 1}
                 </span>
-                <span className="text-xs font-semibold text-[#eff1f6]">
+                <span className="text-xs font-semibold text-white font-heading">
                   Question {currentIdx + 1} of {questions.length}
                 </span>
               </div>
 
-              <div className="flex items-center gap-3 text-xs">
-                <span className="font-mono text-[#8c8c8c] bg-[#1f1f1f] px-2 py-0.5 rounded border border-[#333333]">
+              <div className="flex items-center gap-2.5 text-xs font-mono">
+                <span className="text-[#8c8c8c] bg-[#181818] px-2.5 py-0.5 rounded-md border border-[#282828]">
                   {currentQ.questionType.replace('_', ' ')}
                 </span>
-                <span className="text-[#00b8a3] font-semibold">+{currentQ.marks}</span>
-                <span className="text-[#ff375f] font-semibold">-{currentQ.negativeMarks}</span>
+                <span className="text-[#00e1ab] font-bold">+{currentQ.marks}</span>
+                <span className="text-[#ff525c] font-bold">-{currentQ.negativeMarks}</span>
               </div>
             </div>
 
             {/* Question Statement */}
-            <div className="text-[#eff1f6] text-sm leading-relaxed space-y-4">
+            <div className="text-[#eff1f6] text-[15px] leading-relaxed space-y-4 font-sans">
               <MathRenderer content={currentQ.contentLatex} />
             </div>
 
-            {/* Diagram */}
+            {/* Diagram if present */}
             {currentQ.imageUrl && (
-              <div className="p-4 rounded bg-[#262626] border border-[#333333]">
+              <div className="p-4 rounded-xl bg-[#181818] border border-[#282828]">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src={currentQ.imageUrl}
                   alt="Diagram"
-                  className="max-h-60 mx-auto object-contain rounded"
+                  className="max-h-60 mx-auto object-contain rounded-lg"
                 />
               </div>
             )}
@@ -236,29 +238,29 @@ export default function TakeContestPage() {
             {/* Options Selection */}
             <div className="space-y-3 pt-2">
               {currentQ.questionType === 'SINGLE_CORRECT' && (
-                <div className="space-y-2">
+                <div className="space-y-2.5">
                   {currentQ.options?.map((opt: any) => {
                     const isSelected = answers[currentQ.id]?.[0] === opt.optionKey;
                     return (
                       <div
                         key={opt.optionKey}
                         onClick={() => handleSelectOption(currentQ.id, opt.optionKey, false)}
-                        className={`p-3.5 rounded border text-xs flex items-center gap-3 cursor-pointer transition-colors ${
+                        className={`p-4 rounded-xl border text-xs flex items-center gap-3.5 cursor-pointer transition-all ${
                           isSelected
-                            ? 'bg-[#2b2416] border-[#ffa116] text-white'
-                            : 'bg-[#262626] border-[#333333] text-[#d1d5db] hover:border-[#4a4a4a] hover:bg-[#2a2a2a]'
+                            ? 'bg-[#2E5BFF]/15 border-[#2E5BFF] text-white shadow-sm'
+                            : 'bg-[#181818] border-[#282828] text-[#d1d5db] hover:border-[#383838] hover:bg-[#202020]'
                         }`}
                       >
                         <div
-                          className={`w-5 h-5 rounded-full border flex items-center justify-center text-xs font-mono font-bold ${
+                          className={`w-6 h-6 rounded-lg border flex items-center justify-center text-xs font-mono font-bold shrink-0 ${
                             isSelected
-                              ? 'border-[#ffa116] bg-[#ffa116] text-black'
-                              : 'border-[#4a4a4a] text-[#8c8c8c]'
+                              ? 'border-[#2E5BFF] bg-[#2E5BFF] text-white'
+                              : 'border-[#383838] bg-[#141414] text-[#8c8c8c]'
                           }`}
                         >
                           {opt.optionKey}
                         </div>
-                        <div className="flex-1 font-medium">
+                        <div className="flex-1 font-medium text-sm">
                           <MathRenderer content={opt.contentLatex} inline />
                         </div>
                       </div>
@@ -268,7 +270,7 @@ export default function TakeContestPage() {
               )}
 
               {currentQ.questionType === 'MULTIPLE_CORRECT' && (
-                <div className="space-y-2">
+                <div className="space-y-2.5">
                   {currentQ.options?.map((opt: any) => {
                     const selectedList = answers[currentQ.id] || [];
                     const isSelected = selectedList.includes(opt.optionKey);
@@ -276,22 +278,22 @@ export default function TakeContestPage() {
                       <div
                         key={opt.optionKey}
                         onClick={() => handleSelectOption(currentQ.id, opt.optionKey, true)}
-                        className={`p-3.5 rounded border text-xs flex items-center gap-3 cursor-pointer transition-colors ${
+                        className={`p-4 rounded-xl border text-xs flex items-center gap-3.5 cursor-pointer transition-all ${
                           isSelected
-                            ? 'bg-[#2b2416] border-[#ffa116] text-white'
-                            : 'bg-[#262626] border-[#333333] text-[#d1d5db] hover:border-[#4a4a4a] hover:bg-[#2a2a2a]'
+                            ? 'bg-[#2E5BFF]/15 border-[#2E5BFF] text-white shadow-sm'
+                            : 'bg-[#181818] border-[#282828] text-[#d1d5db] hover:border-[#383838] hover:bg-[#202020]'
                         }`}
                       >
                         <div
-                          className={`w-5 h-5 rounded border flex items-center justify-center text-xs font-mono font-bold ${
+                          className={`w-6 h-6 rounded-md border flex items-center justify-center text-xs font-mono font-bold shrink-0 ${
                             isSelected
-                              ? 'border-[#ffa116] bg-[#ffa116] text-black'
-                              : 'border-[#4a4a4a] text-[#8c8c8c]'
+                              ? 'border-[#2E5BFF] bg-[#2E5BFF] text-white'
+                              : 'border-[#383838] bg-[#141414] text-[#8c8c8c]'
                           }`}
                         >
                           {isSelected ? '✓' : opt.optionKey}
                         </div>
-                        <div className="flex-1 font-medium">
+                        <div className="flex-1 font-medium text-sm">
                           <MathRenderer content={opt.contentLatex} inline />
                         </div>
                       </div>
@@ -301,8 +303,8 @@ export default function TakeContestPage() {
               )}
 
               {currentQ.questionType === 'NUMERICAL' && (
-                <div className="space-y-2">
-                  <div className="text-xs text-[#8c8c8c] font-medium">
+                <div className="space-y-2.5">
+                  <div className="text-xs text-[#8c8c8c] font-mono uppercase tracking-wider">
                     Enter calculated value (Tolerance: ±0.05):
                   </div>
                   <input
@@ -311,7 +313,7 @@ export default function TakeContestPage() {
                     value={answers[currentQ.id] || ''}
                     onChange={(e) => handleNumericalChange(currentQ.id, e.target.value)}
                     placeholder="Enter decimal answer"
-                    className="w-full px-4 py-2.5 rounded bg-[#262626] border border-[#333333] focus:border-[#ffa116] text-white text-sm font-mono outline-none"
+                    className="w-full max-w-sm px-4 py-3 rounded-xl bg-[#181818] border border-[#282828] focus:border-[#2E5BFF] text-white text-base font-mono outline-none"
                   />
                 </div>
               )}
@@ -324,10 +326,10 @@ export default function TakeContestPage() {
               <button
                 type="button"
                 onClick={() => handleToggleReview(currentQ.id)}
-                className={`px-3 py-1.5 rounded text-xs border flex items-center gap-1.5 transition-colors ${
+                className={`px-3.5 py-2 rounded-xl text-xs border font-medium flex items-center gap-1.5 transition-colors ${
                   markedForReview.includes(currentQ.id)
-                    ? 'bg-[#2b2416] border-[#4a3b1d] text-[#ffa116]'
-                    : 'bg-[#262626] border-[#383838] text-[#8c8c8c] hover:text-white'
+                    ? 'bg-[#ffa116]/15 border-[#ffa116] text-[#ffa116]'
+                    : 'bg-[#181818] border-[#282828] text-[#8c8c8c] hover:text-white'
                 }`}
               >
                 <Flag className="w-3.5 h-3.5" />
@@ -337,18 +339,18 @@ export default function TakeContestPage() {
               <button
                 type="button"
                 onClick={() => handleClearResponse(currentQ.id)}
-                className="px-3 py-1.5 rounded text-xs bg-[#262626] border border-[#383838] text-[#8c8c8c] hover:text-white flex items-center gap-1.5 transition-colors"
+                className="px-3.5 py-2 rounded-xl text-xs bg-[#181818] border border-[#282828] text-[#8c8c8c] hover:text-white flex items-center gap-1.5 transition-colors"
               >
                 <RotateCcw className="w-3.5 h-3.5" />
                 <span>Clear Response</span>
               </button>
             </div>
 
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2.5">
               <button
                 disabled={currentIdx === 0}
                 onClick={() => setCurrentIdx(currentIdx - 1)}
-                className="px-3.5 py-1.5 rounded bg-[#262626] border border-[#383838] disabled:opacity-30 text-white text-xs font-semibold flex items-center gap-1"
+                className="px-4 py-2 rounded-xl bg-[#181818] border border-[#282828] disabled:opacity-30 text-white text-xs font-semibold flex items-center gap-1.5 hover:bg-[#202020] transition-colors"
               >
                 <ChevronLeft className="w-3.5 h-3.5" />
                 <span>Previous</span>
@@ -362,24 +364,24 @@ export default function TakeContestPage() {
                     setCurrentIdx(currentIdx + 1);
                   }
                 }}
-                className="px-4 py-1.5 rounded bg-[#2cbb5d] hover:bg-[#26a050] text-white text-xs font-semibold flex items-center gap-1 transition-colors"
+                className="px-5 py-2 rounded-xl bg-[#00e1ab] hover:bg-[#00c596] text-black text-xs font-bold flex items-center gap-1.5 transition-all shadow-sm"
               >
                 <span>{isLastQuestion ? 'Review & Submit' : 'Save & Next'}</span>
-                <ChevronRight className="w-3.5 h-3.5" />
+                <ChevronRight className="w-3.5 h-3.5 stroke-[2.5]" />
               </button>
             </div>
           </div>
         </div>
 
         {/* Right (4 cols): Question Navigation Palette */}
-        <div className="lg:col-span-4 p-5 bg-[#1a1a1a] overflow-y-auto space-y-5">
-          <div className="space-y-1">
-            <h3 className="text-xs font-bold uppercase tracking-wider text-white">
-              Question Palette
+        <div className="lg:col-span-4 p-6 bg-[#0e0e0e] overflow-y-auto space-y-6">
+          <div className="space-y-2">
+            <h3 className="text-xs font-bold uppercase tracking-wider text-white font-heading">
+              Exam Hall Question Palette
             </h3>
-            <div className="grid grid-cols-3 gap-2 pt-2 text-[11px]">
+            <div className="grid grid-cols-3 gap-2 pt-2 text-[11px] font-mono">
               <div className="flex items-center gap-1.5 text-[#8c8c8c]">
-                <span className="w-2.5 h-2.5 rounded-full bg-[#00b8a3] inline-block" />
+                <span className="w-2.5 h-2.5 rounded-full bg-[#00e1ab] inline-block" />
                 <span>Ans ({answeredCount})</span>
               </div>
               <div className="flex items-center gap-1.5 text-[#8c8c8c]">
@@ -387,35 +389,35 @@ export default function TakeContestPage() {
                 <span>Rev ({markedCount})</span>
               </div>
               <div className="flex items-center gap-1.5 text-[#8c8c8c]">
-                <span className="w-2.5 h-2.5 rounded-full bg-[#4a4a4a] inline-block" />
+                <span className="w-2.5 h-2.5 rounded-full bg-[#282828] inline-block" />
                 <span>Unv ({unattemptedCount})</span>
               </div>
             </div>
           </div>
 
           {/* Palette Grid */}
-          <div className="grid grid-cols-5 gap-2 pt-2">
+          <div className="grid grid-cols-5 gap-2.5 pt-2">
             {questions.map((q, idx) => {
               const isAnswered = answers[q.id] !== undefined;
               const isMarked = markedForReview.includes(q.id);
-              const isCurrent = currentIdx === idx;
+              const isCurrent = idx === currentIdx;
 
-              let btnStyle = 'bg-[#262626] border-[#383838] text-[#8c8c8c]';
-              if (isAnswered && isMarked) {
-                btnStyle = 'bg-[#2b2416] border-[#ffa116] text-[#ffa116]';
+              let btnStyle = 'bg-[#141414] border-[#282828] text-[#8c8c8c] hover:border-[#383838]';
+              if (isMarked) {
+                btnStyle = 'bg-[#ffa116]/15 border-[#ffa116] text-[#ffa116] font-bold';
               } else if (isAnswered) {
-                btnStyle = 'bg-[#1b4329] border-[#00b8a3] text-[#00b8a3] font-bold';
-              } else if (isMarked) {
-                btnStyle = 'bg-[#2b2416] border-[#ffa116] text-[#ffa116]';
+                btnStyle = 'bg-[#00e1ab]/15 border-[#00e1ab] text-[#00e1ab] font-bold';
+              }
+
+              if (isCurrent) {
+                btnStyle += ' ring-2 ring-[#2E5BFF] ring-offset-2 ring-offset-[#0e0e0e]';
               }
 
               return (
                 <button
                   key={q.id}
                   onClick={() => setCurrentIdx(idx)}
-                  className={`h-9 rounded border font-mono font-bold text-xs transition-colors ${btnStyle} ${
-                    isCurrent ? 'ring-1 ring-white' : ''
-                  }`}
+                  className={`h-10 rounded-xl border text-xs font-mono font-bold flex items-center justify-center transition-all ${btnStyle}`}
                 >
                   {idx + 1}
                 </button>
@@ -423,66 +425,70 @@ export default function TakeContestPage() {
             })}
           </div>
 
-          {/* Marking Rules */}
-          <div className="p-3.5 rounded bg-[#262626] border border-[#333333] text-xs text-[#8c8c8c] space-y-1.5">
-            <div className="font-semibold text-white">JEE Exam Rules</div>
-            <p className="text-[11px] leading-relaxed">
-              Single-correct: +4 / -1. Multi-correct: +4 full, +2 partial, -2 negative. Numerical: +4 / 0.
+          {/* Exam Info Card */}
+          <div className="p-4 rounded-xl bg-[#141414] border border-[#282828] space-y-2 text-xs">
+            <div className="font-bold text-white font-heading">Proctoring Telemetry</div>
+            <p className="text-[11px] text-[#8c8c8c] leading-relaxed">
+              Window focus events and submission hashes are logged in compliance with official JEE exam guidelines.
             </p>
           </div>
         </div>
       </div>
 
-      {/* 3. Final Submission Confirmation Modal */}
+      {/* Submit Confirmation Modal */}
       {showSubmitModal && (
-        <div className="fixed inset-0 z-50 bg-black/75 flex items-center justify-center p-4">
-          <div className="max-w-md w-full p-5 rounded bg-[#262626] border border-[#333333] shadow-2xl space-y-4">
-            <h2 className="text-base font-bold text-white flex items-center gap-2">
-              <AlertCircle className="w-5 h-5 text-[#ffa116]" />
-              <span>Confirm Final Submission</span>
-            </h2>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
+          <div className="max-w-md w-full p-6 rounded-2xl bg-[#141414] border border-[#282828] space-y-5 shadow-2xl">
+            <div className="flex items-center justify-between">
+              <h3 className="text-lg font-bold text-white font-heading">Confirm Paper Submission</h3>
+              <button
+                onClick={() => setShowSubmitModal(false)}
+                className="text-[#8c8c8c] hover:text-white"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
 
-            <p className="text-xs text-[#8c8c8c]">
-              Are you sure you want to conclude the test? Once submitted, your paper will be locked and graded instantaneously.
-            </p>
-
-            <div className="grid grid-cols-3 gap-2 p-3 rounded bg-[#1f1f1f] border border-[#333333] text-center text-xs">
-              <div>
-                <div className="font-bold text-[#00b8a3] text-lg font-mono">{answeredCount}</div>
-                <div className="text-[10px] text-[#8c8c8c]">Answered</div>
+            <div className="grid grid-cols-3 gap-3 text-center text-xs">
+              <div className="p-3 rounded-xl bg-[#181818] border border-[#282828]">
+                <div className="text-[10px] text-[#8c8c8c] uppercase font-mono">Attempted</div>
+                <div className="text-xl font-bold font-mono text-[#00e1ab] mt-1">{answeredCount}</div>
               </div>
-              <div>
-                <div className="font-bold text-[#ffa116] text-lg font-mono">{markedCount}</div>
-                <div className="text-[10px] text-[#8c8c8c]">Review</div>
+              <div className="p-3 rounded-xl bg-[#181818] border border-[#282828]">
+                <div className="text-[10px] text-[#8c8c8c] uppercase font-mono">Under Review</div>
+                <div className="text-xl font-bold font-mono text-[#ffa116] mt-1">{markedCount}</div>
               </div>
-              <div>
-                <div className="font-bold text-[#8c8c8c] text-lg font-mono">{unattemptedCount}</div>
-                <div className="text-[10px] text-[#8c8c8c]">Unanswered</div>
+              <div className="p-3 rounded-xl bg-[#181818] border border-[#282828]">
+                <div className="text-[10px] text-[#8c8c8c] uppercase font-mono">Unattempted</div>
+                <div className="text-xl font-bold font-mono text-[#ff525c] mt-1">{unattemptedCount}</div>
               </div>
             </div>
 
-            <div className="flex items-center gap-2 pt-2">
+            <p className="text-xs text-[#8c8c8c] leading-relaxed">
+              Are you sure you want to finalize your submission? Once submitted, your scores and national percentile ranking will be computed instantly.
+            </p>
+
+            <div className="flex items-center justify-end gap-3 pt-2">
               <button
                 type="button"
                 onClick={() => setShowSubmitModal(false)}
-                className="flex-1 py-2 rounded bg-[#333333] hover:bg-[#3d3d3d] text-white text-xs font-semibold"
+                className="px-4 py-2 rounded-xl bg-[#181818] hover:bg-[#202020] text-xs font-semibold text-[#8c8c8c] hover:text-white border border-[#282828] transition-colors"
               >
-                Return to Paper
+                Resume Test
               </button>
-
               <button
                 type="button"
                 onClick={finalizeSubmission}
                 disabled={isSubmitting}
-                className="flex-1 py-2 rounded bg-[#ff375f] hover:bg-[#e03152] text-white text-xs font-semibold flex items-center justify-center gap-1.5"
+                className="px-5 py-2 rounded-xl bg-[#ff525c] hover:bg-[#e03152] text-xs font-bold text-white flex items-center gap-1.5 transition-colors disabled:opacity-50"
               >
                 {isSubmitting ? (
                   <>
                     <RefreshCw className="w-3.5 h-3.5 animate-spin" />
-                    <span>Grading...</span>
+                    <span>Grading Paper...</span>
                   </>
                 ) : (
-                  'Submit Test'
+                  <span>Submit & Exit</span>
                 )}
               </button>
             </div>

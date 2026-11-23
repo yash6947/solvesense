@@ -23,7 +23,7 @@ function assert(condition, message) {
 }
 
 async function runE2ETests() {
-  console.log('🧪 Starting ZenithPhysics Master End-to-End Integration Tests...\n');
+  console.log('🧪 Starting Solve Sense Master End-to-End Integration Tests...\n');
 
   const testUserId = 'user-student-arjun';
 

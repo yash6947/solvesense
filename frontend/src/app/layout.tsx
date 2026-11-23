@@ -5,9 +5,9 @@ import Footer from '@/components/Footer';
 import { AuthProvider } from '@/context/AuthContext';
 
 export const metadata: Metadata = {
-  title: 'ZenithPhysics | AI-Powered JEE Problem-Solving Platform',
+  title: 'Solve Sense | AI-Powered JEE Physics Mastery Platform',
   description:
-    'Don’t just solve questions. Master the concepts behind them. Production EdTech platform for JEE Main & JEE Advanced with diagnostic AI mentoring.',
+    'Don’t just solve questions. Understand why. Production EdTech platform for JEE Main & JEE Advanced with diagnostic AI mentoring, deterministic evaluation, and prerequisite gap tracking.',
 };
 
 export default function RootLayout({
@@ -17,7 +17,15 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" className="dark">
-      <body className="min-h-screen flex flex-col bg-background text-slate-100 antialiased selection:bg-blue-600/30 selection:text-electric">
+      <head>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <link
+          href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700;800&display=swap"
+          rel="stylesheet"
+        />
+      </head>
+      <body className="min-h-screen flex flex-col bg-[#0e0e0e] text-[#eff1f6] antialiased selection:bg-[#2E5BFF]/30 selection:text-[#00e1ab]">
         <AuthProvider>
           <Navbar />
           <main className="flex-1 flex flex-col">{children}</main>

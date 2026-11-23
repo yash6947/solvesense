@@ -24,7 +24,7 @@ app.use('/api/v1', apiRouter);
 // Root fallback
 app.get('/', (_req, res) => {
   res.json({
-    name: 'ZenithPhysics API',
+    name: 'Solve Sense API',
     description: 'AI-Powered Competitive Exam Problem-Solving Platform',
     version: '1.0.0',
     documentation: '/api/v1/health',
@@ -37,7 +37,7 @@ app.use(errorHandler);
 const PORT = parseInt(ENV.PORT, 10) || 5000;
 
 app.listen(PORT, () => {
-  console.log(`🚀 ZenithPhysics Backend API running on port ${PORT} [${ENV.NODE_ENV}]`);
+  console.log(`🚀 Solve Sense Backend API running on port ${PORT} [${ENV.NODE_ENV}]`);
 });
 
 export default app;

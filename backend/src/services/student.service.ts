@@ -1,6 +1,5 @@
 import { memoryStore } from './store.service.js';
 import { JEE_PHYSICS_SYLLABUS } from '../data/seedData.js';
-import { JEE_PHYSICS_QUESTIONS } from '../data/questionsData.js';
 
 export interface DashboardMetrics {
   profile: {
@@ -202,18 +201,10 @@ export class StudentService {
         topic: wc.name,
       })),
       recentActivity: attempts.slice(0, 10).map((a) => {
-        const matchedQ = JEE_PHYSICS_QUESTIONS.find(
-          (q) => q.id === a.questionId || q.code === a.questionId
-        );
-        const resolvedId = matchedQ ? matchedQ.id : a.questionId;
-        const resolvedTitle = matchedQ
-          ? `${matchedQ.code} (${matchedQ.topicSlug.replace(/-/g, ' ')})`
-          : `Problem ${a.questionId}`;
-
         return {
           attemptId: a.id,
-          questionId: resolvedId,
-          questionTitle: resolvedTitle,
+          questionId: a.questionId,
+          questionTitle: `Problem ${a.questionId} Practice Drill`,
           isCorrect: a.isCorrect,
           marksEarned: a.marksEarned,
           marksAwarded: a.marksEarned,

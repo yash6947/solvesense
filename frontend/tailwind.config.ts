@@ -10,71 +10,64 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        // LeetCode / GFG Professional Dark Mode Palette
-        background: '#1a1a1a',
-        surface: '#262626',
-        'surface-subtle': '#202020',
-        'surface-elevated': '#2c2c2c',
-        'surface-hover': '#323232',
-        card: '#262626',
-        'card-border': '#333333',
-        border: '#333333',
-        'border-subtle': '#2a2a2a',
-        'border-strong': '#404040',
-        
-        // LeetCode Standard Difficulty and State Colors
+        // Stitch Design System Dark Palette
+        background: '#0e0e0e',
+        surface: '#141414',
+        'surface-subtle': '#181818',
+        'surface-elevated': '#1f1f1f',
+        'surface-hover': '#262626',
+        card: '#181818',
+        'card-border': '#282828',
+        border: '#282828',
+        'border-subtle': '#222222',
+        'border-strong': '#383838',
+
+        // Brand & System Accents from Stitch
+        brand: {
+          primary: '#2E5BFF',
+          secondary: '#6d88ff',
+          tertiary: '#b8c3ff',
+          emerald: '#00e1ab',
+          mint: '#10b981',
+          rose: '#ff525c',
+          gold: '#ffa116',
+          amber: '#ffc01e',
+        },
+
+        // Status & Evaluation Colors
+        eval: {
+          correct: '#00e1ab',
+          incorrect: '#ff525c',
+          partial: '#ffc01e',
+          unattempted: '#8c8c8c',
+        },
+
+        // LeetCode / Competitive Compatibility Palette
         lc: {
-          bg: '#1a1a1a',
-          card: '#262626',
-          border: '#333333',
-          easy: '#00b8a3',
+          bg: '#0e0e0e',
+          card: '#161616',
+          border: '#282828',
+          easy: '#00e1ab',
           medium: '#ffc01e',
-          hard: '#ff375f',
-          green: '#2cbb5d',
+          hard: '#ff525c',
+          green: '#00e1ab',
           orange: '#ffa116',
-          blue: '#3b82f6',
+          blue: '#2E5BFF',
           text: '#eff1f6',
           muted: '#8c8c8c',
-          dark: '#141414',
-        },
-
-        // GeeksforGeeks green accent
-        gfg: {
-          green: '#2f9e44',
-          lightGreen: '#40c057',
-          dark: '#1e1e1e',
-          border: '#2e2e2e',
-        },
-
-        primary: {
-          50: '#f0fdf4',
-          100: '#dcfce7',
-          500: '#22c55e',
-          600: '#16a34a',
-          700: '#15803d',
+          dark: '#0a0a0a',
         },
       },
       fontFamily: {
-        sans: [
-          '-apple-system',
-          'BlinkMacSystemFont',
-          '"Segoe UI"',
-          'Roboto',
-          'Oxygen',
-          'Ubuntu',
-          'Cantarell',
-          'sans-serif',
-        ],
-        mono: [
-          'ui-monospace',
-          'SFMono-Regular',
-          'Menlo',
-          'Monaco',
-          'Consolas',
-          '"Liberation Mono"',
-          '"Courier New"',
-          'monospace',
-        ],
+        headline: ['"Space Grotesk"', 'sans-serif'],
+        sans: ['Inter', '-apple-system', 'BlinkMacSystemFont', '"Segoe UI"', 'sans-serif'],
+        mono: ['"JetBrains Mono"', 'ui-monospace', 'SFMono-Regular', 'Menlo', 'monospace'],
+      },
+      boxShadow: {
+        'glow-primary': '0 0 24px -4px rgba(46, 91, 255, 0.35)',
+        'glow-emerald': '0 0 24px -4px rgba(0, 225, 171, 0.35)',
+        'glow-rose': '0 0 24px -4px rgba(255, 82, 92, 0.35)',
+        'glow-gold': '0 0 24px -4px rgba(255, 161, 22, 0.35)',
       },
     },
   },

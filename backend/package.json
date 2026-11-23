@@ -1,7 +1,7 @@
 {
-  "name": "zenith-physics-backend",
+  "name": "solve-sense-backend",
   "version": "1.0.0",
-  "description": "Backend API Server for ZenithPhysics AI-Powered Competitive Exam Platform",
+  "description": "Backend API Server for Solve Sense AI-Powered Competitive Exam Platform",
   "main": "dist/server.js",
   "scripts": {
     "dev": "tsx watch src/server.ts",

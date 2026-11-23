@@ -45,7 +45,7 @@ export default function LoginPage() {
             <Code2 className="w-5 h-5 text-black stroke-[2.5]" />
           </div>
           <h2 className="text-xl font-bold text-white tracking-tight">
-            Sign In to ZenithCode
+            Sign In to Solve Sense
           </h2>
           <p className="mt-1 text-xs text-[#8c8c8c]">
             Resume your competitive physics practice session

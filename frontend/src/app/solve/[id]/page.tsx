@@ -15,17 +15,34 @@ import {
   Edit3, 
   AlertCircle, 
   ArrowLeft,
-  ChevronLeft,
-  ChevronRight,
-  RefreshCw,
-  Send,
-  MessageSquare,
-  FileText,
-  History,
-  Check,
-  RotateCcw,
-  BookOpen,
-  ArrowRight
+  ChevronLeft, 
+  ChevronRight, 
+  RefreshCw, 
+  Send, 
+  MessageSquare, 
+  FileText, 
+  History, 
+  Check, 
+  RotateCcw, 
+  BookOpen, 
+  ArrowRight,
+  Shield,
+  Zap,
+  X,
+  ThumbsUp,
+  ThumbsDown,
+  Star,
+  Share2,
+  ChevronDown,
+  ChevronUp,
+  Terminal,
+  Maximize2,
+  Minimize2,
+  Code2,
+  BrainCircuit,
+  Info,
+  Tag,
+  Shuffle
 } from 'lucide-react';
 import { apiRequest } from '@/lib/api';
 import { useAuth } from '@/context/AuthContext';
@@ -41,8 +58,26 @@ export default function QuestionWorkspacePage() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // LeetCode-style Active Left Pane Tab
+  // LeetCode Active Tab in Left Pane
   const [leftTab, setLeftTab] = useState<'description' | 'editorial' | 'submissions' | 'hints'>('description');
+
+  // Bottom Console State (LeetCode Testcase / Test Result Drawer)
+  const [isConsoleOpen, setIsConsoleOpen] = useState(true);
+  const [consoleTab, setConsoleTab] = useState<'testcase' | 'result'>('testcase');
+
+  // AI Copilot Drawer State
+  const [isCopilotOpen, setIsCopilotOpen] = useState(false);
+
+  // Formula Sheet Modal State
+  const [showFormulaModal, setShowFormulaModal] = useState(false);
+
+  // Micro-interactions state (Like, Star, Share feedback)
+  const [likesCount, setLikesCount] = useState(142);
+  const [hasLiked, setHasLiked] = useState(false);
+  const [isStarred, setIsStarred] = useState(false);
+  const [shareCopied, setShareCopied] = useState(false);
+  const [isTagsOpen, setIsTagsOpen] = useState(true);
+  const [isSimilarOpen, setIsSimilarOpen] = useState(false);
 
   // Timer state
   const [seconds, setSeconds] = useState(0);
@@ -58,6 +93,7 @@ export default function QuestionWorkspacePage() {
   // Submission & evaluation state
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submissionResult, setSubmissionResult] = useState<any>(null);
+  const [submissionHistory, setSubmissionHistory] = useState<any[]>([]);
 
   // AI Mentor State
   const [mentorMode, setMentorMode] = useState<'COLLABORATIVE' | 'STRICT'>('COLLABORATIVE');
@@ -72,9 +108,51 @@ export default function QuestionWorkspacePage() {
   // AI Chat State
   const [chatMessages, setChatMessages] = useState<
     { sender: 'student' | 'mentor'; text: string; time: string }[]
-  >([]);
+  >([
+    {
+      sender: 'mentor',
+      text: 'Hello! I am your Solve Sense Socratic Physics Mentor. How can I guide your physical intuition or coordinate choice for this problem without giving away the answer?',
+      time: 'Just now',
+    },
+  ]);
   const [chatInput, setChatInput] = useState('');
   const [isChatSending, setIsChatSending] = useState(false);
+
+  // Keyboard shortcut listener (Ctrl+Enter to Submit, A/B/C/D to select)
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // If typing in input, textarea, or chat, don't trigger option shortcuts
+      if (['INPUT', 'TEXTAREA'].includes((e.target as HTMLElement)?.tagName)) {
+        if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+          e.preventDefault();
+          handleSubmitAnswer();
+        }
+        return;
+      }
+
+      if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+        e.preventDefault();
+        handleSubmitAnswer();
+      }
+
+      if (!submissionResult && question?.options) {
+        const key = e.key.toUpperCase();
+        if (['A', 'B', 'C', 'D'].includes(key)) {
+          const opt = question.options.find((o: any) => o.optionKey === key);
+          if (opt) {
+            if (question.questionType === 'SINGLE_CORRECT') {
+              setSelectedSingleKey(key);
+            } else if (question.questionType === 'MULTIPLE_CORRECT') {
+              handleToggleMultiOption(key);
+            }
+          }
+        }
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [question, selectedSingleKey, selectedMultiKeys, numericalInput, submissionResult]);
 
   // Reset state when questionId changes (e.g. clicking Next/Prev)
   useEffect(() => {
@@ -88,6 +166,7 @@ export default function QuestionWorkspacePage() {
     setSeconds(0);
     setIsTimerRunning(true);
     setLeftTab('description');
+    setConsoleTab('testcase');
     fetchQuestionDetails();
   }, [questionId]);
 
@@ -116,7 +195,7 @@ export default function QuestionWorkspacePage() {
   };
 
   const handleToggleMultiOption = (key: string) => {
-    if (submissionResult) return; // Prevent changing after submit
+    if (submissionResult) return;
     if (selectedMultiKeys.includes(key)) {
       setSelectedMultiKeys(selectedMultiKeys.filter((k) => k !== key));
     } else {
@@ -126,7 +205,8 @@ export default function QuestionWorkspacePage() {
 
   const requestHint = async (level: number) => {
     if (hintsCache[level]) {
-      setUnlockedHintLevel(level);
+      setUnlockedHintLevel(Math.max(unlockedHintLevel, level));
+      setLeftTab('hints');
       return;
     }
 
@@ -146,7 +226,8 @@ export default function QuestionWorkspacePage() {
         ...prev,
         [level]: { text: data.hintTextLatex, note: data.guidanceNote },
       }));
-      setUnlockedHintLevel(level);
+      setUnlockedHintLevel(Math.max(unlockedHintLevel, level));
+      setLeftTab('hints');
     } catch (err) {
       console.error('Failed to get hint:', err);
     } finally {
@@ -191,6 +272,21 @@ export default function QuestionWorkspacePage() {
       setSubmissionResult(result);
       setIsTimerRunning(false);
 
+      // Log to submission history
+      const historyItem = {
+        id: Date.now(),
+        isCorrect: result.isCorrect,
+        marksAwarded: result.marksAwarded ?? result.marksEarned,
+        timeSpent: Math.max(seconds, 1),
+        hintsUsed: unlockedHintLevel,
+        submittedAt: new Date().toLocaleTimeString(),
+      };
+      setSubmissionHistory((prev) => [historyItem, ...prev]);
+
+      // Automatically open the Test Result drawer tab like LeetCode
+      setIsConsoleOpen(true);
+      setConsoleTab('result');
+
       if (!result.isCorrect) {
         triggerMistakeAnalysis(submittedAnswer);
       }
@@ -222,15 +318,19 @@ export default function QuestionWorkspacePage() {
     }
   };
 
-  const handleSendChatMessage = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!chatInput.trim() || isChatSending) return;
+  const handleSendChatMessage = async (e?: React.FormEvent, customMsg?: string) => {
+    if (e) e.preventDefault();
+    const userMsg = (customMsg || chatInput).trim();
+    if (!userMsg || isChatSending) return;
 
-    const userMsg = chatInput.trim();
     setChatInput('');
     setChatMessages((prev) => [
       ...prev,
-      { sender: 'student', text: userMsg, time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) },
+      { 
+        sender: 'student', 
+        text: userMsg, 
+        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) 
+      },
     ]);
 
     setIsChatSending(true);
@@ -246,7 +346,11 @@ export default function QuestionWorkspacePage() {
 
       setChatMessages((prev) => [
         ...prev,
-        { sender: 'mentor', text: response.replyLatex || response.reply, time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) },
+        { 
+          sender: 'mentor', 
+          text: response.replyLatex || response.reply, 
+          time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) 
+        },
       ]);
     } catch (err: any) {
       console.error('Chat error:', err);
@@ -254,7 +358,7 @@ export default function QuestionWorkspacePage() {
         ...prev,
         {
           sender: 'mentor',
-          text: 'The AI assistant is temporarily unavailable. Please refer to the verified editorial solution tab.',
+          text: 'The AI assistant is temporarily busy. Check the progressive hints tab or review the fundamental governing laws.',
           time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
         },
       ]);
@@ -270,6 +374,15 @@ export default function QuestionWorkspacePage() {
     setSubmissionResult(null);
     setMistakeAnalysis(null);
     setIsTimerRunning(true);
+    setConsoleTab('testcase');
+  };
+
+  const handleShareClick = () => {
+    if (typeof window !== 'undefined') {
+      navigator.clipboard.writeText(window.location.href);
+      setShareCopied(true);
+      setTimeout(() => setShareCopied(false), 2000);
+    }
   };
 
   const formatTimer = (totalSeconds: number) => {
@@ -278,27 +391,26 @@ export default function QuestionWorkspacePage() {
     return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   };
 
-  const getDifficultyColor = (diff: string) => {
+  const getDifficultyBadge = (diff: string) => {
     switch (diff) {
       case 'EASY':
         return 'text-[#00b8a3] bg-[#00b8a3]/10 border-[#00b8a3]/20';
       case 'MEDIUM':
         return 'text-[#ffc01e] bg-[#ffc01e]/10 border-[#ffc01e]/20';
       case 'HARD':
-        return 'text-[#ff375f] bg-[#ff375f]/10 border-[#ff375f]/20';
       case 'ADVANCED':
-        return 'text-[#a855f7] bg-[#a855f7]/10 border-[#a855f7]/20';
+        return 'text-[#ff375f] bg-[#ff375f]/10 border-[#ff375f]/20';
       default:
-        return 'text-[#9ca3af] bg-[#2a2a2a] border-[#383838]';
+        return 'text-[#8c8c8c] bg-[#1a1a1a] border-[#282828]';
     }
   };
 
   if (isLoading) {
     return (
-      <div className="flex-1 flex items-center justify-center py-24 text-[#8c8c8c]">
+      <div className="flex-1 flex items-center justify-center py-24 text-[#8c8c8c] bg-[#0a0a0a]">
         <div className="flex flex-col items-center gap-3">
-          <div className="w-6 h-6 border-2 border-[#ffa116] border-t-transparent rounded-full animate-spin" />
-          <span className="text-xs font-mono">Loading problem telemetry...</span>
+          <div className="w-8 h-8 border-2 border-[#ffa116] border-t-transparent rounded-full animate-spin" />
+          <span className="text-xs font-mono tracking-wider text-[#a1a1aa]">LOADING LEETCODE WORKSPACE...</span>
         </div>
       </div>
     );
@@ -306,14 +418,14 @@ export default function QuestionWorkspacePage() {
 
   if (error || !question) {
     return (
-      <div className="flex-1 flex items-center justify-center py-20 px-4">
-        <div className="max-w-md w-full p-6 rounded bg-[#262626] border border-[#333333] text-center space-y-4">
+      <div className="flex-1 flex items-center justify-center py-20 px-4 bg-[#0a0a0a]">
+        <div className="max-w-md w-full p-6 rounded-xl bg-[#1a1a1a] border border-[#2e2e2e] text-center space-y-4">
           <AlertCircle className="w-8 h-8 text-[#ff375f] mx-auto" />
-          <h3 className="text-base font-bold text-white">Problem Unavailable</h3>
+          <h3 className="text-base font-bold text-white font-heading">Problem Unavailable</h3>
           <p className="text-xs text-[#8c8c8c]">{error || 'Could not load question.'}</p>
           <Link
             href="/solve"
-            className="inline-block px-4 py-2 rounded bg-[#333333] hover:bg-[#3d3d3d] text-white text-xs font-semibold"
+            className="inline-block px-4 py-2 rounded-lg bg-[#2E5BFF] hover:bg-[#2044cc] text-white text-xs font-semibold"
           >
             Back to Problemset
           </Link>
@@ -322,66 +434,91 @@ export default function QuestionWorkspacePage() {
     );
   }
 
+  const promptSuggestions = [
+    { label: 'Free Body Diagram', text: 'Help me set up the Free Body Diagram (FBD) for this problem.' },
+    { label: 'Governing Law', text: 'What core conservation law or governing principle should I apply?' },
+    { label: 'Sign Convention', text: 'What is the correct coordinate system and sign convention to use here?' },
+    { label: 'Frame of Reference', text: 'Should I analyze this from an inertial or non-inertial frame of reference?' },
+  ];
+
+  const formulaCategories = [
+    {
+      category: 'Rotational Dynamics',
+      formulas: [
+        { name: 'Torque Balance', eq: '\\vec{\\tau} = \\vec{r} \\times \\vec{F} = I\\vec{\\alpha}' },
+        { name: 'Pure Rolling Condition', eq: 'v_{cm} = \\omega R, \\quad a_{cm} = \\alpha R' },
+        { name: 'Total Kinetic Energy', eq: 'K_{tot} = \\frac{1}{2}mv_{cm}^2 + \\frac{1}{2}I_{cm}\\omega^2' },
+        { name: 'Angular Momentum', eq: '\\vec{L} = \\vec{r}_{cm} \\times m\\vec{v}_{cm} + I_{cm}\\vec{\\omega}' },
+      ],
+    },
+    {
+      category: 'Work, Energy & Power',
+      formulas: [
+        { name: 'Work-Energy Theorem', eq: 'W_{all} = \\Delta K = K_f - K_i' },
+        { name: 'Conservative Force', eq: '\\vec{F} = -\\vec{\\nabla} U = -\\left(\\frac{\\partial U}{\\partial x}\\hat{i} + \\frac{\\partial U}{\\partial y}\\hat{j} + \\frac{\\partial U}{\\partial z}\\hat{k}\\right)' },
+        { name: 'Instantaneous Power', eq: 'P = \\vec{F} \\cdot \\vec{v} = \\tau \\omega' },
+      ],
+    },
+  ];
+
   return (
-    <div className="flex-1 flex flex-col h-[calc(100vh-3.25rem)] overflow-hidden bg-[#1a1a1a]">
-      {/* LeetCode Workspace Top Sub-Navbar */}
-      <div className="h-11 border-b border-[#282828] bg-[#212121] px-4 flex items-center justify-between text-xs shrink-0 select-none">
-        {/* Left: Back Link & Problem Code / Navigation */}
+    <div className="flex-1 flex flex-col h-[calc(100vh-3.25rem)] overflow-hidden bg-[#0a0a0a] text-[#eff1f6]">
+      {/* ======================================================== */}
+      {/* LEETCODE WORKSPACE SUB-NAVBAR                            */}
+      {/* ======================================================== */}
+      <div className="h-11 border-b border-[#282828] bg-[#141414] px-4 flex items-center justify-between text-xs shrink-0 select-none">
+        {/* Left: Problem navigation & breadcrumb */}
         <div className="flex items-center gap-3">
           <Link
             href="/solve"
-            className="text-[#8c8c8c] hover:text-[#eff1f6] flex items-center gap-1.5 font-medium transition-colors"
+            className="text-[#8c8c8c] hover:text-white flex items-center gap-1.5 font-medium transition-colors"
           >
             <ArrowLeft className="w-3.5 h-3.5" />
-            <span className="hidden sm:inline font-mono">Problemset</span>
+            <span className="hidden sm:inline font-mono">Problem List</span>
           </Link>
-          <span className="text-[#3a3a3a]">|</span>
+          <span className="text-[#333333]">|</span>
 
-          {/* Quick Problem Switcher (< and >) */}
+          {/* Prev / Next Arrows */}
           <div className="flex items-center gap-1">
             <button
               disabled={!question.prevQuestionId}
               onClick={() => {
-                if (question.prevQuestionId) {
-                  router.push(`/solve/${question.prevQuestionId}`);
-                }
+                if (question.prevQuestionId) router.push(`/solve/${question.prevQuestionId}`);
               }}
-              title="Previous Problem"
-              className="p-1 rounded bg-[#262626] border border-[#383838] text-[#8c8c8c] hover:text-white disabled:opacity-30 disabled:pointer-events-none transition-colors"
+              title="Previous Problem (Ctrl + [)"
+              className="p-1 rounded bg-[#1e1e1e] border border-[#2e2e2e] text-[#8c8c8c] hover:text-white disabled:opacity-30 disabled:pointer-events-none transition-colors"
             >
               <ChevronLeft className="w-3.5 h-3.5" />
             </button>
             <button
               disabled={!question.nextQuestionId}
               onClick={() => {
-                if (question.nextQuestionId) {
-                  router.push(`/solve/${question.nextQuestionId}`);
-                }
+                if (question.nextQuestionId) router.push(`/solve/${question.nextQuestionId}`);
               }}
-              title="Next Problem"
-              className="p-1 rounded bg-[#262626] border border-[#383838] text-[#8c8c8c] hover:text-white disabled:opacity-30 disabled:pointer-events-none transition-colors"
+              title="Next Problem (Ctrl + ])"
+              className="p-1 rounded bg-[#1e1e1e] border border-[#2e2e2e] text-[#8c8c8c] hover:text-white disabled:opacity-30 disabled:pointer-events-none transition-colors"
             >
               <ChevronRight className="w-3.5 h-3.5" />
             </button>
           </div>
 
-          <span className="font-mono text-[#eff1f6] font-bold">
+          <span className="font-mono text-white font-bold tracking-tight">
             {question.code}
           </span>
-          <span className={`px-2 py-0.5 rounded text-[11px] font-semibold border ${getDifficultyColor(question.difficulty)}`}>
+          <span className={`px-2 py-0.5 rounded text-[11px] font-semibold border ${getDifficultyBadge(question.difficulty)}`}>
             {question.difficulty}
           </span>
           {question.isPYQ && (
             <span className="hidden sm:inline-block px-2 py-0.5 rounded text-[10px] font-mono bg-[#2b2416] text-[#ffa116] border border-[#4a3b1d]">
-              JEE PYQ {question.pyqYear}
+              JEE ADVANCED &apos;{question.pyqYear}
             </span>
           )}
         </div>
 
-        {/* Center: Stopwatch & Marking */}
+        {/* Center: Stopwatch & Marks */}
         <div className="flex items-center gap-4">
-          <div className="flex items-center gap-2 px-2.5 py-1 rounded bg-[#1a1a1a] border border-[#333333] font-mono text-white text-xs">
-            <Clock className="w-3 h-3 text-[#ffa116]" />
+          <div className="flex items-center gap-2 px-2.5 py-1 rounded bg-[#1a1a1a] border border-[#2e2e2e] font-mono text-white text-xs">
+            <Clock className={`w-3.5 h-3.5 ${seconds > question.timeRecommendationSec ? 'text-[#ff375f]' : 'text-[#ffa116]'}`} />
             <span className="font-bold">{formatTimer(seconds)}</span>
             {!submissionResult && (
               <button
@@ -394,7 +531,7 @@ export default function QuestionWorkspacePage() {
             )}
           </div>
 
-          <div className="hidden sm:flex items-center gap-1 font-mono text-[11px] text-[#8c8c8c]">
+          <div className="hidden md:flex items-center gap-1.5 font-mono text-[11px] text-[#8c8c8c]">
             <span>Marks:</span>
             <span className="text-[#00b8a3] font-bold">+{question.marks}</span>
             <span>/</span>
@@ -402,33 +539,60 @@ export default function QuestionWorkspacePage() {
           </div>
         </div>
 
-        {/* Right: Quick Action Buttons */}
+        {/* Right: LeetCode Tools & Submission Trigger */}
         <div className="flex items-center gap-2">
+          {/* Formula Sheet Trigger */}
+          <button
+            onClick={() => setShowFormulaModal(true)}
+            className="px-2.5 py-1 rounded bg-[#1a1a1a] border border-[#2e2e2e] text-[#8c8c8c] hover:text-white text-xs font-medium flex items-center gap-1.5 transition-colors"
+            title="Formula Reference Sheet"
+          >
+            <BookOpen className="w-3.5 h-3.5 text-[#2E5BFF]" />
+            <span className="hidden lg:inline">Formulas</span>
+          </button>
+
+          {/* Scratchpad Trigger */}
           <button
             onClick={() => setShowScratchpad(!showScratchpad)}
             className={`px-2.5 py-1 rounded text-xs border font-medium flex items-center gap-1.5 transition-colors ${
               showScratchpad
                 ? 'bg-[#2b2416] border-[#4a3b1d] text-[#ffa116]'
-                : 'bg-[#262626] border-[#383838] text-[#8c8c8c] hover:text-white'
+                : 'bg-[#1a1a1a] border-[#2e2e2e] text-[#8c8c8c] hover:text-white'
             }`}
           >
-            <Edit3 className="w-3 h-3" />
-            <span className="hidden sm:inline">Scratchpad</span>
+            <Edit3 className="w-3.5 h-3.5" />
+            <span className="hidden md:inline">Scratchpad</span>
           </button>
 
+          {/* AI Copilot Flyout Trigger */}
+          <button
+            onClick={() => setIsCopilotOpen(!isCopilotOpen)}
+            className={`px-2.5 py-1 rounded text-xs font-semibold flex items-center gap-1.5 transition-all shadow-sm ${
+              isCopilotOpen
+                ? 'bg-[#2E5BFF] text-white border border-[#2E5BFF]'
+                : 'bg-[#1a1a1a] border border-[#2e2e2e] text-[#eff1f6] hover:border-[#2E5BFF]/50'
+            }`}
+          >
+            <BrainCircuit className="w-3.5 h-3.5 text-[#00b8a3]" />
+            <span className="hidden sm:inline">Ask AI</span>
+            <span className="w-1.5 h-1.5 rounded-full bg-[#00e1ab] animate-pulse" />
+          </button>
+
+          {/* Submit Button */}
           <button
             onClick={handleSubmitAnswer}
             disabled={isSubmitting}
-            className="px-4 py-1 rounded bg-[#2cbb5d] hover:bg-[#26a050] text-white font-semibold text-xs flex items-center gap-1.5 shadow-sm transition-all disabled:opacity-50"
+            className="px-3.5 py-1 rounded bg-[#2cbb5d] hover:bg-[#26a050] text-white font-bold text-xs flex items-center gap-1.5 shadow transition-all disabled:opacity-50"
+            title="Submit Solution (Ctrl + Enter)"
           >
             {isSubmitting ? (
               <>
-                <RefreshCw className="w-3 h-3 animate-spin" />
+                <RefreshCw className="w-3.5 h-3.5 animate-spin" />
                 <span>Evaluating...</span>
               </>
             ) : (
               <>
-                <Check className="w-3 h-3 stroke-[3]" />
+                <Check className="w-3.5 h-3.5 stroke-[3]" />
                 <span>Submit</span>
               </>
             )}
@@ -436,14 +600,16 @@ export default function QuestionWorkspacePage() {
         </div>
       </div>
 
-      {/* Main Split Body: Left Pane (Tabs) & Right Pane (Solving Workspace) */}
-      <div className="flex-1 grid grid-cols-1 lg:grid-cols-12 overflow-hidden">
+      {/* ======================================================== */}
+      {/* MAIN SPLIT BODY (LEFT PANE & RIGHT PANE)                 */}
+      {/* ======================================================== */}
+      <div className="flex-1 grid grid-cols-1 lg:grid-cols-12 overflow-hidden relative">
         {/* ======================================================== */}
-        {/* LEFT PANE: LeetCode Tabbed Problem Description / Editorial */}
+        {/* LEFT PANE: LEETCODE TABBED PROBLEM SPECIFICATION         */}
         {/* ======================================================== */}
-        <div className="lg:col-span-6 flex flex-col border-b lg:border-b-0 lg:border-r border-[#282828] bg-[#1e1e1e] overflow-hidden">
-          {/* Tab Strip */}
-          <div className="flex items-center border-b border-[#282828] bg-[#212121] px-2 shrink-0 overflow-x-auto">
+        <div className="lg:col-span-6 flex flex-col border-b lg:border-b-0 lg:border-r border-[#282828] bg-[#141414] overflow-hidden">
+          {/* LeetCode Tab Strip */}
+          <div className="flex items-center border-b border-[#282828] bg-[#1e1e1e] px-2 shrink-0 overflow-x-auto gap-0.5">
             <button
               onClick={() => setLeftTab('description')}
               className={`lc-tab ${leftTab === 'description' ? 'lc-tab-active' : ''}`}
@@ -462,93 +628,175 @@ export default function QuestionWorkspacePage() {
               )}
             </button>
             <button
+              onClick={() => setLeftTab('hints')}
+              className={`lc-tab ${leftTab === 'hints' ? 'lc-tab-active' : ''}`}
+            >
+              <Sparkles className="w-3.5 h-3.5 text-[#ffa116]" />
+              <span>Progressive Hints</span>
+              {unlockedHintLevel > 0 && (
+                <span className="px-1.5 py-0.2 rounded text-[10px] font-mono bg-[#ffa116]/20 text-[#ffa116] ml-1">
+                  {unlockedHintLevel}/4
+                </span>
+              )}
+            </button>
+            <button
               onClick={() => setLeftTab('submissions')}
               className={`lc-tab ${leftTab === 'submissions' ? 'lc-tab-active' : ''}`}
             >
               <History className="w-3.5 h-3.5" />
               <span>Submissions</span>
-              {submissionResult && (
+              {submissionHistory.length > 0 && (
                 <span className="px-1.5 py-0.2 rounded text-[10px] font-mono bg-[#282828] text-white ml-1">
-                  1
+                  {submissionHistory.length}
                 </span>
               )}
             </button>
-            <button
-              onClick={() => setLeftTab('hints')}
-              className={`lc-tab ${leftTab === 'hints' ? 'lc-tab-active' : ''}`}
-            >
-              <Sparkles className="w-3.5 h-3.5 text-[#ffa116]" />
-              <span>Mentor Hints</span>
-            </button>
           </div>
 
-          {/* Tab Content Area (Scrollable) */}
+          {/* Left Tab Content Area (Scrollable) */}
           <div className="flex-1 overflow-y-auto p-5 text-sm text-[#eff1f6] space-y-5">
             {/* TAB 1: DESCRIPTION */}
             {leftTab === 'description' && (
               <div className="space-y-5">
-                {/* Title & Exam Meta */}
-                <div className="border-b border-[#282828] pb-3">
-                  <h1 className="text-lg font-bold text-white tracking-tight">
+                {/* Problem Title & Meta Header */}
+                <div className="border-b border-[#282828] pb-3 space-y-2">
+                  <div className="flex items-center justify-between text-xs text-[#8c8c8c]">
+                    <span className="font-mono text-[#00b8a3]">
+                      {question.topic?.chapter?.name || 'Classical Mechanics'} &gt; {question.topic?.name}
+                    </span>
+                    <span className="font-mono text-[11px]">
+                      Target Pace: {Math.round(question.timeRecommendationSec / 60)} min
+                    </span>
+                  </div>
+                  <h1 className="text-xl font-bold text-white tracking-tight">
                     {question.code}: {question.topic ? question.topic.name : 'JEE Physics Problem'}
                   </h1>
-                  <div className="flex items-center gap-2 text-xs text-[#8c8c8c] mt-1.5">
-                    <span>{question.examType.replace('_', ' ')}</span>
-                    <span>•</span>
-                    <span className="font-mono">{question.questionType.replace('_', ' ')}</span>
-                    <span>•</span>
-                    <span>Time Target: {Math.round(question.timeRecommendationSec / 60)}m</span>
+
+                  {/* LeetCode Meta Bar (Difficulty, PYQ, Likes, Favorite, Share) */}
+                  <div className="flex items-center justify-between pt-1">
+                    <div className="flex items-center gap-2">
+                      <span className={`px-2 py-0.5 rounded text-[11px] font-semibold border ${getDifficultyBadge(question.difficulty)}`}>
+                        {question.difficulty}
+                      </span>
+                      {question.isPYQ && (
+                        <span className="px-2 py-0.5 rounded text-[10px] font-mono bg-[#2b2416] text-[#ffa116] border border-[#4a3b1d]">
+                          JEE ADVANCED &apos;{question.pyqYear}
+                        </span>
+                      )}
+                      <span className="text-[#8c8c8c] text-xs font-mono">
+                        Acceptance: 44.8%
+                      </span>
+                    </div>
+
+                    <div className="flex items-center gap-3 text-xs text-[#8c8c8c]">
+                      <button
+                        onClick={() => {
+                          setHasLiked(!hasLiked);
+                          setLikesCount(hasLiked ? likesCount - 1 : likesCount + 1);
+                        }}
+                        className={`flex items-center gap-1 transition-colors ${hasLiked ? 'text-[#00b8a3]' : 'hover:text-white'}`}
+                        title="Like this question"
+                      >
+                        <ThumbsUp className="w-3.5 h-3.5" />
+                        <span className="font-mono text-[11px]">{likesCount}</span>
+                      </button>
+
+                      <button
+                        onClick={() => setIsStarred(!isStarred)}
+                        className={`transition-colors ${isStarred ? 'text-[#ffa116]' : 'hover:text-white'}`}
+                        title="Add to Starred"
+                      >
+                        <Star className={`w-3.5 h-3.5 ${isStarred ? 'fill-[#ffa116]' : ''}`} />
+                      </button>
+
+                      <button
+                        onClick={handleShareClick}
+                        className="hover:text-white transition-colors relative"
+                        title="Share problem URL"
+                      >
+                        <Share2 className="w-3.5 h-3.5" />
+                        {shareCopied && (
+                          <span className="absolute -top-6 right-0 bg-[#00b8a3] text-black text-[10px] font-bold px-1.5 py-0.5 rounded shadow">
+                            Copied!
+                          </span>
+                        )}
+                      </button>
+                    </div>
                   </div>
                 </div>
 
-                {/* Question Statement with KaTeX */}
-                <div className="leading-relaxed text-[#d1d5db]">
+                {/* Problem Statement with KaTeX */}
+                <div className="leading-relaxed text-[#d1d5db] font-sans text-[15px] space-y-4">
                   <MathRenderer content={question.contentLatex} />
                 </div>
 
-                {/* Constraints & Exam Scheme Box */}
-                <div className="p-3.5 rounded bg-[#262626] border border-[#333333] space-y-2 text-xs">
-                  <div className="font-bold text-[#eff1f6] uppercase tracking-wider text-[11px]">
-                    Marking Scheme & Rules
+                {/* Question Diagram if present */}
+                {question.imageUrl && (
+                  <div className="p-4 rounded-lg bg-[#1a1a1a] border border-[#2e2e2e]">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={question.imageUrl}
+                      alt="Problem Diagram"
+                      className="max-h-60 mx-auto object-contain rounded"
+                    />
                   </div>
-                  <ul className="list-disc list-inside text-[#9ca3af] space-y-1">
+                )}
+
+                {/* Official Marking Rules Accordion */}
+                <div className="p-4 rounded-lg bg-[#1a1a1a] border border-[#2e2e2e] space-y-2 text-xs">
+                  <div className="font-bold text-white uppercase tracking-wider text-[11px] flex items-center gap-1.5">
+                    <Info className="w-3.5 h-3.5 text-[#2E5BFF]" />
+                    <span>Official Marking Scheme & Rules</span>
+                  </div>
+                  <ul className="list-disc list-inside text-[#9ca3af] space-y-1 font-sans">
                     {question.questionType === 'SINGLE_CORRECT' && (
                       <>
-                        <li><span className="text-[#00b8a3] font-medium">+4 Marks</span> for the correct option selected.</li>
-                        <li><span className="text-[#ff375f] font-medium">-1 Mark</span> for an incorrect option.</li>
+                        <li><span className="text-[#00b8a3] font-semibold">+4 Marks</span> for the correct option selected.</li>
+                        <li><span className="text-[#ff375f] font-semibold">-1 Mark</span> for an incorrect option.</li>
                         <li>0 Marks if unattempted.</li>
                       </>
                     )}
                     {question.questionType === 'MULTIPLE_CORRECT' && (
                       <>
-                        <li><span className="text-[#00b8a3] font-medium">+4 Marks</span> if all correct options are selected and no incorrect option is chosen.</li>
-                        <li><span className="text-[#00b8a3] font-medium">+2 Marks</span> (Partial) if two or more correct options are selected without any incorrect choice.</li>
-                        <li><span className="text-[#ff375f] font-medium">-2 Marks</span> if any incorrect option is selected.</li>
+                        <li><span className="text-[#00b8a3] font-semibold">+4 Marks</span> if all correct options are selected and no wrong option is chosen.</li>
+                        <li><span className="text-[#00b8a3] font-semibold">+2 Marks</span> (Partial) if two or more correct options are selected without wrong choices.</li>
+                        <li><span className="text-[#ff375f] font-semibold">-2 Marks</span> if any incorrect option is selected.</li>
                       </>
                     )}
                     {question.questionType === 'NUMERICAL' && (
                       <>
-                        <li><span className="text-[#00b8a3] font-medium">+4 Marks</span> for exact numerical value within ±0.05 tolerance.</li>
+                        <li><span className="text-[#00b8a3] font-semibold">+4 Marks</span> for exact numerical value within ±0.05 tolerance.</li>
                         <li>0 Negative Marks.</li>
                       </>
                     )}
                   </ul>
                 </div>
 
-                {/* Prerequisite Tags */}
+                {/* Collapsible Prerequisite Concepts */}
                 {question.conceptTags && question.conceptTags.length > 0 && (
-                  <div className="pt-2">
-                    <div className="text-xs text-[#8c8c8c] font-medium mb-2">Prerequisite Concepts:</div>
-                    <div className="flex flex-wrap gap-1.5">
-                      {question.conceptTags.map((tag: string) => (
-                        <span
-                          key={tag}
-                          className="px-2 py-0.5 rounded bg-[#262626] border border-[#333333] text-[11px] font-mono text-[#8c8c8c]"
-                        >
-                          {tag}
-                        </span>
-                      ))}
-                    </div>
+                  <div className="border border-[#282828] rounded-lg bg-[#181818] overflow-hidden">
+                    <button
+                      onClick={() => setIsTagsOpen(!isTagsOpen)}
+                      className="w-full p-3 flex items-center justify-between text-xs font-semibold text-white hover:bg-[#202020] transition-colors"
+                    >
+                      <div className="flex items-center gap-2">
+                        <Tag className="w-3.5 h-3.5 text-[#ffa116]" />
+                        <span>Related Topics & Concepts</span>
+                      </div>
+                      {isTagsOpen ? <ChevronUp className="w-4 h-4 text-[#8c8c8c]" /> : <ChevronDown className="w-4 h-4 text-[#8c8c8c]" />}
+                    </button>
+                    {isTagsOpen && (
+                      <div className="p-3 pt-0 flex flex-wrap gap-1.5 border-t border-[#282828]">
+                        {question.conceptTags.map((tag: string) => (
+                          <span
+                            key={tag}
+                            className="px-2.5 py-1 rounded bg-[#1f1f1f] border border-[#2e2e2e] text-[11px] font-mono text-[#a1a1aa] hover:border-[#404040] transition-colors"
+                          >
+                            {tag}
+                          </span>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
@@ -565,8 +813,11 @@ export default function QuestionWorkspacePage() {
                 </div>
 
                 {submissionResult?.solutionLatex || question.solutionLatex || submissionResult?.verifiedSolution ? (
-                  <div className="p-4 rounded bg-[#262626] border border-[#333333] space-y-3">
-                    <div className="text-xs font-mono font-bold text-[#00b8a3]">DERIVATION & PROOF:</div>
+                  <div className="p-5 rounded-lg bg-[#1a1a1a] border border-[#2e2e2e] space-y-4">
+                    <div className="text-xs font-mono font-bold text-[#00b8a3] flex items-center gap-1.5">
+                      <CheckCircle2 className="w-4 h-4" />
+                      <span>STEP-BY-STEP PROOF & GOVERNING EQUATIONS:</span>
+                    </div>
                     <div className="text-sm text-[#d1d5db] leading-relaxed">
                       <MathRenderer
                         content={submissionResult?.solutionLatex || submissionResult?.verifiedSolution || question.solutionLatex}
@@ -574,9 +825,10 @@ export default function QuestionWorkspacePage() {
                     </div>
                   </div>
                 ) : (
-                  <div className="p-6 text-center text-[#8c8c8c] bg-[#262626] rounded border border-[#333333]">
-                    <HelpCircle className="w-6 h-6 mx-auto mb-2 text-[#ffa116]" />
-                    <p className="text-xs">
+                  <div className="p-8 text-center text-[#8c8c8c] bg-[#1a1a1a] rounded-lg border border-[#2e2e2e] space-y-2">
+                    <HelpCircle className="w-8 h-8 mx-auto text-[#ffa116]" />
+                    <h3 className="text-sm font-bold text-white">Solution Locked</h3>
+                    <p className="text-xs max-w-sm mx-auto">
                       Submit an answer or consult the progressive hints tab to view the complete verified editorial derivation.
                     </p>
                   </div>
@@ -584,116 +836,66 @@ export default function QuestionWorkspacePage() {
               </div>
             )}
 
-            {/* TAB 3: SUBMISSIONS */}
-            {leftTab === 'submissions' && (
-              <div className="space-y-4">
-                <div className="border-b border-[#282828] pb-3">
-                  <h2 className="text-base font-bold text-white">Your Submissions</h2>
-                  <p className="text-xs text-[#8c8c8c] mt-0.5">Execution history and scoring logs for this problem.</p>
-                </div>
-
-                {submissionResult ? (
-                  <div className="rounded border border-[#333333] overflow-hidden bg-[#262626]">
-                    <div className="p-4 flex items-center justify-between border-b border-[#333333]">
-                      <div className="flex items-center gap-2">
-                        {submissionResult.isCorrect ? (
-                          <div className="flex items-center gap-1.5 text-[#00b8a3] font-bold text-sm">
-                            <CheckCircle2 className="w-4 h-4" />
-                            <span>Accepted</span>
-                          </div>
-                        ) : (
-                          <div className="flex items-center gap-1.5 text-[#ff375f] font-bold text-sm">
-                            <XCircle className="w-4 h-4" />
-                            <span>Wrong Answer</span>
-                          </div>
-                        )}
-                      </div>
-                      <span className="font-mono text-xs text-[#8c8c8c]">
-                        {new Date().toLocaleTimeString()}
-                      </span>
-                    </div>
-
-                    <div className="p-4 grid grid-cols-3 gap-2 text-center text-xs">
-                      <div className="p-2 rounded bg-[#1f1f1f]">
-                        <div className="text-[#8c8c8c] text-[10px] uppercase">Runtime</div>
-                        <div className="font-mono font-bold text-white mt-0.5">{seconds}s</div>
-                      </div>
-                      <div className="p-2 rounded bg-[#1f1f1f]">
-                        <div className="text-[#8c8c8c] text-[10px] uppercase">Marks</div>
-                        <div className={`font-mono font-bold mt-0.5 ${(submissionResult.marksAwarded ?? submissionResult.marksEarned) >= 0 ? 'text-[#00b8a3]' : 'text-[#ff375f]'}`}>
-                          {(submissionResult.marksAwarded ?? submissionResult.marksEarned) > 0 ? `+${submissionResult.marksAwarded ?? submissionResult.marksEarned}` : (submissionResult.marksAwarded ?? submissionResult.marksEarned)}
-                        </div>
-                      </div>
-                      <div className="p-2 rounded bg-[#1f1f1f]">
-                        <div className="text-[#8c8c8c] text-[10px] uppercase">Hints Used</div>
-                        <div className="font-mono font-bold text-white mt-0.5">{unlockedHintLevel} / 4</div>
-                      </div>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="py-12 text-center text-[#8c8c8c]">
-                    <History className="w-6 h-6 mx-auto mb-2 text-[#4a4a4a]" />
-                    <p className="text-xs">No submissions recorded yet for this session.</p>
-                  </div>
-                )}
-              </div>
-            )}
-
-            {/* TAB 4: MENTOR HINTS */}
+            {/* TAB 3: AI PROGRESSIVE HINTS */}
             {leftTab === 'hints' && (
               <div className="space-y-4">
                 <div className="border-b border-[#282828] pb-3 flex items-center justify-between">
                   <div>
-                    <h2 className="text-base font-bold text-white">Progressive Hints</h2>
+                    <h2 className="text-base font-bold text-white">Socratic Progressive Hints</h2>
                     <p className="text-xs text-[#8c8c8c]">Calibrated hints designed to guide without giving away answers.</p>
                   </div>
                   {/* Mode Selector */}
                   <select
                     value={mentorMode}
                     onChange={(e: any) => setMentorMode(e.target.value)}
-                    className="px-2 py-1 rounded bg-[#262626] border border-[#333333] text-[11px] text-[#eff1f6] outline-none"
+                    className="px-2.5 py-1.5 rounded bg-[#1e1e1e] border border-[#2e2e2e] text-xs text-[#eff1f6] outline-none font-mono"
                   >
                     <option value="COLLABORATIVE">Collaborative Mode</option>
-                    <option value="STRICT">Strict Exam Mode</option>
+                    <option value="STRICT">Strict Mode</option>
                   </select>
                 </div>
 
                 {/* 4 Hint Levels */}
-                <div className="space-y-2.5">
+                <div className="space-y-3">
                   {[
-                    { level: 1, title: 'Level 1: Physical Intuition', subtitle: 'Conceptual setup & free body diagram' },
-                    { level: 2, title: 'Level 2: Governing Physical Law', subtitle: 'Conservation principles & Newton-Euler laws' },
-                    { level: 3, title: 'Level 3: Equation Formulation', subtitle: 'Simultaneous system equations in variables' },
-                    { level: 4, title: 'Level 4: Complete Method Step', subtitle: 'Step-by-step mathematical path' },
+                    { level: 1, title: 'Tier 1: Core Physical Intuition', subtitle: 'Key physical phenomenon & Free Body Diagram setup', penalty: '0% PSI Impact' },
+                    { level: 2, title: 'Tier 2: Governing Physical Law', subtitle: 'Conservation principles & Newton-Euler equations', penalty: '-5% PSI Impact' },
+                    { level: 3, title: 'Tier 3: Tactical Equation Setup', subtitle: 'System equations in variables & coordinate choices', penalty: '-10% PSI Impact' },
+                    { level: 4, title: 'Tier 4: Step-by-Step Method', subtitle: 'Complete mathematical roadmap towards final answer', penalty: '-20% PSI Impact' },
                   ].map((h) => {
                     const isUnlocked = unlockedHintLevel >= h.level;
                     return (
-                      <div key={h.level} className="rounded border border-[#333333] bg-[#262626] p-3 text-xs">
-                        <div className="flex items-center justify-between">
-                          <div>
-                            <div className="font-bold text-white">{h.title}</div>
+                      <div key={h.level} className="rounded-lg border border-[#2e2e2e] bg-[#1a1a1a] p-4 text-xs transition-colors hover:border-[#383838]">
+                        <div className="flex items-center justify-between gap-3">
+                          <div className="space-y-0.5">
+                            <div className="flex items-center gap-2">
+                              <span className="font-bold text-white">{h.title}</span>
+                              <span className="text-[10px] font-mono px-2 py-0.2 rounded bg-[#121212] text-[#8c8c8c] border border-[#282828]">
+                                {h.penalty}
+                              </span>
+                            </div>
                             <div className="text-[11px] text-[#8c8c8c]">{h.subtitle}</div>
                           </div>
                           <button
                             onClick={() => requestHint(h.level)}
                             disabled={isLoadingHint}
-                            className={`px-2.5 py-1 rounded font-semibold text-[11px] transition-colors ${
+                            className={`px-3 py-1.5 rounded font-bold text-xs transition-colors shrink-0 ${
                               isUnlocked
-                                ? 'bg-[#333333] text-white'
+                                ? 'bg-[#282828] text-white hover:bg-[#333333]'
                                 : 'bg-[#ffa116] hover:bg-[#ff9500] text-black'
                             }`}
                           >
-                            {isUnlocked ? 'View' : 'Unlock Hint'}
+                            {isUnlocked ? 'Unlocked' : 'Unlock Hint'}
                           </button>
                         </div>
 
                         {/* Unlocked Hint Text */}
                         {isUnlocked && hintsCache[h.level] && (
-                          <div className="mt-3 pt-2.5 border-t border-[#333333] text-[#d1d5db] space-y-1">
+                          <div className="mt-3 pt-3 border-t border-[#2e2e2e] text-[#d1d5db] space-y-1.5">
                             <MathRenderer content={hintsCache[h.level].text} />
                             {hintsCache[h.level].note && (
                               <p className="text-[11px] text-[#ffa116] font-mono mt-1">
-                                Note: {hintsCache[h.level].note}
+                                Mentor Note: {hintsCache[h.level].note}
                               </p>
                             )}
                           </div>
@@ -702,78 +904,100 @@ export default function QuestionWorkspacePage() {
                     );
                   })}
                 </div>
+              </div>
+            )}
 
-                {/* Chat with Mentor Drawer */}
-                <div className="pt-3 border-t border-[#282828] space-y-2">
-                  <div className="text-xs font-bold text-white flex items-center gap-1.5">
-                    <MessageSquare className="w-3.5 h-3.5 text-[#00b8a3]" />
-                    <span>Ask a Concept Doubt</span>
-                  </div>
-
-                  {chatMessages.length > 0 && (
-                    <div className="p-3 rounded bg-[#1a1a1a] border border-[#333333] max-h-40 overflow-y-auto space-y-2 text-xs">
-                      {chatMessages.map((msg, i) => (
-                        <div
-                          key={i}
-                          className={`p-2 rounded ${
-                            msg.sender === 'student'
-                              ? 'bg-[#282828] text-white ml-6 text-right'
-                              : 'bg-[#222222] text-[#d1d5db] mr-6 border border-[#333333]'
-                          }`}
-                        >
-                          <div className="font-semibold text-[10px] text-[#8c8c8c] mb-0.5">
-                            {msg.sender === 'student' ? 'You' : 'AI Physics Mentor'} • {msg.time}
-                          </div>
-                          <MathRenderer content={msg.text} />
-                        </div>
-                      ))}
-                    </div>
-                  )}
-
-                  <form onSubmit={handleSendChatMessage} className="flex gap-2">
-                    <input
-                      type="text"
-                      value={chatInput}
-                      onChange={(e) => setChatInput(e.target.value)}
-                      placeholder="e.g. Why does friction point upward here?"
-                      className="flex-1 px-3 py-1.5 rounded bg-[#262626] border border-[#383838] text-xs text-white placeholder-[#6b7280] outline-none focus:border-[#ffa116]"
-                    />
-                    <button
-                      type="submit"
-                      disabled={isChatSending || !chatInput.trim()}
-                      className="px-3 py-1.5 rounded bg-[#333333] hover:bg-[#3d3d3d] text-white text-xs font-semibold disabled:opacity-50"
-                    >
-                      <Send className="w-3.5 h-3.5" />
-                    </button>
-                  </form>
+            {/* TAB 4: LEETCODE SUBMISSIONS HISTORY */}
+            {leftTab === 'submissions' && (
+              <div className="space-y-4">
+                <div className="border-b border-[#282828] pb-3">
+                  <h2 className="text-base font-bold text-white">Execution Submissions</h2>
+                  <p className="text-xs text-[#8c8c8c] mt-0.5">Official grading logs and execution telemetry for this problem.</p>
                 </div>
+
+                {submissionHistory.length > 0 ? (
+                  <div className="rounded-lg border border-[#2e2e2e] overflow-hidden bg-[#1a1a1a]">
+                    <table className="w-full text-left text-xs border-collapse font-mono">
+                      <thead>
+                        <tr className="border-b border-[#2e2e2e] bg-[#141414] text-[#8c8c8c] text-[11px] uppercase">
+                          <th className="py-2.5 px-3">Status</th>
+                          <th className="py-2.5 px-3">Runtime</th>
+                          <th className="py-2.5 px-3">Marks</th>
+                          <th className="py-2.5 px-3">Hints</th>
+                          <th className="py-2.5 px-3 text-right">Time</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-[#242424]">
+                        {submissionHistory.map((sub) => (
+                          <tr key={sub.id} className="hover:bg-[#202020] transition-colors">
+                            <td className="py-2.5 px-3">
+                              <span className={`font-bold flex items-center gap-1.5 ${sub.isCorrect ? 'text-[#00b8a3]' : 'text-[#ff375f]'}`}>
+                                {sub.isCorrect ? <CheckCircle2 className="w-3.5 h-3.5" /> : <XCircle className="w-3.5 h-3.5" />}
+                                <span>{sub.isCorrect ? 'Accepted' : 'Wrong Answer'}</span>
+                              </span>
+                            </td>
+                            <td className="py-2.5 px-3 text-[#eff1f6]">{sub.timeSpent}s</td>
+                            <td className={`py-2.5 px-3 font-bold ${sub.marksAwarded >= 0 ? 'text-[#00b8a3]' : 'text-[#ff375f]'}`}>
+                              {sub.marksAwarded > 0 ? `+${sub.marksAwarded}` : sub.marksAwarded}
+                            </td>
+                            <td className="py-2.5 px-3 text-[#8c8c8c]">{sub.hintsUsed}/4</td>
+                            <td className="py-2.5 px-3 text-right text-[#8c8c8c]">{sub.submittedAt}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                ) : (
+                  <div className="py-12 text-center text-[#8c8c8c]">
+                    <History className="w-8 h-8 mx-auto mb-2 text-[#333333]" />
+                    <p className="text-xs">No submissions recorded yet for this session.</p>
+                  </div>
+                )}
               </div>
             )}
           </div>
         </div>
 
         {/* ======================================================== */}
-        {/* RIGHT PANE: LeetCode-style Answer Editor & Test Console */}
+        {/* RIGHT PANE: LEETCODE SOLUTION EDITOR & TESTCASE CONSOLE   */}
         {/* ======================================================== */}
-        <div className="lg:col-span-6 flex flex-col bg-[#1a1a1a] overflow-hidden">
+        <div className="lg:col-span-6 flex flex-col bg-[#0f0f0f] overflow-hidden">
           {/* Header of Right Pane */}
-          <div className="h-10 border-b border-[#282828] bg-[#212121] px-4 flex items-center justify-between text-xs text-[#8c8c8c] shrink-0">
-            <span className="font-semibold text-white">Your Solution</span>
-            <span className="font-mono text-[11px]">
-              {question.questionType.replace('_', ' ')}
-            </span>
+          <div className="h-10 border-b border-[#282828] bg-[#141414] px-4 flex items-center justify-between text-xs text-[#8c8c8c] shrink-0 font-mono">
+            <div className="flex items-center gap-2">
+              <span className="font-semibold text-white">Solution Console</span>
+              <span className="text-[#333333]">|</span>
+              <span className="text-[11px] text-[#00b8a3]">
+                {question.questionType.replace('_', ' ')}
+              </span>
+            </div>
+
+            <div className="flex items-center gap-3">
+              <span className="text-[10px] text-[#6b7280] hidden sm:inline">Shortcuts: A, B, C, D to choose</span>
+              <button
+                onClick={handleResetAnswer}
+                className="text-[#8c8c8c] hover:text-white flex items-center gap-1 transition-colors"
+                title="Reset Answers"
+              >
+                <RotateCcw className="w-3 h-3" />
+                <span>Reset</span>
+              </button>
+            </div>
           </div>
 
-          {/* Interactive Workspace Area */}
+          {/* Solution Input Area (Middle) */}
           <div className="flex-1 overflow-y-auto p-5 space-y-4">
             {/* If Scratchpad is active */}
             {showScratchpad && (
-              <div className="p-3 rounded bg-[#202020] border border-[#333333] space-y-2">
+              <div className="p-3.5 rounded-lg bg-[#141414] border border-[#2e2e2e] space-y-2">
                 <div className="flex items-center justify-between text-xs text-[#8c8c8c]">
-                  <span className="font-mono text-[#ffa116]">Rough Work / Scratchpad</span>
+                  <span className="font-mono text-[#ffa116] font-bold flex items-center gap-1.5">
+                    <Edit3 className="w-3.5 h-3.5" />
+                    <span>Rough Work & Equations Scratchpad</span>
+                  </span>
                   <button
                     onClick={() => setScratchpadText('')}
-                    className="hover:text-white"
+                    className="hover:text-white transition-colors"
                   >
                     Clear
                   </button>
@@ -781,9 +1005,9 @@ export default function QuestionWorkspacePage() {
                 <textarea
                   value={scratchpadText}
                   onChange={(e) => setScratchpadText(e.target.value)}
-                  placeholder="Type formulas or intermediate steps here (e.g. tau = I*alpha, F - f = m*a)..."
+                  placeholder="Type intermediate formulas, force balances, or work notes here (e.g. tau = I * alpha, N - mg*cos(theta) = 0)..."
                   rows={4}
-                  className="w-full bg-[#181818] border border-[#333333] rounded p-2.5 text-xs text-white font-mono outline-none resize-none"
+                  className="w-full bg-[#0a0a0a] border border-[#282828] rounded p-2.5 text-xs text-white font-mono outline-none resize-none focus:border-[#2E5BFF]"
                 />
               </div>
             )}
@@ -791,7 +1015,9 @@ export default function QuestionWorkspacePage() {
             {/* SINGLE CORRECT MCQ SELECTOR */}
             {question.questionType === 'SINGLE_CORRECT' && (
               <div className="space-y-2.5">
-                <div className="text-xs text-[#8c8c8c] mb-2 font-medium">Select exactly one option:</div>
+                <div className="text-xs text-[#8c8c8c] font-medium font-mono uppercase tracking-wider mb-1">
+                  Select one option:
+                </div>
                 {question.options &&
                   question.options.map((opt: any) => {
                     const isSelected = selectedSingleKey === opt.optionKey;
@@ -799,20 +1025,20 @@ export default function QuestionWorkspacePage() {
                     const isCorrectAnswer = submissionResult?.correctAnswer?.includes(opt.optionKey);
                     const isWrongSelection = isSubmitted && isSelected && !isCorrectAnswer;
 
-                    let cardClass = 'bg-[#262626] border-[#333333] text-[#d1d5db] hover:border-[#4a4a4a] hover:bg-[#2a2a2a]';
-                    let badgeClass = 'bg-[#1f1f1f] text-[#8c8c8c] border border-[#383838]';
+                    let cardClass = 'bg-[#181818] border-[#282828] text-[#d1d5db] hover:border-[#3d3d3d] hover:bg-[#202020]';
+                    let badgeClass = 'bg-[#1f1f1f] text-[#8c8c8c] border border-[#2e2e2e]';
 
                     if (isSubmitted) {
                       if (isCorrectAnswer) {
-                        cardClass = 'bg-[#1b4329] border-[#00b8a3] text-white';
+                        cardClass = 'bg-[#00b8a3]/10 border-[#00b8a3] text-white';
                         badgeClass = 'bg-[#00b8a3] text-black font-bold';
                       } else if (isWrongSelection) {
-                        cardClass = 'bg-[#381a1f] border-[#ff375f] text-white';
+                        cardClass = 'bg-[#ff375f]/10 border-[#ff375f] text-white';
                         badgeClass = 'bg-[#ff375f] text-white font-bold';
                       }
                     } else if (isSelected) {
-                      cardClass = 'bg-[#2b2416] border-[#ffa116] text-white';
-                      badgeClass = 'bg-[#ffa116] text-black font-bold';
+                      cardClass = 'bg-[#2E5BFF]/15 border-[#2E5BFF] text-white shadow-sm';
+                      badgeClass = 'bg-[#2E5BFF] text-white font-bold';
                     }
 
                     return (
@@ -821,19 +1047,19 @@ export default function QuestionWorkspacePage() {
                         onClick={() => {
                           if (!submissionResult) setSelectedSingleKey(opt.optionKey);
                         }}
-                        className={`p-3.5 rounded border text-xs flex items-center justify-between transition-colors ${
+                        className={`p-3.5 rounded-lg border text-xs flex items-center justify-between transition-all ${
                           !submissionResult ? 'cursor-pointer' : 'cursor-default'
                         } ${cardClass}`}
                       >
-                        <div className="flex items-center gap-3 flex-1">
-                          <span className={`w-6 h-6 rounded flex items-center justify-center font-mono font-bold shrink-0 ${badgeClass}`}>
+                        <div className="flex items-center gap-3.5 flex-1">
+                          <span className={`w-7 h-7 rounded-full flex items-center justify-center font-mono font-bold shrink-0 ${badgeClass}`}>
                             {opt.optionKey}
                           </span>
-                          <div className="flex-1 font-medium">
+                          <div className="flex-1 font-medium text-sm">
                             <MathRenderer content={opt.contentLatex} inline />
                           </div>
                         </div>
-                        {isSelected && !isSubmitted && <Check className="w-4 h-4 text-[#ffa116] shrink-0 ml-2" />}
+                        {isSelected && !isSubmitted && <Check className="w-4 h-4 text-[#2E5BFF] shrink-0 ml-2" />}
                         {isCorrectAnswer && isSubmitted && <CheckCircle2 className="w-4 h-4 text-[#00b8a3] shrink-0 ml-2" />}
                         {isWrongSelection && isSubmitted && <XCircle className="w-4 h-4 text-[#ff375f] shrink-0 ml-2" />}
                       </div>
@@ -845,8 +1071,8 @@ export default function QuestionWorkspacePage() {
             {/* MULTIPLE CORRECT MCQ SELECTOR */}
             {question.questionType === 'MULTIPLE_CORRECT' && (
               <div className="space-y-2.5">
-                <div className="text-xs text-[#8c8c8c] mb-2 font-medium">
-                  Select one or more correct options (Partial marking enabled):
+                <div className="text-xs text-[#8c8c8c] font-medium font-mono uppercase tracking-wider mb-1">
+                  Select one or more options (Partial marking enabled):
                 </div>
                 {question.options &&
                   question.options.map((opt: any) => {
@@ -855,39 +1081,39 @@ export default function QuestionWorkspacePage() {
                     const isCorrectAnswer = submissionResult?.correctAnswer?.includes(opt.optionKey);
                     const isWrongSelection = isSubmitted && isSelected && !isCorrectAnswer;
 
-                    let cardClass = 'bg-[#262626] border-[#333333] text-[#d1d5db] hover:border-[#4a4a4a] hover:bg-[#2a2a2a]';
-                    let badgeClass = 'bg-[#1f1f1f] text-[#8c8c8c] border border-[#383838]';
+                    let cardClass = 'bg-[#181818] border-[#282828] text-[#d1d5db] hover:border-[#3d3d3d] hover:bg-[#202020]';
+                    let badgeClass = 'bg-[#1f1f1f] text-[#8c8c8c] border border-[#2e2e2e]';
 
                     if (isSubmitted) {
                       if (isCorrectAnswer) {
-                        cardClass = 'bg-[#1b4329] border-[#00b8a3] text-white';
+                        cardClass = 'bg-[#00b8a3]/10 border-[#00b8a3] text-white';
                         badgeClass = 'bg-[#00b8a3] text-black font-bold';
                       } else if (isWrongSelection) {
-                        cardClass = 'bg-[#381a1f] border-[#ff375f] text-white';
+                        cardClass = 'bg-[#ff375f]/10 border-[#ff375f] text-white';
                         badgeClass = 'bg-[#ff375f] text-white font-bold';
                       }
                     } else if (isSelected) {
-                      cardClass = 'bg-[#2b2416] border-[#ffa116] text-white';
-                      badgeClass = 'bg-[#ffa116] text-black font-bold';
+                      cardClass = 'bg-[#2E5BFF]/15 border-[#2E5BFF] text-white shadow-sm';
+                      badgeClass = 'bg-[#2E5BFF] text-white font-bold';
                     }
 
                     return (
                       <div
                         key={opt.id || opt.optionKey}
                         onClick={() => handleToggleMultiOption(opt.optionKey)}
-                        className={`p-3.5 rounded border text-xs flex items-center justify-between transition-colors ${
+                        className={`p-3.5 rounded-lg border text-xs flex items-center justify-between transition-all ${
                           !submissionResult ? 'cursor-pointer' : 'cursor-default'
                         } ${cardClass}`}
                       >
-                        <div className="flex items-center gap-3 flex-1">
-                          <span className={`w-6 h-6 rounded flex items-center justify-center font-mono font-bold shrink-0 ${badgeClass}`}>
+                        <div className="flex items-center gap-3.5 flex-1">
+                          <span className={`w-7 h-7 rounded-md flex items-center justify-center font-mono font-bold shrink-0 ${badgeClass}`}>
                             {opt.optionKey}
                           </span>
-                          <div className="flex-1 font-medium">
+                          <div className="flex-1 font-medium text-sm">
                             <MathRenderer content={opt.contentLatex} inline />
                           </div>
                         </div>
-                        {isSelected && !isSubmitted && <Check className="w-4 h-4 text-[#ffa116] shrink-0 ml-2" />}
+                        {isSelected && !isSubmitted && <Check className="w-4 h-4 text-[#2E5BFF] shrink-0 ml-2" />}
                         {isCorrectAnswer && isSubmitted && <CheckCircle2 className="w-4 h-4 text-[#00b8a3] shrink-0 ml-2" />}
                         {isWrongSelection && isSubmitted && <XCircle className="w-4 h-4 text-[#ff375f] shrink-0 ml-2" />}
                       </div>
@@ -899,7 +1125,7 @@ export default function QuestionWorkspacePage() {
             {/* NUMERICAL VALUE INPUT */}
             {question.questionType === 'NUMERICAL' && (
               <div className="space-y-3">
-                <label className="block text-xs text-[#8c8c8c] font-medium">
+                <label className="block text-xs text-[#8c8c8c] font-medium font-mono uppercase tracking-wider">
                   Enter final numerical answer (Tolerance ±0.05):
                 </label>
                 <div className="relative max-w-sm">
@@ -910,9 +1136,9 @@ export default function QuestionWorkspacePage() {
                     value={numericalInput}
                     onChange={(e) => setNumericalInput(e.target.value)}
                     placeholder="e.g. 1.25"
-                    className="w-full px-4 py-2.5 rounded bg-[#262626] border border-[#333333] focus:border-[#ffa116] font-mono text-base text-white outline-none disabled:opacity-75"
+                    className="w-full px-4 py-2.5 rounded-lg bg-[#181818] border border-[#282828] focus:border-[#2E5BFF] font-mono text-base text-white outline-none disabled:opacity-75 transition-colors"
                   />
-                  <span className="absolute right-3 top-3 text-xs font-mono text-[#8c8c8c]">
+                  <span className="absolute right-3.5 top-3 text-xs font-mono text-[#8c8c8c]">
                     SI Units
                   </span>
                 </div>
@@ -921,122 +1147,334 @@ export default function QuestionWorkspacePage() {
           </div>
 
           {/* ======================================================== */}
-          {/* LEETCODE TEST RESULTS & SUBMISSION OUTPUT CONSOLE        */}
+          {/* LEETCODE TESTCASE & TEST RESULT DRAWER                   */}
           {/* ======================================================== */}
-          <div className="border-t border-[#282828] bg-[#1e1e1e] p-4 shrink-0 space-y-3">
-            {/* If Result exists */}
-            {submissionResult ? (
-              <div
-                className={`p-4 rounded border text-xs space-y-2.5 ${
-                  submissionResult.isCorrect
-                    ? 'bg-[#172b1d] border-[#2cbb5d] text-[#eff1f6]'
-                    : 'bg-[#2b171c] border-[#ff375f] text-[#eff1f6]'
-                }`}
+          <div className="border-t border-[#282828] bg-[#141414] shrink-0">
+            {/* Console Tab Strip & Collapse Toggle */}
+            <div className="h-9 border-b border-[#242424] px-4 flex items-center justify-between text-xs bg-[#181818]">
+              <div className="flex items-center gap-1">
+                <button
+                  onClick={() => {
+                    setConsoleTab('testcase');
+                    setIsConsoleOpen(true);
+                  }}
+                  className={`px-3 py-1 font-medium text-xs flex items-center gap-1.5 transition-colors ${
+                    consoleTab === 'testcase' && isConsoleOpen
+                      ? 'text-white border-b-2 border-[#2E5BFF]'
+                      : 'text-[#8c8c8c] hover:text-white'
+                  }`}
+                >
+                  <Terminal className="w-3.5 h-3.5" />
+                  <span>Testcase</span>
+                </button>
+                <button
+                  onClick={() => {
+                    setConsoleTab('result');
+                    setIsConsoleOpen(true);
+                  }}
+                  className={`px-3 py-1 font-medium text-xs flex items-center gap-1.5 transition-colors ${
+                    consoleTab === 'result' && isConsoleOpen
+                      ? 'text-white border-b-2 border-[#2E5BFF]'
+                      : 'text-[#8c8c8c] hover:text-white'
+                  }`}
+                >
+                  <Code2 className="w-3.5 h-3.5" />
+                  <span>Test Result</span>
+                  {submissionResult && (
+                    <span className={`w-1.5 h-1.5 rounded-full ${submissionResult.isCorrect ? 'bg-[#00b8a3]' : 'bg-[#ff375f]'}`} />
+                  )}
+                </button>
+              </div>
+
+              <button
+                onClick={() => setIsConsoleOpen(!isConsoleOpen)}
+                className="text-[#8c8c8c] hover:text-white flex items-center gap-1 text-[11px] font-mono"
               >
-                {/* Header status */}
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    {submissionResult.isCorrect ? (
-                      <CheckCircle2 className="w-5 h-5 text-[#2cbb5d]" />
-                    ) : (
-                      <XCircle className="w-5 h-5 text-[#ff375f]" />
-                    )}
-                    <span
-                      className={`text-base font-bold ${
-                        submissionResult.isCorrect ? 'text-[#2cbb5d]' : 'text-[#ff375f]'
-                      }`}
-                    >
-                      {submissionResult.isCorrect ? 'Accepted' : 'Wrong Answer'}
-                    </span>
-                  </div>
+                <span>Console</span>
+                {isConsoleOpen ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronUp className="w-3.5 h-3.5" />}
+              </button>
+            </div>
 
-                  <span className="font-mono text-xs">
-                    Marks: <span className="font-bold">{(submissionResult.marksAwarded ?? submissionResult.marksEarned) > 0 ? `+${submissionResult.marksAwarded ?? submissionResult.marksEarned}` : (submissionResult.marksAwarded ?? submissionResult.marksEarned)}</span>
-                  </span>
-                </div>
-
-                {/* Explanation text */}
-                <div className="text-xs text-[#d1d5db] leading-relaxed pt-1 border-t border-[#383838]">
-                  <MathRenderer content={submissionResult.explanation || submissionResult.solutionLatex || submissionResult.verifiedSolution} />
-                </div>
-
-                {/* Mistake analysis card if incorrect */}
-                {mistakeAnalysis && (
-                  <div className="p-3 rounded bg-[#1f1f1f] border border-[#404040] space-y-1.5 text-xs mt-2">
-                    <div className="font-bold text-[#ffa116] flex items-center gap-1.5">
-                      <AlertCircle className="w-3.5 h-3.5" />
-                      <span>Cognitive Diagnostic: {mistakeAnalysis.mistakeCategory || mistakeAnalysis.mistakeType}</span>
+            {/* Console Body Content */}
+            {isConsoleOpen && (
+              <div className="p-4 max-h-56 overflow-y-auto text-xs space-y-3 bg-[#141414]">
+                {consoleTab === 'testcase' && (
+                  <div className="space-y-2 text-[#9ca3af] font-mono">
+                    <div className="flex items-center justify-between text-xs text-[#8c8c8c]">
+                      <span>Exam Standard Test Parameters:</span>
+                      <span className="text-[#00b8a3]">Standard JEE Gravity: g = 9.8 m/s²</span>
                     </div>
-                    <p className="text-[#9ca3af]">{mistakeAnalysis.feedback || mistakeAnalysis.analysisTextLatex || mistakeAnalysis.divergencePoint}</p>
-                    {(mistakeAnalysis.remedialAction || mistakeAnalysis.suggestedReview) && (
-                      <p className="text-[#00b8a3] font-mono text-[11px]">
-                        Remedy: {mistakeAnalysis.remedialAction || mistakeAnalysis.suggestedReview}
-                      </p>
-                    )}
+                    <div className="p-3 rounded bg-[#0a0a0a] border border-[#242424] space-y-1">
+                      <div><strong className="text-white">Format:</strong> {question.questionType}</div>
+                      <div><strong className="text-white">Marks:</strong> +{question.marks} / -{question.negativeMarks}</div>
+                      <div><strong className="text-white">Coordinate System:</strong> Standard 2D Cartesian $(x, y)$</div>
+                    </div>
                   </div>
                 )}
 
-                {/* Post-submission fluent action buttons */}
-                <div className="pt-2 flex items-center gap-2 flex-wrap">
-                  <button
-                    onClick={() => setLeftTab('editorial')}
-                    className="px-3 py-1 rounded bg-[#262626] hover:bg-[#303030] text-[#00b8a3] border border-[#00b8a3]/30 font-medium text-xs flex items-center gap-1 transition-colors"
-                  >
-                    <BookOpen className="w-3 h-3" />
-                    <span>View Step-by-Step Editorial</span>
-                  </button>
+                {consoleTab === 'result' && (
+                  <div>
+                    {submissionResult ? (
+                      <div className="space-y-3">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            {submissionResult.isCorrect ? (
+                              <CheckCircle2 className="w-5 h-5 text-[#00b8a3]" />
+                            ) : (
+                              <XCircle className="w-5 h-5 text-[#ff375f]" />
+                            )}
+                            <span
+                              className={`text-base font-bold font-heading ${
+                                submissionResult.isCorrect ? 'text-[#00b8a3]' : 'text-[#ff375f]'
+                              }`}
+                            >
+                              {submissionResult.isCorrect ? 'Accepted' : 'Wrong Answer'}
+                            </span>
+                          </div>
 
-                  {question.nextQuestionId && (
-                    <button
-                      onClick={() => router.push(`/solve/${question.nextQuestionId}`)}
-                      className="px-3 py-1 rounded bg-[#ffa116] hover:bg-[#ff9500] text-black font-semibold text-xs flex items-center gap-1 transition-colors ml-auto"
-                    >
-                      <span>Next Problem</span>
-                      <ArrowRight className="w-3 h-3 stroke-[2.5]" />
-                    </button>
-                  )}
-                </div>
-              </div>
-            ) : (
-              <div className="flex items-center justify-between text-xs text-[#8c8c8c]">
-                <span>Status: Ready to evaluate</span>
-                <span className="font-mono">Time elapsed: {formatTimer(seconds)}</span>
+                          <div className="flex items-center gap-3 font-mono text-xs">
+                            <span>Runtime: <strong className="text-white">{seconds}s</strong></span>
+                            <span>•</span>
+                            <span>Marks: <strong className={(submissionResult.marksAwarded ?? submissionResult.marksEarned) >= 0 ? 'text-[#00b8a3]' : 'text-[#ff375f]'}>
+                              {(submissionResult.marksAwarded ?? submissionResult.marksEarned) > 0 ? `+${submissionResult.marksAwarded ?? submissionResult.marksEarned}` : (submissionResult.marksAwarded ?? submissionResult.marksEarned)}
+                            </strong></span>
+                          </div>
+                        </div>
+
+                        {/* Explanation proof */}
+                        <div className="p-3 rounded bg-[#0a0a0a] border border-[#242424] text-xs text-[#d1d5db] leading-relaxed">
+                          <MathRenderer content={submissionResult.explanation || submissionResult.solutionLatex || submissionResult.verifiedSolution} />
+                        </div>
+
+                        {/* 9-Class Mistake Analysis Card if incorrect */}
+                        {mistakeAnalysis && (
+                          <div className="p-3 rounded bg-[#1f1618] border border-[#ff375f]/30 space-y-1.5 text-xs">
+                            <div className="font-bold text-[#ffa116] flex items-center gap-1.5 font-heading">
+                              <AlertCircle className="w-3.5 h-3.5 text-[#ff375f]" />
+                              <span>Cognitive Diagnostic: {mistakeAnalysis.mistakeCategory || mistakeAnalysis.mistakeType}</span>
+                            </div>
+                            <p className="text-[#a1a1aa] leading-relaxed">
+                              {mistakeAnalysis.feedback || mistakeAnalysis.analysisTextLatex || mistakeAnalysis.divergencePoint}
+                            </p>
+                            {(mistakeAnalysis.remedialAction || mistakeAnalysis.suggestedReview) && (
+                              <div className="p-2 rounded bg-[#0a0a0a] border border-[#282828] text-[#00b8a3] font-mono text-[11px]">
+                                Remedy: {mistakeAnalysis.remedialAction || mistakeAnalysis.suggestedReview}
+                              </div>
+                            )}
+                          </div>
+                        )}
+
+                        {/* Action buttons */}
+                        <div className="flex items-center gap-2 pt-1">
+                          <button
+                            onClick={() => setLeftTab('editorial')}
+                            className="px-3 py-1 rounded bg-[#1e1e1e] hover:bg-[#282828] text-[#00b8a3] border border-[#00b8a3]/30 font-medium text-xs flex items-center gap-1 transition-colors"
+                          >
+                            <BookOpen className="w-3 h-3" />
+                            <span>View Full Editorial</span>
+                          </button>
+                          {question.nextQuestionId && (
+                            <button
+                              onClick={() => router.push(`/solve/${question.nextQuestionId}`)}
+                              className="px-3 py-1 rounded bg-[#ffa116] hover:bg-[#ff9500] text-black font-semibold text-xs flex items-center gap-1 transition-colors ml-auto"
+                            >
+                              <span>Next Problem</span>
+                              <ArrowRight className="w-3 h-3 stroke-[2.5]" />
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="py-6 text-center text-[#8c8c8c] font-mono">
+                        Submit your answer above to execute test suite evaluation.
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
             )}
 
-            {/* Bottom Buttons Row */}
-            <div className="flex items-center justify-between pt-1">
+            {/* Bottom Controls Bar (Run / Submit & Console Pill) */}
+            <div className="h-12 border-t border-[#282828] px-4 flex items-center justify-between bg-[#181818]">
               <button
-                type="button"
-                onClick={handleResetAnswer}
-                className="px-3 py-1.5 rounded bg-[#262626] hover:bg-[#303030] text-[#8c8c8c] hover:text-white border border-[#333333] text-xs font-medium transition-colors flex items-center gap-1.5"
+                onClick={() => setIsConsoleOpen(!isConsoleOpen)}
+                className="px-3 py-1.5 rounded bg-[#1e1e1e] hover:bg-[#252525] border border-[#2e2e2e] text-xs font-mono text-[#8c8c8c] hover:text-white flex items-center gap-1.5 transition-colors"
               >
-                <RotateCcw className="w-3 h-3" />
-                <span>Reset Answer</span>
+                <Terminal className="w-3.5 h-3.5" />
+                <span>Console</span>
+                {isConsoleOpen ? <ChevronDown className="w-3 h-3" /> : <ChevronUp className="w-3 h-3" />}
               </button>
 
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={handleSubmitAnswer}
+                  disabled={isSubmitting}
+                  className="px-5 py-1.5 rounded bg-[#2cbb5d] hover:bg-[#26a050] text-white font-bold text-xs flex items-center gap-1.5 shadow transition-all disabled:opacity-50"
+                >
+                  {isSubmitting ? (
+                    <>
+                      <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                      <span>Grading...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Check className="w-3.5 h-3.5 stroke-[3]" />
+                      <span>Submit Solution</span>
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* ======================================================== */}
+        {/* SLIDING LEETCODE-STYLE AI COPILOT FLYOUT DRAWER          */}
+        {/* ======================================================== */}
+        {isCopilotOpen && (
+          <div className="absolute right-0 top-0 bottom-0 w-full sm:w-[420px] bg-[#141414] border-l border-[#282828] shadow-2xl flex flex-col z-30 animate-in slide-in-from-right duration-200">
+            {/* Copilot Header */}
+            <div className="h-11 border-b border-[#282828] px-4 flex items-center justify-between bg-[#181818]">
+              <div className="flex items-center gap-2">
+                <BrainCircuit className="w-4 h-4 text-[#00b8a3]" />
+                <span className="font-bold text-white text-xs font-heading">Solve Sense AI Physics Copilot</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <select
+                  value={mentorMode}
+                  onChange={(e: any) => setMentorMode(e.target.value)}
+                  className="px-2 py-0.5 rounded bg-[#141414] border border-[#2e2e2e] text-[11px] text-[#eff1f6] outline-none font-mono"
+                >
+                  <option value="COLLABORATIVE">Collaborative</option>
+                  <option value="STRICT">Strict Mode</option>
+                </select>
+                <button
+                  onClick={() => setIsCopilotOpen(false)}
+                  className="p-1 rounded text-[#8c8c8c] hover:text-white hover:bg-[#202020] transition-colors"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+
+            {/* Quick Prompt Chips */}
+            <div className="p-2.5 border-b border-[#282828] bg-[#121212] overflow-x-auto flex gap-1.5 shrink-0">
+              {promptSuggestions.map((p, i) => (
+                <button
+                  key={i}
+                  onClick={() => handleSendChatMessage(undefined, p.text)}
+                  disabled={isChatSending}
+                  className="px-2.5 py-1 rounded-full bg-[#1a1a1a] hover:bg-[#242424] border border-[#2e2e2e] text-[11px] text-[#a1a1aa] hover:text-white whitespace-nowrap transition-colors"
+                >
+                  {p.label}
+                </button>
+              ))}
+            </div>
+
+            {/* Chat Stream */}
+            <div className="flex-1 overflow-y-auto p-4 space-y-3 text-xs">
+              {chatMessages.map((msg, i) => (
+                <div
+                  key={i}
+                  className={`p-3 rounded-lg ${
+                    msg.sender === 'student'
+                      ? 'bg-[#2E5BFF]/15 border border-[#2E5BFF]/30 text-white ml-6'
+                      : 'bg-[#1a1a1a] border border-[#282828] text-[#d1d5db] mr-6'
+                  }`}
+                >
+                  <div className="flex items-center justify-between text-[10px] text-[#8c8c8c] mb-1 font-mono">
+                    <span className="font-bold text-white">
+                      {msg.sender === 'student' ? 'You' : `AI Mentor (${mentorMode})`}
+                    </span>
+                    <span>{msg.time}</span>
+                  </div>
+                  <div className="leading-relaxed">
+                    <MathRenderer content={msg.text} />
+                  </div>
+                </div>
+              ))}
+              {isChatSending && (
+                <div className="p-3 rounded-lg bg-[#1a1a1a] border border-[#282828] text-[#8c8c8c] flex items-center gap-2">
+                  <RefreshCw className="w-3.5 h-3.5 animate-spin text-[#00b8a3]" />
+                  <span className="text-xs font-mono">Formulating Socratic guidance...</span>
+                </div>
+              )}
+            </div>
+
+            {/* Chat Input */}
+            <form onSubmit={handleSendChatMessage} className="p-3 border-t border-[#282828] bg-[#181818] flex gap-2">
+              <input
+                type="text"
+                value={chatInput}
+                onChange={(e) => setChatInput(e.target.value)}
+                placeholder="Ask any physics conceptual doubt..."
+                className="flex-1 px-3 py-1.5 rounded bg-[#141414] border border-[#2e2e2e] text-xs text-white placeholder-[#6b7280] outline-none focus:border-[#2E5BFF]"
+              />
               <button
-                type="button"
-                onClick={handleSubmitAnswer}
-                disabled={isSubmitting}
-                className="px-6 py-2 rounded bg-[#2cbb5d] hover:bg-[#26a050] text-white font-bold text-xs flex items-center gap-1.5 shadow transition-all disabled:opacity-50"
+                type="submit"
+                disabled={isChatSending || !chatInput.trim()}
+                className="px-3 py-1.5 rounded bg-[#2E5BFF] hover:bg-[#2044cc] text-white text-xs font-bold disabled:opacity-50 transition-colors"
               >
-                {isSubmitting ? (
-                  <>
-                    <RefreshCw className="w-3.5 h-3.5 animate-spin" />
-                    <span>Grading Submission...</span>
-                  </>
-                ) : (
-                  <>
-                    <Check className="w-3.5 h-3.5 stroke-[3]" />
-                    <span>Submit Answer</span>
-                  </>
-                )}
+                <Send className="w-3.5 h-3.5" />
+              </button>
+            </form>
+          </div>
+        )}
+      </div>
+
+      {/* ======================================================== */}
+      {/* FORMULA QUICK REFERENCE MODAL                            */}
+      {/* ======================================================== */}
+      {showFormulaModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
+          <div className="max-w-2xl w-full p-6 rounded-xl bg-[#141414] border border-[#282828] space-y-5 shadow-2xl">
+            <div className="flex items-center justify-between border-b border-[#282828] pb-3">
+              <div className="flex items-center gap-2">
+                <BookOpen className="w-4 h-4 text-[#2E5BFF]" />
+                <h3 className="text-base font-bold text-white font-heading">
+                  JEE Advanced Physics Formula Card
+                </h3>
+              </div>
+              <button
+                onClick={() => setShowFormulaModal(false)}
+                className="text-[#8c8c8c] hover:text-white"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="space-y-4 max-h-96 overflow-y-auto pr-1">
+              {formulaCategories.map((cat, idx) => (
+                <div key={idx} className="space-y-2">
+                  <div className="text-xs font-bold text-[#00b8a3] uppercase font-mono tracking-wider">
+                    {cat.category}
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                    {cat.formulas.map((f, fi) => (
+                      <div key={fi} className="p-3 rounded-lg bg-[#1a1a1a] border border-[#282828] space-y-1">
+                        <div className="text-[11px] text-[#8c8c8c] font-medium">{f.name}</div>
+                        <div className="text-xs text-white">
+                          <MathRenderer content={`$$${f.eq}$$`} />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <div className="flex justify-end pt-2">
+              <button
+                onClick={() => setShowFormulaModal(false)}
+                className="px-4 py-1.5 rounded-lg bg-[#282828] hover:bg-[#333333] text-xs font-semibold text-white transition-colors"
+              >
+                Close
               </button>
             </div>
           </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }

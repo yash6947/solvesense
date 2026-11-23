@@ -41,7 +41,7 @@ export class ContestController {
   static submitContest(req: Request, res: Response, next: NextFunction) {
     try {
       const { id } = req.params;
-      const userId = req.user?.userId || 'demo-student-uuid-001';
+      const userId = req.user?.userId || 'user-arjun-01';
 
       const validated = submitContestSchema.parse(req.body);
       const result = ContestService.submitContest(id, userId, validated);

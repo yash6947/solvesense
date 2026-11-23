@@ -1,111 +1,121 @@
 import React from 'react';
 import Link from 'next/link';
-import { Atom, Github, Award, Sparkles, BookOpen } from 'lucide-react';
+import { Sparkles, Terminal, Award, BookOpen, Layers, ShieldCheck, Heart } from 'lucide-react';
 
 export const Footer: React.FC = () => {
   return (
-    <footer className="border-t border-card-border bg-[#070a12] text-slate-400 py-12">
+    <footer className="border-t border-[#1f1f1f] bg-[#090909] text-[#8c8c8c] py-12 mt-auto">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-12">
-          {/* Brand Col */}
-          <div className="space-y-4 md:col-span-1">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-10">
+          {/* Brand Column */}
+          <div className="space-y-3.5 md:col-span-1">
             <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center">
-                <Atom className="w-5 h-5 text-white" />
+              <div className="w-7 h-7 rounded bg-gradient-to-br from-[#2E5BFF] to-[#00e1ab] p-[1px]">
+                <div className="w-full h-full bg-[#121212] rounded flex items-center justify-center">
+                  <Sparkles className="w-3.5 h-3.5 text-[#00e1ab]" />
+                </div>
               </div>
-              <span className="font-bold text-lg text-white">
-                Zenith<span className="text-electric">Physics</span>
+              <span className="font-headline font-bold text-base text-white">
+                Solve<span className="text-[#00e1ab]">Sense</span>
               </span>
             </div>
-            <p className="text-sm text-slate-400 leading-relaxed">
-              An intelligent learning ecosystem engineered to diagnose knowledge gaps, foster independent reasoning, and master JEE Main & JEE Advanced Physics.
+            <p className="text-xs text-[#8c8c8c] leading-relaxed">
+              Diagnostic AI problem-solving platform engineered for JEE Main & Advanced Physics aspirants. Understand root-cause concept dependencies with zero guesswork.
             </p>
-            <div className="text-xs text-slate-500">
-              Product Principle: &ldquo;Don&apos;t just solve questions. Understand why.&rdquo;
+            <div className="text-[11px] font-mono text-[#00e1ab]/80">
+              Deterministic Engine • KaTeX Math Verified
             </div>
           </div>
 
           {/* Quick Links */}
           <div>
-            <h4 className="text-sm font-semibold text-slate-200 uppercase tracking-wider mb-4">
-              Practice & Solve
+            <h4 className="text-xs font-headline font-bold text-white uppercase tracking-wider mb-3">
+              Practice & Compete
             </h4>
-            <ul className="space-y-2.5 text-sm">
+            <ul className="space-y-2 text-xs">
               <li>
-                <Link href="/solve" className="hover:text-electric transition-colors">
+                <Link href="/solve" className="hover:text-white transition-colors">
                   JEE Advanced Question Bank
                 </Link>
               </li>
               <li>
-                <Link href="/solve?difficulty=HARD" className="hover:text-electric transition-colors">
-                  Challenging Mechanics Problems
+                <Link href="/solve?difficulty=HARD" className="hover:text-white transition-colors">
+                  Challenging Mechanics Drills
                 </Link>
               </li>
               <li>
-                <Link href="/solve?isPYQ=true" className="hover:text-electric transition-colors">
-                  Previous Year Questions (PYQs)
+                <Link href="/solve?isPYQ=true" className="hover:text-white transition-colors">
+                  Official PYQ Archive (2020-2024)
                 </Link>
               </li>
               <li>
-                <Link href="/contests" className="hover:text-electric transition-colors">
-                  Weekly Proctored Mock Tests
+                <Link href="/contests" className="hover:text-white transition-colors">
+                  All-India Proctored Mock Tests
                 </Link>
               </li>
             </ul>
           </div>
 
-          {/* Learning Tech */}
+          {/* AI Architecture */}
           <div>
-            <h4 className="text-sm font-semibold text-slate-200 uppercase tracking-wider mb-4">
-              AI & Architecture
+            <h4 className="text-xs font-headline font-bold text-white uppercase tracking-wider mb-3">
+              AI Pedagogical Engine
             </h4>
-            <ul className="space-y-2.5 text-sm">
-              <li className="flex items-center gap-2 text-slate-300">
-                <Sparkles className="w-4 h-4 text-electric" />
-                <span>Google Gemini AI Mentor</span>
+            <ul className="space-y-2 text-xs">
+              <li className="flex items-center gap-2 text-[#eff1f6]">
+                <Sparkles className="w-3.5 h-3.5 text-[#2E5BFF]" />
+                <span>Dual Mode Socratic Copilot</span>
               </li>
-              <li className="flex items-center gap-2 text-slate-300">
-                <BookOpen className="w-4 h-4 text-emerald-400" />
-                <span>Prerequisite Knowledge Graphs</span>
+              <li className="flex items-center gap-2 text-[#eff1f6]">
+                <Layers className="w-3.5 h-3.5 text-[#00e1ab]" />
+                <span>Prerequisite DAG Gap Detection</span>
               </li>
-              <li className="flex items-center gap-2 text-slate-300">
-                <Award className="w-4 h-4 text-amber-400" />
+              <li className="flex items-center gap-2 text-[#eff1f6]">
+                <ShieldCheck className="w-3.5 h-3.5 text-[#ff525c]" />
+                <span>9-Class Mistake Taxonomy</span>
+              </li>
+              <li className="flex items-center gap-2 text-[#eff1f6]">
+                <Award className="w-3.5 h-3.5 text-[#ffa116]" />
                 <span>Problem-Solving Index (PSI)</span>
               </li>
             </ul>
           </div>
 
-          {/* Institutional & Legal */}
+          {/* Ecosystem */}
           <div>
-            <h4 className="text-sm font-semibold text-slate-200 uppercase tracking-wider mb-4">
-              Ecosystem
+            <h4 className="text-xs font-headline font-bold text-white uppercase tracking-wider mb-3">
+              Institutes & Scholars
             </h4>
-            <ul className="space-y-2.5 text-sm">
+            <ul className="space-y-2 text-xs">
               <li>
-                <Link href="/institutes" className="hover:text-electric transition-colors">
-                  For Coaching Institutes
+                <Link href="/institutes" className="hover:text-white transition-colors">
+                  Coaching Institute Management
                 </Link>
               </li>
               <li>
-                <Link href="/scholarships" className="hover:text-electric transition-colors">
-                  Talent Discovery & Scholarships
+                <Link href="/scholarships" className="hover:text-white transition-colors">
+                  Kota Super-30 Talent Discovery
                 </Link>
               </li>
               <li>
-                <span className="text-slate-500">PostgreSQL + Prisma Verified Engine</span>
+                <Link href="/analytics" className="hover:text-white transition-colors">
+                  National Physics Index Rankings
+                </Link>
               </li>
             </ul>
           </div>
         </div>
 
-        <div className="pt-8 border-t border-card-border/60 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate-500">
+        <div className="pt-6 border-t border-[#1a1a1a] flex flex-col sm:flex-row items-center justify-between gap-3 text-[11px] text-[#666666]">
           <div>
-            © {new Date().getFullYear()} ZenithPhysics EdTech SaaS. Built for JEE Main & Advanced Aspirants.
+            © {new Date().getFullYear()} SolveSense EdTech. Engineered for JEE Main & Advanced Aspirants.
           </div>
-          <div className="flex items-center gap-4">
-            <span className="hover:text-slate-400">Strict & Collaborative Mentoring</span>
+          <div className="flex items-center gap-3">
+            <span>Deterministic Scoring (+4/-1)</span>
             <span>•</span>
-            <span className="hover:text-slate-400">Deterministic Evaluation Engine</span>
+            <span>Socratic AI Mentoring</span>
+            <span>•</span>
+            <span>All Rights Reserved</span>
           </div>
         </div>
       </div>

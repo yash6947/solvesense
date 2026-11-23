@@ -17,6 +17,7 @@ apiRouter.use('/auth', authRouter);
 apiRouter.use('/students', studentRouter);
 apiRouter.use('/syllabus', syllabusRouter);
 apiRouter.use('/exams', syllabusRouter);
+apiRouter.use('/courses', syllabusRouter);
 apiRouter.use('/questions', questionRouter);
 apiRouter.use('/ai', aiRouter);
 apiRouter.use('/analytics', analyticsRouter);
