@@ -100,16 +100,11 @@ export default function DashboardPage() {
   // LeetCode-style 12-month calendar heatmap (52 weeks x 7 days mock grid)
   const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
   
-  // Generate 84 days (12 weeks) for prominent visual fidelity
+  // Real activity heatmap: 84 days (12 weeks).
+  // A fresh account starts with a clean slate; today is marked active only after practice.
   const calendarCells = Array.from({ length: 84 }, (_, i) => {
-    const isHeavy = i % 7 === 0 || i % 11 === 0;
-    const isMedium = i % 3 === 0;
-    const isLight = i % 2 === 0;
-    let level = 0;
-    if (i > 65) level = 3;
-    else if (isHeavy) level = 3;
-    else if (isMedium) level = 2;
-    else if (isLight) level = 1;
+    const isToday = i === 83;
+    const level = isToday && (performance?.totalAttempted > 0) ? 2 : 0;
     return { day: i + 1, level };
   });
 
@@ -126,8 +121,13 @@ export default function DashboardPage() {
     }
   };
 
-  const accuracyVal = performance.accuracyPercentage || 0;
-  const psiVal = profile.problemSolvingIndex || 0;
+  const accuracyVal = performance?.accuracyPercentage || 0;
+  const psiVal = profile?.problemSolvingIndex || 0;
+
+  // Compute live difficulty counts from actual recent attempts
+  const easySolved = recentActivity?.filter((a: any) => a.difficulty === 'EASY' && a.isCorrect).length || 0;
+  const mediumSolved = recentActivity?.filter((a: any) => (a.difficulty === 'MEDIUM' || !a.difficulty) && a.isCorrect).length || 0;
+  const hardSolved = recentActivity?.filter((a: any) => (a.difficulty === 'HARD' || a.difficulty === 'ADVANCED') && a.isCorrect).length || 0;
 
   // Badges & Milestones
   const badges = [
@@ -219,38 +219,20 @@ export default function DashboardPage() {
                   fill="none"
                   d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
                 />
-                <path
-                  className="text-[#00e1ab]"
-                  stroke="currentColor"
-                  strokeWidth="3.5"
-                  strokeDasharray="40, 100"
-                  strokeLinecap="round"
-                  fill="none"
-                  d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
-                />
-                <path
-                  className="text-[#ffa116]"
-                  stroke="currentColor"
-                  strokeWidth="3.5"
-                  strokeDasharray="25, 100"
-                  strokeDashoffset="-40"
-                  strokeLinecap="round"
-                  fill="none"
-                  d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
-                />
-                <path
-                  className="text-[#ff525c]"
-                  stroke="currentColor"
-                  strokeWidth="3.5"
-                  strokeDasharray="15, 100"
-                  strokeDashoffset="-65"
-                  strokeLinecap="round"
-                  fill="none"
-                  d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
-                />
+                {performance.totalCorrect > 0 && (
+                  <path
+                    className="text-[#00e1ab]"
+                    stroke="currentColor"
+                    strokeWidth="3.5"
+                    strokeDasharray={`${Math.min(100, Math.round((performance.totalCorrect / 37) * 100))}, 100`}
+                    strokeLinecap="round"
+                    fill="none"
+                    d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                  />
+                )}
               </svg>
               <div className="absolute inset-0 flex flex-col items-center justify-center font-mono">
-                <span className="text-xl font-bold text-white">{performance.totalCorrect}</span>
+                <span className="text-xl font-bold text-white">{performance.totalCorrect || 0}</span>
                 <span className="text-[10px] text-[#8c8c8c] uppercase">Solved</span>
               </div>
             </div>
@@ -260,30 +242,45 @@ export default function DashboardPage() {
               <div>
                 <div className="flex justify-between text-[11px] mb-1 font-mono">
                   <span className="text-[#00e1ab] font-bold">Easy</span>
-                  <span className="text-white font-semibold">6 <span className="text-[#8c8c8c]">/ 10</span></span>
+                  <span className="text-white font-semibold">
+                    {easySolved} <span className="text-[#8c8c8c]">/ 10</span>
+                  </span>
                 </div>
                 <div className="w-full h-1.5 rounded-full bg-[#181818] overflow-hidden">
-                  <div className="h-full bg-[#00e1ab] rounded-full" style={{ width: '60%' }} />
+                  <div
+                    className="h-full bg-[#00e1ab] rounded-full transition-all duration-500"
+                    style={{ width: `${Math.min(100, Math.round((easySolved / 10) * 100))}%` }}
+                  />
                 </div>
               </div>
 
               <div>
                 <div className="flex justify-between text-[11px] mb-1 font-mono">
                   <span className="text-[#ffa116] font-bold">Medium</span>
-                  <span className="text-white font-semibold">4 <span className="text-[#8c8c8c]">/ 15</span></span>
+                  <span className="text-white font-semibold">
+                    {mediumSolved} <span className="text-[#8c8c8c]">/ 15</span>
+                  </span>
                 </div>
                 <div className="w-full h-1.5 rounded-full bg-[#181818] overflow-hidden">
-                  <div className="h-full bg-[#ffa116] rounded-full" style={{ width: '27%' }} />
+                  <div
+                    className="h-full bg-[#ffa116] rounded-full transition-all duration-500"
+                    style={{ width: `${Math.min(100, Math.round((mediumSolved / 15) * 100))}%` }}
+                  />
                 </div>
               </div>
 
               <div>
                 <div className="flex justify-between text-[11px] mb-1 font-mono">
                   <span className="text-[#ff525c] font-bold">Hard</span>
-                  <span className="text-white font-semibold">2 <span className="text-[#8c8c8c]">/ 12</span></span>
+                  <span className="text-white font-semibold">
+                    {hardSolved} <span className="text-[#8c8c8c]">/ 12</span>
+                  </span>
                 </div>
                 <div className="w-full h-1.5 rounded-full bg-[#181818] overflow-hidden">
-                  <div className="h-full bg-[#ff525c] rounded-full" style={{ width: '17%' }} />
+                  <div
+                    className="h-full bg-[#ff525c] rounded-full transition-all duration-500"
+                    style={{ width: `${Math.min(100, Math.round((hardSolved / 12) * 100))}%` }}
+                  />
                 </div>
               </div>
             </div>
@@ -429,47 +426,66 @@ export default function DashboardPage() {
             </span>
           </div>
 
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs border-collapse">
-              <thead>
-                <tr className="border-b border-[#282828] text-[#8c8c8c] text-[11px] font-mono uppercase tracking-wider">
-                  <th className="pb-3 w-12 text-center">Status</th>
-                  <th className="pb-3">Problem</th>
-                  <th className="pb-3 w-24 text-right">Time</th>
-                  <th className="pb-3 w-20 text-right">Marks</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-[#1e1e1e]">
-                {recentActivity.map((act: any, idx: number) => (
-                  <tr key={idx} className="hover:bg-[#181818] transition-colors">
-                    <td className="py-3 text-center">
-                      {act.isCorrect ? (
-                        <CheckCircle2 className="w-4 h-4 text-[#00e1ab] mx-auto" />
-                      ) : (
-                        <XCircle className="w-4 h-4 text-[#ff525c] mx-auto" />
-                      )}
-                    </td>
-                    <td className="py-3">
-                      <Link
-                        href={`/solve/${act.questionId}`}
-                        className="font-semibold text-white hover:text-[#00e1ab] transition-colors"
-                      >
-                        {act.questionTitle}
-                      </Link>
-                    </td>
-                    <td className="py-3 text-right font-mono text-[#8c8c8c]">
-                      {act.timeSpentSeconds}s
-                    </td>
-                    <td className="py-3 text-right font-mono font-bold">
-                      <span className={act.marksAwarded >= 0 ? 'text-[#00e1ab]' : 'text-[#ff525c]'}>
-                        {act.marksAwarded > 0 ? `+${act.marksAwarded}` : act.marksAwarded}
-                      </span>
-                    </td>
+          {recentActivity.length === 0 ? (
+            <div className="py-12 text-center space-y-3">
+              <div className="w-10 h-10 rounded-full bg-[#181818] border border-[#282828] flex items-center justify-center mx-auto text-[#8c8c8c]">
+                <Clock className="w-5 h-5" />
+              </div>
+              <h4 className="text-xs font-bold text-white font-heading">No submissions yet</h4>
+              <p className="text-[11px] text-[#8c8c8c] max-w-xs mx-auto">
+                Solve your first physics question in the Problem Bank to begin your practice streak and live accuracy telemetry.
+              </p>
+              <Link
+                href="/solve"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#00e1ab] text-black font-bold text-xs hover:bg-[#00c596] transition-colors"
+              >
+                <span>Start Solving Problems</span>
+                <ChevronRight className="w-3.5 h-3.5" />
+              </Link>
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-xs border-collapse">
+                <thead>
+                  <tr className="border-b border-[#282828] text-[#8c8c8c] text-[11px] font-mono uppercase tracking-wider">
+                    <th className="pb-3 w-12 text-center">Status</th>
+                    <th className="pb-3">Problem</th>
+                    <th className="pb-3 w-24 text-right">Time</th>
+                    <th className="pb-3 w-20 text-right">Marks</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                </thead>
+                <tbody className="divide-y divide-[#1e1e1e]">
+                  {recentActivity.map((act: any, idx: number) => (
+                    <tr key={idx} className="hover:bg-[#181818] transition-colors">
+                      <td className="py-3 text-center">
+                        {act.isCorrect ? (
+                          <CheckCircle2 className="w-4 h-4 text-[#00e1ab] mx-auto" />
+                        ) : (
+                          <XCircle className="w-4 h-4 text-[#ff525c] mx-auto" />
+                        )}
+                      </td>
+                      <td className="py-3">
+                        <Link
+                          href={`/solve/${act.questionId}`}
+                          className="font-semibold text-white hover:text-[#00e1ab] transition-colors"
+                        >
+                          {act.questionTitle}
+                        </Link>
+                      </td>
+                      <td className="py-3 text-right font-mono text-[#8c8c8c]">
+                        {act.timeSpentSeconds}s
+                      </td>
+                      <td className="py-3 text-right font-mono font-bold">
+                        <span className={act.marksAwarded >= 0 ? 'text-[#00e1ab]' : 'text-[#ff525c]'}>
+                          {act.marksAwarded > 0 ? `+${act.marksAwarded}` : act.marksAwarded}
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
         </div>
       </div>
     </div>

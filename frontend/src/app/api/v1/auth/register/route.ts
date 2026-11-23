@@ -24,7 +24,7 @@ export async function POST(request: Request) {
       dailyGoalQuestions: 10,
       currentStreak: 1,
       longestStreak: 1,
-      problemSolvingIndex: 78.4,
+      problemSolvingIndex: 0.0,
     };
 
     const token = 'ss_jwt_' + Buffer.from(JSON.stringify(user)).toString('base64');

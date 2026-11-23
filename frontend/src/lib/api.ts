@@ -94,10 +94,36 @@ function handleOfflineFallback<T = any>(endpoint: string, options: RequestInit =
     const body = options.body ? (typeof options.body === 'string' ? JSON.parse(options.body) : options.body) : {};
     const submitted = body.submittedAnswer;
     const isCorrect = submitted === 'B' || (Array.isArray(submitted) && submitted.includes('A') && submitted.includes('C')) || submitted === 2;
+    const marksEarned = isCorrect ? 4 : -1;
+
+    const qid = cleanEndpoint.replace('/questions/', '').replace('/attempts', '');
+    const foundQ = FALLBACK_QUESTIONS.find((q) => q.id === qid || q.code === qid) || FALLBACK_QUESTIONS[0];
+
+    const newAttempt = {
+      questionId: foundQ.id,
+      questionTitle: `${foundQ.code}: ${foundQ.topic?.name || 'Problem'}`,
+      isCorrect,
+      marksAwarded: marksEarned,
+      marksEarned,
+      timeSpentSeconds: body.timeSpentSeconds || 120,
+      difficulty: foundQ.difficulty,
+      submittedAnswer: submitted,
+      createdAt: new Date().toISOString(),
+    };
+
+    if (typeof window !== 'undefined') {
+      try {
+        const stored = localStorage.getItem('zenith_attempts');
+        const attempts = stored ? JSON.parse(stored) : [];
+        attempts.unshift(newAttempt);
+        localStorage.setItem('zenith_attempts', JSON.stringify(attempts));
+      } catch (_) {}
+    }
+
     return {
       isCorrect,
-      marksAwarded: isCorrect ? 4 : -1,
-      marksEarned: isCorrect ? 4 : -1,
+      marksAwarded: marksEarned,
+      marksEarned,
       correctAnswer: ['B'],
       explanation: '$$\\tau_P = I_P \\alpha \\implies F\\left(R + \\frac{3R}{2}\\right) = \\left(\\frac{1}{2}MR^2 + MR^2\\right) \\alpha \\implies a_{cm} = \\alpha R = \\frac{5F}{3M}.$$',
       solutionLatex: '$$\\tau_P = I_P \\alpha \\implies F\\left(R + \\frac{3R}{2}\\right) = \\left(\\frac{1}{2}MR^2 + MR^2\\right) \\alpha \\implies a_{cm} = \\alpha R = \\frac{5F}{3M}.$$',
@@ -124,22 +150,67 @@ function handleOfflineFallback<T = any>(endpoint: string, options: RequestInit =
   if (cleanEndpoint === '/students/dashboard') {
     let savedProfile: any = null;
     let savedUser: any = null;
+    let savedAttempts: any[] = [];
     if (typeof window !== 'undefined') {
       try {
         const p = localStorage.getItem('zenith_profile');
         const u = localStorage.getItem('zenith_user');
+        const a = localStorage.getItem('zenith_attempts');
         if (p) savedProfile = JSON.parse(p);
         if (u) savedUser = JSON.parse(u);
+        if (a) savedAttempts = JSON.parse(a);
       } catch (_) {}
     }
-    const combinedProfile = {
-      ...FALLBACK_DASHBOARD.profile,
-      ...(savedProfile || {}),
-      fullName: savedUser?.fullName || savedProfile?.fullName || FALLBACK_DASHBOARD.profile.fullName,
-    };
+
+    const totalAttempted = savedAttempts.length;
+    const totalCorrect = savedAttempts.filter((a) => a.isCorrect).length;
+    const accuracyPercentage =
+      totalAttempted > 0 ? parseFloat(((totalCorrect / totalAttempted) * 100).toFixed(1)) : 0;
+    const totalTime = savedAttempts.reduce((acc, curr) => acc + (curr.timeSpentSeconds || 0), 0);
+    const averageTimeSeconds = totalAttempted > 0 ? Math.round(totalTime / totalAttempted) : 0;
+
+    const userFullName = savedUser?.fullName || savedProfile?.fullName || 'Student Aspirant';
+
+    // Dynamic chapter progress from real attempts
+    const subjectProgress = FALLBACK_CHAPTERS.map((chap) => {
+      const chapAttempts = savedAttempts.filter((a) =>
+        a.questionId.toLowerCase().includes(chap.slug.substring(0, 3))
+      );
+      const chapCorrect = chapAttempts.filter((a) => a.isCorrect).length;
+      return {
+        chapterName: chap.name,
+        slug: chap.slug,
+        masteryScore: chapAttempts.length > 0 ? Math.round((chapCorrect / chapAttempts.length) * 100) : 0,
+        solvedCount: chapCorrect,
+        totalQuestions: chap.questionCount || 10,
+      };
+    });
+
     return {
-      ...FALLBACK_DASHBOARD,
-      profile: combinedProfile,
+      profile: {
+        fullName: userFullName,
+        targetExam: savedProfile?.targetExam || 'JEE_ADVANCED',
+        targetYear: savedProfile?.targetYear || 2026,
+        academicLevel: savedProfile?.academicLevel || 'Class 12',
+        currentStreak: totalAttempted > 0 ? 1 : 1,
+        longestStreak: totalAttempted > 0 ? 1 : 1,
+        problemSolvingIndex: totalAttempted > 0 ? parseFloat((accuracyPercentage * 0.7 + 25).toFixed(1)) : 0.0,
+      },
+      performance: {
+        totalAttempted,
+        totalCorrect,
+        accuracyPercentage,
+        averageTimeSeconds,
+      },
+      subjectProgress,
+      weakConcepts: savedAttempts
+        .filter((a) => !a.isCorrect)
+        .map((a) => ({
+          topic: a.questionTitle,
+          chapter: 'Rotational Motion',
+          accuracy: 40,
+        })),
+      recentActivity: savedAttempts.slice(0, 10),
     } as any;
   }
 
@@ -227,7 +298,7 @@ function handleOfflineFallback<T = any>(endpoint: string, options: RequestInit =
       dailyGoalQuestions: 10,
       currentStreak: 1,
       longestStreak: 1,
-      problemSolvingIndex: 78.4,
+      problemSolvingIndex: 0.0,
     };
     const mockToken = 'mock_jwt_token_' + (typeof window !== 'undefined' ? btoa(encodeURIComponent(JSON.stringify(mockUser))) : 'offline');
 
@@ -236,6 +307,7 @@ function handleOfflineFallback<T = any>(endpoint: string, options: RequestInit =
         localStorage.setItem('zenith_token', mockToken);
         localStorage.setItem('zenith_user', JSON.stringify(mockUser));
         localStorage.setItem('zenith_profile', JSON.stringify(mockProfile));
+        localStorage.setItem('zenith_attempts', JSON.stringify([]));
       } catch (_) {}
     }
 

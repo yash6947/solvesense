@@ -47,9 +47,9 @@ export async function GET(request: Request) {
     academicLevel: 'Class 12',
     preferredSubjects: ['Physics'],
     dailyGoalQuestions: 10,
-    currentStreak: 7,
-    longestStreak: 14,
-    problemSolvingIndex: 78.4,
+    currentStreak: 1,
+    longestStreak: 1,
+    problemSolvingIndex: 0.0,
   };
 
   return NextResponse.json({

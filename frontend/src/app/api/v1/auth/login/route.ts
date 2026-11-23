@@ -22,9 +22,9 @@ export async function POST(request: Request) {
       academicLevel: 'Class 12',
       preferredSubjects: ['Physics'],
       dailyGoalQuestions: 10,
-      currentStreak: 7,
-      longestStreak: 14,
-      problemSolvingIndex: 78.4,
+      currentStreak: 1,
+      longestStreak: 1,
+      problemSolvingIndex: 0.0,
     };
 
     const token = 'ss_jwt_' + Buffer.from(JSON.stringify(user)).toString('base64');
