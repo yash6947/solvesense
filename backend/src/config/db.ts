@@ -16,4 +16,13 @@ if (ENV.NODE_ENV !== 'production') {
   global.prismaInstance = prisma;
 }
 
+export async function testDbConnection(): Promise<{ connected: boolean; error?: string }> {
+  try {
+    await prisma.$queryRaw`SELECT 1`;
+    return { connected: true };
+  } catch (err: any) {
+    return { connected: false, error: err?.message || 'Database connection failed' };
+  }
+}
+
 export default prisma;

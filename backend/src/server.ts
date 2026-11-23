@@ -4,6 +4,7 @@ import helmet from 'helmet';
 import { ENV } from './config/env.config.js';
 import apiRouter from './routes/index.js';
 import { errorHandler } from './middlewares/errorHandler.middleware.js';
+import { testDbConnection } from './config/db.js';
 
 const app = express();
 
@@ -36,8 +37,16 @@ app.use(errorHandler);
 
 const PORT = parseInt(ENV.PORT, 10) || 5000;
 
-app.listen(PORT, () => {
+app.listen(PORT, async () => {
   console.log(`🚀 Solve Sense Backend API running on port ${PORT} [${ENV.NODE_ENV}]`);
+  const dbCheck = await testDbConnection();
+  if (dbCheck.connected) {
+    console.log('✅ PostgreSQL Database connected successfully via Prisma');
+  } else {
+    console.warn('⚠️  Database Status: DISCONNECTED');
+    console.warn(`   Prisma could not connect to PostgreSQL: ${dbCheck.error}`);
+    console.warn('   To connect a real database, set DATABASE_URL in backend/.env');
+  }
 });
 
 export default app;

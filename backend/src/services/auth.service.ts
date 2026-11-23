@@ -30,12 +30,34 @@ export class AuthService {
    * Register a new student
    */
   static async registerStudent(data: RegisterDTO): Promise<AuthResult> {
-    const existing = memoryStore.findUserByEmail(data.email);
-    if (existing) {
-      const error: any = new Error('An account with this email address already exists');
-      error.statusCode = 409;
-      error.code = 'EMAIL_ALREADY_EXISTS';
-      throw error;
+    const email = data.email.toLowerCase();
+
+    // 1. Check database first if connected
+    let prismaAvailable = false;
+    try {
+      const existingDb = await prisma.user.findUnique({ where: { email } });
+      if (existingDb) {
+        const error: any = new Error('An account with this email address already exists');
+        error.statusCode = 409;
+        error.code = 'EMAIL_ALREADY_EXISTS';
+        throw error;
+      }
+      prismaAvailable = true;
+    } catch (dbErr: any) {
+      if (dbErr.statusCode === 409) throw dbErr;
+      prismaAvailable = false;
+    }
+
+    // 2. Check memory store if database is offline
+    if (!prismaAvailable) {
+      const existingMem = memoryStore.findUserByEmail(email);
+      if (existingMem) {
+        const error: any = new Error('An account with this email address already exists');
+        error.statusCode = 409;
+        error.code = 'EMAIL_ALREADY_EXISTS';
+        throw error;
+      }
+      console.warn(`[AUTH] Database disconnected. Registering '${email}' in memory store.`);
     }
 
     const salt = await bcrypt.genSalt(10);
@@ -44,7 +66,7 @@ export class AuthService {
 
     const newUser: UserEntity = {
       id: userId,
-      email: data.email.toLowerCase(),
+      email,
       passwordHash,
       fullName: data.fullName,
       role: 'STUDENT',
@@ -62,38 +84,52 @@ export class AuthService {
       academicLevel: data.academicLevel || 'Class 12',
       preferredSubjects: data.preferredSubjects || ['Physics'],
       dailyGoalQuestions: 15,
-      currentStreak: 1, // First day practice streak initialized
+      currentStreak: 1,
       longestStreak: 1,
       problemSolvingIndex: 0.0,
       createdAt: new Date(),
       updatedAt: new Date(),
     };
 
-    // Save to memory store
-    memoryStore.users.set(newUser.id, newUser);
-    memoryStore.profiles.set(newProfile.userId, newProfile);
-
-    // Also attempt PostgreSQL save if connected
-    try {
-      await prisma.user.create({
-        data: {
-          id: newUser.id,
-          email: newUser.email,
-          passwordHash: newUser.passwordHash,
-          fullName: newUser.fullName,
-          role: 'STUDENT',
-          studentProfile: {
-            create: {
-              targetExam: newProfile.targetExam,
-              targetYear: newProfile.targetYear,
-              academicLevel: newProfile.academicLevel,
-              preferredSubjects: newProfile.preferredSubjects,
+    // Attempt persistent database write
+    if (prismaAvailable) {
+      try {
+        const createdUser = await prisma.user.create({
+          data: {
+            id: newUser.id,
+            email: newUser.email,
+            passwordHash: newUser.passwordHash,
+            fullName: newUser.fullName,
+            role: 'STUDENT',
+            studentProfile: {
+              create: {
+                targetExam: newProfile.targetExam as any,
+                targetYear: newProfile.targetYear,
+                academicLevel: newProfile.academicLevel,
+                preferredSubjects: newProfile.preferredSubjects,
+                dailyGoalQuestions: newProfile.dailyGoalQuestions,
+                currentStreak: newProfile.currentStreak,
+                longestStreak: newProfile.longestStreak,
+                problemSolvingIndex: newProfile.problemSolvingIndex,
+              },
             },
           },
-        },
-      });
-    } catch (e) {
-      // Prisma offline, memory fallback active
+          include: { studentProfile: true },
+        });
+
+        // Cache in memory store
+        memoryStore.users.set(createdUser.id, newUser);
+        if (createdUser.studentProfile) {
+          memoryStore.profiles.set(createdUser.id, newProfile);
+        }
+      } catch (err) {
+        console.error('[AUTH ERROR] Failed to write user to PostgreSQL, falling back to memory store:', err);
+        memoryStore.users.set(newUser.id, newUser);
+        memoryStore.profiles.set(newProfile.userId, newProfile);
+      }
+    } else {
+      memoryStore.users.set(newUser.id, newUser);
+      memoryStore.profiles.set(newProfile.userId, newProfile);
     }
 
     const token = jwt.sign(
@@ -122,7 +158,52 @@ export class AuthService {
    * Log in an existing user
    */
   static async login(email: string, password: string): Promise<AuthResult> {
-    const user = memoryStore.findUserByEmail(email);
+    const cleanEmail = email.toLowerCase();
+
+    // 1. Try finding user in database first
+    try {
+      const dbUser = await prisma.user.findUnique({
+        where: { email: cleanEmail },
+        include: { studentProfile: true },
+      });
+
+      if (dbUser) {
+        const isMatch = await bcrypt.compare(password, dbUser.passwordHash);
+        if (!isMatch) {
+          const error: any = new Error('Invalid email or password credentials');
+          error.statusCode = 401;
+          error.code = 'INVALID_CREDENTIALS';
+          throw error;
+        }
+
+        const token = jwt.sign(
+          {
+            userId: dbUser.id,
+            email: dbUser.email,
+            role: dbUser.role,
+          },
+          ENV.JWT_SECRET,
+          { expiresIn: '7d' }
+        );
+
+        return {
+          user: {
+            id: dbUser.id,
+            email: dbUser.email,
+            fullName: dbUser.fullName,
+            role: dbUser.role,
+          },
+          profile: dbUser.studentProfile as any,
+          token,
+        };
+      }
+    } catch (err: any) {
+      if (err.statusCode === 401) throw err;
+      // Database offline, proceed to memory store check
+    }
+
+    // 2. Fallback to memory store
+    const user = memoryStore.findUserByEmail(cleanEmail);
     if (!user) {
       const error: any = new Error('Invalid email or password credentials');
       error.statusCode = 401;
@@ -166,6 +247,30 @@ export class AuthService {
    * Get current authenticated user details
    */
   static async getMe(userId: string) {
+    // 1. Try database first
+    try {
+      const dbUser = await prisma.user.findUnique({
+        where: { id: userId },
+        include: { studentProfile: true },
+      });
+
+      if (dbUser) {
+        return {
+          user: {
+            id: dbUser.id,
+            email: dbUser.email,
+            fullName: dbUser.fullName,
+            role: dbUser.role,
+            createdAt: dbUser.createdAt,
+          },
+          profile: dbUser.studentProfile as any,
+        };
+      }
+    } catch (_) {
+      // Database offline, check memory store
+    }
+
+    // 2. Fallback to memory store
     const user = memoryStore.findUserById(userId);
     if (!user) {
       const error: any = new Error('User not found');
