@@ -173,3 +173,148 @@ export const FALLBACK_LEADERBOARD = {
     { rank: 5, studentName: 'Kavya Nair', instituteName: 'Narayana Hyderabad', timeSpentSeconds: 3200, score: 52 },
   ],
 };
+
+export const FALLBACK_ANALYTICS_OVERVIEW = {
+  psi: {
+    overallPsi: 78.4,
+    accuracyComponent: 75.7,
+    speedComponent: 80.2,
+    consistencyComponent: 85.0,
+    difficultyCalibration: 72.5,
+  },
+  summary: {
+    totalAttempted: 37,
+    totalCorrect: 28,
+    overallAccuracy: 75.7,
+    totalTimeSpentMinutes: 103,
+    averagePacingSeconds: 168,
+    estimatedJeeRank: 'Top 1,500',
+  },
+  weeklyActivity: [
+    { dayName: 'Mon', solved: 4, accuracy: 75 },
+    { dayName: 'Tue', solved: 6, accuracy: 83 },
+    { dayName: 'Wed', solved: 5, accuracy: 60 },
+    { dayName: 'Thu', solved: 8, accuracy: 88 },
+    { dayName: 'Fri', solved: 7, accuracy: 71 },
+    { dayName: 'Sat', solved: 10, accuracy: 80 },
+    { dayName: 'Sun', solved: 6, accuracy: 83 },
+  ],
+  difficultyBreakdown: [
+    { difficulty: 'MEDIUM', attempted: 14, correct: 12, accuracy: 85.7 },
+    { difficulty: 'HARD', attempted: 16, correct: 12, accuracy: 75.0 },
+    { difficulty: 'ADVANCED', attempted: 7, correct: 4, accuracy: 57.1 },
+  ],
+  chapterPerformance: [
+    { chapterName: 'Kinematics', accuracy: 88, solvedCount: 7, masteryLevel: 'Mastered' },
+    { chapterName: 'Rotational Motion', accuracy: 82, solvedCount: 10, masteryLevel: 'Proficient' },
+    { chapterName: 'Electrostatics', accuracy: 80, solvedCount: 5, masteryLevel: 'Proficient' },
+    { chapterName: 'Laws of Motion', accuracy: 74, solvedCount: 5, masteryLevel: 'Developing' },
+    { chapterName: 'Work, Power & Energy', accuracy: 70, solvedCount: 4, masteryLevel: 'Developing' },
+    { chapterName: 'Thermodynamics', accuracy: 65, solvedCount: 3, masteryLevel: 'Needs Review' },
+  ],
+};
+
+export const FALLBACK_KNOWLEDGE_GAPS = [
+  {
+    topic: 'Non-Inertial Frame Pseudo Force Equilibrium',
+    chapter: 'Laws of Motion',
+    accuracy: 40,
+    attemptsCount: 5,
+    misconception: 'Neglecting centrifugal pseudo-force components along normal axes in rotating reference frames.',
+    recommendedAction: 'Review Free-Body Diagram formulation in accelerated frames with constraint equations.',
+  },
+  {
+    topic: 'Variable Mass Rocket Thrust Integration',
+    chapter: 'Kinematics',
+    accuracy: 50,
+    attemptsCount: 4,
+    misconception: 'Applying constant-mass impulse equations instead of differential momentum balance dp = m dv + v_rel dm.',
+    recommendedAction: 'Practice differential rocket equations with variable ejection velocity.',
+  },
+];
+
+export const FALLBACK_RECOMMENDATIONS = {
+  recommendedQuestions: [
+    {
+      id: 'PHY-ADV-24-ROT-01',
+      code: 'PHY-ADV-24-ROT-01',
+      title: 'Pure Rolling Dynamics & Friction',
+      difficulty: 'HARD',
+      reason: 'Strengthens torque about instantaneous center of zero velocity.',
+    },
+    {
+      id: 'PHY-ADV-24-ROT-02',
+      code: 'PHY-ADV-24-ROT-02',
+      title: 'Hinged Rod Angular Momentum & Reactions',
+      difficulty: 'ADVANCED',
+      reason: 'Reinforces pivot force calculation in non-equilibrium rotation.',
+    },
+  ],
+  focusTopics: [
+    { topicName: 'Torque about Instantaneous Axis', chapterName: 'Rotational Motion', priority: 'HIGH' },
+    { topicName: 'Hinged Constraint Reactions', chapterName: 'Rotational Motion', priority: 'HIGH' },
+    { topicName: 'Work-Energy in Rolling', chapterName: 'Work, Power & Energy', priority: 'MEDIUM' },
+  ],
+};
+
+export const FALLBACK_INSTITUTE_DASHBOARD = {
+  institute: {
+    id: 'inst-apex-01',
+    name: 'Apex Kota - Super 30 Centre',
+    isVerified: true,
+    city: 'Kota',
+    state: 'Rajasthan',
+  },
+  metrics: {
+    totalStudents: 30,
+    activeThisWeek: 29,
+    avgPsi: 82.6,
+    topStreak: 45,
+    scholarshipRecipients: 12,
+  },
+  batches: ['Super-30 Batch A', 'Super-30 Batch B'],
+  studentsRequiringAttention: [
+    { name: 'Kavya Nair', maskedEmail: 'kavya***@gmail.com', issue: 'Rotational torque misconception detected in last 3 attempts', psi: 71.2 },
+    { name: 'Rohan Sen', maskedEmail: 'rohan***@fiitjee.edu', issue: 'Pacing timeout on multi-correct physics problems', psi: 74.8 },
+  ],
+  studentRoster: [
+    { id: 'st-01', name: 'Aditya Verma', maskedEmail: 'adi***@apex.edu', batchName: 'Super-30 Batch A', psi: 88.5, questionsSolved: 142, streak: 28 },
+    { id: 'st-02', name: 'Ananya Deshmukh', maskedEmail: 'ana***@allen.edu', batchName: 'Super-30 Batch A', psi: 86.2, questionsSolved: 135, streak: 24 },
+    { id: 'st-03', name: 'Yash Sharma', maskedEmail: 'yash***@solvesense.dev', batchName: 'Super-30 Batch A', psi: 84.1, questionsSolved: 120, streak: 18 },
+    { id: 'st-04', name: 'Rohan Sen', maskedEmail: 'rohan***@fiitjee.edu', batchName: 'Super-30 Batch B', psi: 79.4, questionsSolved: 98, streak: 14 },
+    { id: 'st-05', name: 'Kavya Nair', maskedEmail: 'kavya***@gmail.com', batchName: 'Super-30 Batch B', psi: 74.8, questionsSolved: 85, streak: 11 },
+  ],
+};
+
+export const FALLBACK_SCHOLARSHIPS = [
+  {
+    id: 'sch-apex-100',
+    title: 'Kota Apex Super-30 100% Tuition Waiver',
+    instituteName: 'Apex Kota Institute',
+    minPsiRequired: 80,
+    discountPercentage: 100,
+    seatsAvailable: 5,
+    deadline: '2026-12-31',
+    description: 'Full residential coaching sponsorship for students demonstrating PSI >= 80 in Advanced Physics.',
+  },
+  {
+    id: 'sch-allen-star-50',
+    title: 'Allen Star Batch 50% Excellence Scholarship',
+    instituteName: 'Allen Career Institute',
+    minPsiRequired: 75,
+    discountPercentage: 50,
+    seatsAvailable: 20,
+    deadline: '2026-12-15',
+    description: 'Academic grant covering classroom coaching and test series for meritorious JEE Advanced candidates.',
+  },
+  {
+    id: 'sch-fiitjee-pinnacle',
+    title: 'FIITJEE Pinnacle Merit Fellowship',
+    instituteName: 'FIITJEE Centre',
+    minPsiRequired: 70,
+    discountPercentage: 35,
+    seatsAvailable: 15,
+    deadline: '2026-12-20',
+    description: 'Special fee concession for top problem solvers on Solve Sense platform.',
+  },
+];

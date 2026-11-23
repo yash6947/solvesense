@@ -4,11 +4,27 @@ import {
   FALLBACK_DASHBOARD, 
   FALLBACK_CONTESTS, 
   FALLBACK_CONTEST_PAPER, 
-  FALLBACK_LEADERBOARD 
+  FALLBACK_LEADERBOARD,
+  FALLBACK_ANALYTICS_OVERVIEW,
+  FALLBACK_KNOWLEDGE_GAPS,
+  FALLBACK_RECOMMENDATIONS,
+  FALLBACK_INSTITUTE_DASHBOARD,
+  FALLBACK_SCHOLARSHIPS
 } from './offlineFallbacks';
 
-const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api/v1';
+const getApiBaseUrl = (): string => {
+  if (process.env.NEXT_PUBLIC_API_URL) {
+    return process.env.NEXT_PUBLIC_API_URL;
+  }
+  if (typeof window !== 'undefined') {
+    const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+    if (!isLocal) {
+      // On Vercel / remote production: use relative endpoint to avoid mixed-content blocks
+      return '/api/v1';
+    }
+  }
+  return 'http://localhost:5000/api/v1';
+};
 
 export interface ApiResponse<T = any> {
   success: boolean;
@@ -34,7 +50,8 @@ export async function apiRequest<T = any>(
     ...options.headers,
   };
 
-  const url = `${API_BASE_URL}${endpoint.startsWith('/') ? endpoint : `/${endpoint}`}`;
+  const baseUrl = getApiBaseUrl();
+  const url = `${baseUrl}${endpoint.startsWith('/') ? endpoint : `/${endpoint}`}`;
 
   try {
     const res = await fetch(url, {
@@ -42,19 +59,24 @@ export async function apiRequest<T = any>(
       headers,
     });
 
-    const json: ApiResponse<T> = await res.json();
+    let json: any = null;
+    try {
+      json = await res.json();
+    } catch (_) {
+      json = null;
+    }
 
-    if (!res.ok || !json.success) {
-      const errorMsg = json.error?.message || `Request failed with status ${res.status}`;
+    if (!res.ok || !json?.success) {
+      const errorMsg = json?.error?.message || `Request failed with status ${res.status}`;
       const err: any = new Error(errorMsg);
       err.status = res.status;
-      err.details = json.error?.details;
+      err.details = json?.error?.details;
       throw err;
     }
 
     return json.data;
   } catch (networkErr: any) {
-    // If backend is unreachable (e.g. running standalone on Vercel without a live backend),
+    // If backend is unreachable or returns non-200 (e.g. running standalone on Vercel without a live backend),
     // provide full offline fallback so every screen works flawlessly.
     const fallback = handleOfflineFallback<T>(endpoint, options);
     if (fallback !== undefined) {
@@ -69,7 +91,7 @@ function handleOfflineFallback<T = any>(endpoint: string, options: RequestInit =
 
   // 1. Question details (/questions/:id)
   if (cleanEndpoint.startsWith('/questions/') && cleanEndpoint.endsWith('/attempts')) {
-    const body = options.body ? JSON.parse(options.body as string) : {};
+    const body = options.body ? (typeof options.body === 'string' ? JSON.parse(options.body) : options.body) : {};
     const submitted = body.submittedAnswer;
     const isCorrect = submitted === 'B' || (Array.isArray(submitted) && submitted.includes('A') && submitted.includes('C')) || submitted === 2;
     return {
@@ -94,13 +116,31 @@ function handleOfflineFallback<T = any>(endpoint: string, options: RequestInit =
   }
 
   // 3. Syllabus chapters
-  if (cleanEndpoint.includes('/chapters')) {
+  if (cleanEndpoint.includes('/chapters') || cleanEndpoint.startsWith('/syllabus')) {
     return FALLBACK_CHAPTERS as any;
   }
 
   // 4. Student Dashboard
   if (cleanEndpoint === '/students/dashboard') {
-    return FALLBACK_DASHBOARD as any;
+    let savedProfile: any = null;
+    let savedUser: any = null;
+    if (typeof window !== 'undefined') {
+      try {
+        const p = localStorage.getItem('zenith_profile');
+        const u = localStorage.getItem('zenith_user');
+        if (p) savedProfile = JSON.parse(p);
+        if (u) savedUser = JSON.parse(u);
+      } catch (_) {}
+    }
+    const combinedProfile = {
+      ...FALLBACK_DASHBOARD.profile,
+      ...(savedProfile || {}),
+      fullName: savedUser?.fullName || savedProfile?.fullName || FALLBACK_DASHBOARD.profile.fullName,
+    };
+    return {
+      ...FALLBACK_DASHBOARD,
+      profile: combinedProfile,
+    } as any;
   }
 
   // 5. Contests
@@ -122,7 +162,7 @@ function handleOfflineFallback<T = any>(endpoint: string, options: RequestInit =
 
   // 6. AI Progressive Hints
   if (cleanEndpoint === '/ai/hint' || cleanEndpoint === '/ai/hints') {
-    const body = options.body ? JSON.parse(options.body as string) : {};
+    const body = options.body ? (typeof options.body === 'string' ? JSON.parse(options.body) : options.body) : {};
     const level = body.level || 1;
     const hints = [
       { text: 'Analyze torque about the instantaneous point of zero velocity (contact point $P$) to eliminate the unknown static friction force.', note: 'Free Body Diagram choice' },
@@ -139,7 +179,7 @@ function handleOfflineFallback<T = any>(endpoint: string, options: RequestInit =
 
   // 7. AI Socratic Chat
   if (cleanEndpoint === '/ai/chat') {
-    const body = options.body ? JSON.parse(options.body as string) : {};
+    const body = options.body ? (typeof options.body === 'string' ? JSON.parse(options.body) : options.body) : {};
     const studentMsg = (body.studentMessage || '').toLowerCase();
     let reply = 'In pure rolling without slipping, static friction can act forward or backward depending on where the external force is applied relative to the gyration radius. Have you calculated the torque about the instantaneous center of rotation?';
     if (studentMsg.includes('friction')) {
@@ -161,11 +201,140 @@ function handleOfflineFallback<T = any>(endpoint: string, options: RequestInit =
     } as any;
   }
 
-  // 9. Auth
-  if (cleanEndpoint === '/auth/me') {
+  // 9. Auth: Register
+  if (cleanEndpoint === '/auth/register') {
+    let body: any = {};
+    try {
+      body = options.body ? (typeof options.body === 'string' ? JSON.parse(options.body) : options.body) : {};
+    } catch (_) {}
+
+    const fullName = body.fullName || 'Student Aspirant';
+    const email = body.email || 'student@solvesense.dev';
+    const mockUser = {
+      id: 'usr_' + Date.now(),
+      fullName,
+      email,
+      role: 'STUDENT',
+    };
+    const mockProfile = {
+      id: 'prof_' + Date.now(),
+      userId: mockUser.id,
+      fullName,
+      targetExam: body.targetExam || 'JEE_ADVANCED',
+      targetYear: body.targetYear ? Number(body.targetYear) : 2026,
+      academicLevel: body.academicLevel || 'Class 12',
+      preferredSubjects: body.preferredSubjects || ['Physics'],
+      dailyGoalQuestions: 10,
+      currentStreak: 1,
+      longestStreak: 1,
+      problemSolvingIndex: 78.4,
+    };
+    const mockToken = 'mock_jwt_token_' + (typeof window !== 'undefined' ? btoa(encodeURIComponent(JSON.stringify(mockUser))) : 'offline');
+
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.setItem('zenith_token', mockToken);
+        localStorage.setItem('zenith_user', JSON.stringify(mockUser));
+        localStorage.setItem('zenith_profile', JSON.stringify(mockProfile));
+      } catch (_) {}
+    }
+
     return {
-      user: { id: 'u-1', fullName: 'Yash Sharma', email: 'yash@solvesense.dev', role: 'STUDENT' },
-      profile: FALLBACK_DASHBOARD.profile,
+      user: mockUser,
+      profile: mockProfile,
+      token: mockToken,
+    } as any;
+  }
+
+  // 10. Auth: Login
+  if (cleanEndpoint === '/auth/login') {
+    let body: any = {};
+    try {
+      body = options.body ? (typeof options.body === 'string' ? JSON.parse(options.body) : options.body) : {};
+    } catch (_) {}
+
+    let savedUser: any = null;
+    let savedProfile: any = null;
+    if (typeof window !== 'undefined') {
+      try {
+        const u = localStorage.getItem('zenith_user');
+        const p = localStorage.getItem('zenith_profile');
+        if (u) savedUser = JSON.parse(u);
+        if (p) savedProfile = JSON.parse(p);
+      } catch (_) {}
+    }
+
+    const email = body.email || 'student@solvesense.dev';
+    const fullName = savedUser?.email === email ? savedUser.fullName : (email.split('@')[0] || 'Aspirant');
+    const mockUser = (savedUser && savedUser.email === email) ? savedUser : {
+      id: 'usr_' + Date.now(),
+      fullName,
+      email,
+      role: 'STUDENT',
+    };
+    const mockProfile = savedProfile || {
+      ...FALLBACK_DASHBOARD.profile,
+      id: 'prof_' + Date.now(),
+      userId: mockUser.id,
+      fullName,
+    };
+    const mockToken = 'mock_jwt_token_' + (typeof window !== 'undefined' ? btoa(encodeURIComponent(JSON.stringify(mockUser))) : 'offline');
+
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.setItem('zenith_token', mockToken);
+        localStorage.setItem('zenith_user', JSON.stringify(mockUser));
+        localStorage.setItem('zenith_profile', JSON.stringify(mockProfile));
+      } catch (_) {}
+    }
+
+    return {
+      user: mockUser,
+      profile: mockProfile,
+      token: mockToken,
+    } as any;
+  }
+
+  // 11. Auth: Me
+  if (cleanEndpoint === '/auth/me') {
+    let savedUser: any = null;
+    let savedProfile: any = null;
+    if (typeof window !== 'undefined') {
+      try {
+        const u = localStorage.getItem('zenith_user');
+        const p = localStorage.getItem('zenith_profile');
+        if (u) savedUser = JSON.parse(u);
+        if (p) savedProfile = JSON.parse(p);
+      } catch (_) {}
+    }
+    return {
+      user: savedUser || { id: 'u-1', fullName: 'Yash Sharma', email: 'yash@solvesense.dev', role: 'STUDENT' },
+      profile: savedProfile || FALLBACK_DASHBOARD.profile,
+    } as any;
+  }
+
+  // 12. Analytics
+  if (cleanEndpoint === '/analytics/overview') {
+    return FALLBACK_ANALYTICS_OVERVIEW as any;
+  }
+  if (cleanEndpoint === '/analytics/knowledge-gaps') {
+    return FALLBACK_KNOWLEDGE_GAPS as any;
+  }
+  if (cleanEndpoint === '/learning/recommendations') {
+    return FALLBACK_RECOMMENDATIONS as any;
+  }
+
+  // 13. Institutes & Scholarships
+  if (cleanEndpoint.includes('/institutes') && cleanEndpoint.includes('/dashboard')) {
+    return FALLBACK_INSTITUTE_DASHBOARD as any;
+  }
+  if (cleanEndpoint === '/institutes/scholarships') {
+    return FALLBACK_SCHOLARSHIPS as any;
+  }
+  if (cleanEndpoint.includes('/institutes/scholarships') && cleanEndpoint.endsWith('/apply')) {
+    return {
+      success: true,
+      message: 'Application submitted successfully! Coaching partner admission panel notified.',
     } as any;
   }
 

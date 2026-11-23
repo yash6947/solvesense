@@ -97,13 +97,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const logout = () => {
-    localStorage.removeItem('zenith_token');
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('zenith_token');
+      localStorage.removeItem('zenith_user');
+      localStorage.removeItem('zenith_profile');
+      window.location.href = '/auth/login';
+    }
     setUser(null);
     setProfile(null);
     setToken(null);
-    if (typeof window !== 'undefined') {
-      window.location.href = '/auth/login';
-    }
   };
 
   const refreshProfile = async () => {
