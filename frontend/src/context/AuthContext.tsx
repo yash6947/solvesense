@@ -2,6 +2,7 @@
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { apiRequest } from '@/lib/api';
+import { createClient } from '@/utils/supabase/client';
 
 export interface User {
   id: string;
@@ -93,6 +94,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, []);
 
   const login = async (email: string, password: string) => {
+    // 1. Live Supabase Auth sign-in
+    try {
+      const supabase = createClient();
+      await supabase.auth.signInWithPassword({ email, password });
+    } catch (_) {}
+
+    // 2. Application session
     const data = await apiRequest<{ user: User; profile: StudentProfile; token: string }>(
       '/auth/login',
       {
@@ -108,6 +116,24 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const register = async (formData: any) => {
+    // 1. Live Supabase Auth sign-up
+    try {
+      const supabase = createClient();
+      await supabase.auth.signUp({
+        email: formData.email,
+        password: formData.password,
+        options: {
+          data: {
+            full_name: formData.fullName,
+            target_exam: formData.targetExam,
+            target_year: formData.targetYear,
+            academic_level: formData.academicLevel,
+          },
+        },
+      });
+    } catch (_) {}
+
+    // 2. Application session
     const data = await apiRequest<{ user: User; profile: StudentProfile; token: string }>(
       '/auth/register',
       {
@@ -122,7 +148,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setProfile(data.profile);
   };
 
-  const logout = () => {
+  const logout = async () => {
+    try {
+      const supabase = createClient();
+      await supabase.auth.signOut();
+    } catch (_) {}
     if (typeof window !== 'undefined') {
       localStorage.removeItem('zenith_token');
       localStorage.removeItem('zenith_user');

@@ -3,19 +3,19 @@
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { 
-  Flame, 
-  Clock, 
-  Target, 
-  CheckCircle2, 
-  XCircle, 
-  AlertTriangle, 
-  BookOpen, 
-  ChevronRight, 
-  TrendingUp, 
-  RefreshCw, 
-  Award, 
-  Zap, 
+import {
+  Flame,
+  Clock,
+  Target,
+  CheckCircle2,
+  XCircle,
+  AlertTriangle,
+  BookOpen,
+  ChevronRight,
+  TrendingUp,
+  RefreshCw,
+  Award,
+  Zap,
   Calendar,
   Layers,
   ArrowUpRight,
@@ -99,7 +99,7 @@ export default function DashboardPage() {
 
   // LeetCode-style 12-month calendar heatmap (52 weeks x 7 days mock grid)
   const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-  
+
   // Real activity heatmap: 84 days (12 weeks).
   // A fresh account starts with a clean slate; today is marked active only after practice.
   const calendarCells = Array.from({ length: 84 }, (_, i) => {
