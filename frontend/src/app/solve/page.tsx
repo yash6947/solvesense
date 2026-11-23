@@ -375,7 +375,7 @@ function ProblemBankContent() {
                           <Link
                             href={`/solve/${q.id}`}
                             className="font-semibold text-white group-hover:text-[#00e1ab] transition-colors text-sm"
-                            onClick={(e) => e.stopPropagation()}
+                            onClick={(e: React.MouseEvent) => e.stopPropagation()}
                           >
                             {q.topic ? `${q.topic.name}` : 'JEE Physics Problem'}
                           </Link>
